@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --app-viewport-height: 100vh;
+
+  /* R_IELTSWORDS Design Philosophy */
+  --text: #4b5563;
+  --text-h: #111827;
+  --bg-color: #f8fafc;
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --primary-bg: rgba(99, 102, 241, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.5);
+
+  /* Modern Palette */
+  --color-primary: #1363df;
+  --color-primary-hover: #0f52ba;
+  --color-primary-light: rgba(19, 99, 223, 0.1);
+  --color-primary-glow: rgba(19, 99, 223, 0.25);
+  --grad-aurora: linear-gradient(135deg, #1363df 0%, #2563eb 100%);
+  
+  --color-bg: #f8fafc;
+  --color-bg-alt: #f1f5f9;
+  --color-title: #111827;
+  --color-body: #4b5563;
+  --color-muted: #6b7280;
+  --color-line: rgba(148, 163, 184, 0.25);
+  --color-line-highlight: rgba(99, 102, 241, 0.35);
+
+  --color-emerald: #10b981;
+  --color-amber: #f59e0b;
+  --color-rose: #f43f5e;
+  
+  /* Typography - R_IELTSWORDS */
+  --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Shadows - R_IELTSWORDS */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.05);
+  --shadow-hover: 0 20px 40px rgba(99, 102, 241, 0.15);
+
+  /* Geometry */
+  --radius-sm: 8px;
+  --radius: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+  --sidebar: 260px;
+  --target: 44px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  color: var(--text-h);
+  background: var(--bg-color);
+  font-family: var(--font-family);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+

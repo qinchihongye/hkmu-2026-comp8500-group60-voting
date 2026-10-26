@@ -1,0 +1,99 @@
+import { render, screen, type RenderResult } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import type { ReactElement } from "react";
+import { MemoryRouter } from "react-router-dom";
+
+import { Providers } from "../../../app/providers";
+import type { PollResults } from "../../../lib/api-types";
+import { ResultsPanel } from "../ResultsPanel";
+
+function renderPanel(ui: ReactElement): RenderResult {
+  return render(
+    <Providers>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </Providers>,
+  );
+}
+
+function results(overrides: Partial<PollResults> = {}): PollResults {
+  return {
+    poll_id: 1,
+    total_votes: 1,
+    is_final: false,
+    server_time: "2026-10-26T06:00:00Z",
+    winner_option_ids: [1],
+    options: [
+      { option_id: 1, label: "111", count: 1, percentage: 100 },
+      { option_id: 2, label: "222", count: 0, percentage: 0 },
+    ],
+    ...overrides,
+  };
+}
+
+describe("ResultsPanel", () => {
+  it("左边只显示选项和票数，右边饼图显示百分比", () => {
+    const { container } = renderPanel(<ResultsPanel results={results()} />);
+
+    expect(screen.getByRole("columnheader", { name: "Option" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Votes" })).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: /Percentage/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: /111/ })).toHaveTextContent("(leading)");
+    expect(screen.getByRole("cell", { name: "1" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "111 100.00%, 222 0.00%" })).toBeInTheDocument();
+    expect(container.querySelector(".results-pie circle")).not.toBeNull();
+    expect(screen.getAllByText("100.00%").length).toBeGreaterThan(0);
+    expect(screen.getByText("0.00%")).toBeInTheDocument();
+  });
+
+  it("多选项按百分比切分，没有有效票时不画扇区", () => {
+    const { container, rerender } = renderPanel(
+      <ResultsPanel
+        results={results({
+          total_votes: 2,
+          winner_option_ids: [1, 2],
+          options: [
+            { option_id: 1, label: "甲", count: 1, percentage: 50 },
+            { option_id: 2, label: "乙", count: 1, percentage: 50 },
+          ],
+        })}
+      />,
+    );
+    expect(container.querySelectorAll(".results-pie path")).toHaveLength(2);
+
+    rerender(
+      <Providers>
+        <MemoryRouter>
+          <ResultsPanel
+            results={results({
+              total_votes: 0,
+              winner_option_ids: [],
+              options: [
+                { option_id: 1, label: "甲", count: 0, percentage: 0 },
+                { option_id: 2, label: "乙", count: 0, percentage: 0 },
+              ],
+            })}
+          />
+        </MemoryRouter>
+      </Providers>,
+    );
+    expect(screen.getByRole("img", { name: "No valid votes" })).toBeInTheDocument();
+    expect(container.querySelectorAll(".results-pie path")).toHaveLength(0);
+  });
+
+  it("百分比说明收在感叹号里，触屏点击后显示", async () => {
+    const user = userEvent.setup();
+    renderPanel(<ResultsPanel results={results()} />);
+    const button = screen.getByRole("button", { name: "About percentages" });
+    const note = document.getElementById(button.getAttribute("aria-controls") ?? "");
+    expect(note).toHaveTextContent("Percentages are rounded to two decimal places and may not add up to 100%.");
+    expect(note).not.toHaveClass("open");
+    expect(button).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(button);
+    expect(note).toHaveClass("open");
+    expect(button).toHaveAttribute("aria-expanded", "true");
+
+    await user.click(button);
+    expect(note).not.toHaveClass("open");
+  });
+});

@@ -1,0 +1,25 @@
+/references/
+prompt.txt
+/references/*
+
+# 本地环境与密钥
+.env
+
+# 数据库运行数据
+db/data/
+db/backups/
+
+# Python 与测试缓存
+backend/.venv/
+**/.pytest_cache/
+**/.ruff_cache/
+**/__pycache__/
+**/*.py[cod]
+
+# 前端依赖与构建产物
+frontend/node_modules/
+frontend/dist/
+
+# 系统与 IDE 生成物
+.DS_Store
+.idea/

@@ -1,0 +1,663 @@
+/* =========================================================
+   VoteMaster Unified SaaS Views Stylesheet
+   (Ballot, Results, Workspace, Audit, Access & History)
+   ========================================================= */
+
+.view-root {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #0f172a;
+  height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.view-root-narrow {
+  max-width: 640px;
+}
+
+/* Page Headers (Fixed Top) */
+.view-header {
+  flex-shrink: 0;
+  margin-bottom: 20px;
+}
+
+/* Independent Scrolling Frame (The Red Box Scroll Frame) */
+.view-scroll-frame {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 4px 6px 36px 2px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.view-scroll-frame::-webkit-scrollbar {
+  width: 6px;
+}
+
+.view-scroll-frame::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.view-scroll-frame::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+
+.view-scroll-frame::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.6);
+}
+
+/* Fallback for views without separate frame */
+.view-root:not(:has(.view-scroll-frame)),
+.poll-form-wrapper,
+.poll-workspace {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 6px 36px 2px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.view-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: #eef4ff;
+  color: #1363df;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.view-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.025em;
+  margin: 0 0 8px 0;
+}
+
+.view-subtitle {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.55;
+}
+
+/* Base Card Container */
+.view-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.04);
+  margin-bottom: 24px;
+}
+
+.view-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.view-card-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+/* =========================================================
+   BALLOT VOTING FORM
+   ========================================================= */
+.ballot-options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.ballot-option-tile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.ballot-option-tile:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.ballot-option-tile.selected {
+  border-color: #1363df;
+  background: #f0f7ff;
+}
+
+.ballot-option-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ballot-option-letter {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  display: grid;
+  place-items: center;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #475569;
+}
+
+.ballot-option-tile.selected .ballot-option-letter {
+  background: #1363df;
+  color: #ffffff;
+}
+
+.ballot-option-text {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.ballot-option-tile.selected .ballot-option-text {
+  color: #1363df;
+  font-weight: 700;
+}
+
+.ballot-option-radio-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  display: grid;
+  place-items: center;
+  transition: all 0.2s ease;
+}
+
+.ballot-option-tile.selected .ballot-option-radio-dot {
+  border-color: #1363df;
+}
+
+.ballot-option-radio-inner {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #1363df;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.2s ease;
+}
+
+.ballot-option-tile.selected .ballot-option-radio-inner {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Success Receipt Ticket */
+.receipt-card {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1.5px solid #a7f3d0;
+  border-radius: 18px;
+  padding: 26px;
+  margin: 20px 0;
+  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.1);
+}
+
+.receipt-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.receipt-seal {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #10b981;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.receipt-id-box {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid #bbf7d0;
+  color: #065f46;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin: 4px 0 8px;
+}
+
+/* =========================================================
+   RESULTS PROGRESS PANELS
+   ========================================================= */
+.results-summary-strip {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 24px;
+}
+
+.results-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
+  gap: 20px;
+  align-items: start;
+  margin-bottom: 12px;
+}
+
+.results-table-card {
+  margin-bottom: 0;
+}
+
+.results-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 8px;
+  border-radius: 999px;
+  vertical-align: middle;
+}
+
+.results-pie-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 18px 16px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.02);
+}
+
+.results-pie-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.results-pie-caption {
+  margin: 0;
+  color: #475569;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.results-note {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.results-note-button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #dbeafe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1363df;
+  cursor: pointer;
+}
+
+.results-note-button:hover,
+.results-note-button:focus-visible {
+  background: #dbeafe;
+  outline: none;
+}
+
+.results-note-pop {
+  position: absolute;
+  top: calc(100% - 4px);
+  right: 0;
+  z-index: 5;
+  width: min(260px, calc(100vw - 48px));
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: left;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.results-note-pop.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.results-pie {
+  width: min(100%, 220px);
+  height: auto;
+}
+
+.results-pie-label {
+  fill: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.results-pie-legend {
+  list-style: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.results-pie-legend li {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  color: #1e293b;
+  font-size: 0.9rem;
+}
+
+.results-pie-legend strong {
+  color: #0f172a;
+}
+
+@media (max-width: 960px) {
+  .results-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   TABLES (AUDIT & HISTORY)
+   ========================================================= */
+.saas-table-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.02);
+  margin-bottom: 24px;
+}
+
+.saas-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.92rem;
+}
+
+.saas-table th {
+  padding: 14px 18px;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 700;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.saas-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+
+.saas-table tr:last-child td {
+  border-bottom: none;
+}
+
+.saas-table tr:hover td {
+  background: #f8fbff;
+}
+
+/* Action Buttons */
+.view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  touch-action: manipulation;
+}
+
+.view-btn-primary {
+  background: #1363df;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(19, 99, 223, 0.25);
+}
+
+.view-btn-primary:hover:not(:disabled) {
+  background: #0f52ba;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.view-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.view-btn-secondary {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+}
+
+.view-btn-secondary:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.view-btn-secondary:active:not(:disabled) {
+  background: #cbd5e1;
+}
+
+.view-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Ensure receipt-id-box never overflows */
+.receipt-id-box {
+  word-break: break-all;
+  max-width: 100%;
+}
+
+/* =========================================================
+   MOBILE RESPONSIVENESS (< 768px and < 480px)
+   ========================================================= */
+@media (max-width: 768px) {
+  .view-header {
+    margin-bottom: 20px;
+  }
+
+  .view-title {
+    font-size: 1.55rem;
+  }
+
+  .view-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .view-card {
+    padding: 20px 16px;
+    border-radius: 16px;
+    margin-bottom: 18px;
+  }
+
+  .view-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .ballot-option-tile {
+    padding: 14px 14px;
+    min-height: 52px;
+  }
+
+  .ballot-option-left {
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .ballot-option-text {
+    font-size: 0.95rem;
+    word-break: break-word;
+  }
+
+  .receipt-card {
+    padding: 20px 16px;
+    border-radius: 14px;
+  }
+
+  .receipt-header {
+    gap: 10px;
+  }
+
+  .receipt-seal {
+    width: 34px;
+    height: 34px;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  .saas-table-card {
+    border-radius: 14px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .saas-table th,
+  .saas-table td {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  .view-root,
+  .poll-form-root,
+  .admin-page-root {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding-bottom: 24px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .view-root::-webkit-scrollbar,
+  .poll-form-root::-webkit-scrollbar,
+  .admin-page-root::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  .view-root::-webkit-scrollbar-thumb,
+  .poll-form-root::-webkit-scrollbar-thumb,
+  .admin-page-root::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.4);
+    border-radius: 9999px;
+  }
+}
+
+@media (max-width: 480px) {
+  .view-title {
+    font-size: 1.35rem;
+    letter-spacing: -0.02em;
+  }
+
+  .view-card {
+    padding: 16px 12px;
+    border-radius: 14px;
+  }
+
+  .ballot-option-tile {
+    padding: 12px 10px;
+  }
+
+  .ballot-option-letter {
+    width: 26px;
+    height: 26px;
+    font-size: 0.78rem;
+  }
+
+  .ballot-option-text {
+    font-size: 0.9rem;
+  }
+
+  .view-btn {
+    padding: 12px 16px;
+    font-size: 0.9rem;
+  }
+
+  .saas-table th,
+  .saas-table td {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
+
+  .receipt-id-box {
+    font-size: 0.8rem;
+    padding: 3px 6px;
+  }
+}

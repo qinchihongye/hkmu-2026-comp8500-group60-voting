@@ -1,0 +1,119 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: voting
+          POSTGRES_PASSWORD: change-me
+          POSTGRES_DB: voting_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U voting -d voting_test"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      DATABASE_URL: postgresql+psycopg://voting:change-me@127.0.0.1:5432/voting
+      TEST_DATABASE_URL: postgresql+psycopg://voting:change-me@127.0.0.1:5433/voting_test
+      ANON_VOTER_HMAC_KEY: course-demo-anon-hmac-key-32bytes
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run python -m pytest tests/unit tests/api tests/integration -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test -- --run
+      - run: npm run build
+
+  browser:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: voting
+          POSTGRES_PASSWORD: change-me
+          POSTGRES_DB: voting_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U voting -d voting_test"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      DATABASE_URL: postgresql+psycopg://voting:change-me@127.0.0.1:5433/voting_test
+      TEST_DATABASE_URL: postgresql+psycopg://voting:change-me@127.0.0.1:5434/voting_unused
+      PUBLIC_BASE_URL: http://localhost:5173
+      COOKIE_SECURE: "false"
+      ANON_VOTER_HMAC_KEY: course-demo-anon-hmac-key-32bytes
+      DEMO_ADMIN_PASSWORD: demo-admin-pass1
+      DEMO_USER_PASSWORD: demo-user-pass1
+      DEMO_VOTER_PASSWORD: demo-voter-pass1
+      DEMO_POLL_PASSWORD: access-pass1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: uv sync --frozen
+        working-directory: backend
+      - name: Migrate, seed, and run Playwright
+        run: |
+          set -euo pipefail
+          cd backend
+          uv run python -m alembic upgrade head
+          uv run python -m src.main.python.cli seed-demo
+          uv run python -m uvicorn src.main.python.main:create_app --factory --host 127.0.0.1 --port 8000 --no-access-log &
+          pid=$!
+          trap 'kill "$pid"' EXIT
+          ready=0
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/api/v1/health/live >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+          cd ../frontend
+          npm ci
+          npm exec playwright install --with-deps chromium
+          npm exec playwright test
