@@ -8,7 +8,7 @@
 
   1. 开发库是 `127.0.0.1:5432/voting`，测试库是 `127.0.0.1:5433/voting_test`。两个连接串必须不同。测试、测量和恢复都不要指向 5432。全栈 Docker 模式下，`compose.yml` 会把主机名自动覆盖成容器内的 `postgres` 服务名，无需手改。
   2. `ANON_VOTER_HMAC_KEY` 一旦填写，至少 32 字节，并且每次重启保持同一值。匿名防重复依赖这把密钥。示例文件留空。
-  3. `PUBLIC_BASE_URL` 和 `ALLOWED_ORIGINS` 填浏览器访问地址。Docker 模式是 `http://localhost`（Nginx 80 端口）；本机直跑 Vite 则是 `http://localhost:5173`。`ALLOWED_ORIGINS` 是 JSON 列表，写成不带方括号的字符串会在启动时失败。部署到服务器时改成服务器实际域名或 IP。
+  3. `PUBLIC_BASE_URL` 和 `ALLOWED_ORIGINS` 填浏览器访问地址。Docker 模式是 `http://localhost:8188`（Nginx 8188 端口）；本机直跑 Vite 则是 `http://localhost:5173`。`ALLOWED_ORIGINS` 是 JSON 列表，写成不带方括号的字符串会在启动时失败。部署到服务器时改成服务器实际域名或 IP。
   4. 账户 Cookie 是 `voting_session`，访客 Cookie 是 `voting_guest`。写请求还要带 `X-CSRF-Token`。账户 CSRF 和访客 CSRF 不能互换。注册、登录和首次建立访客只检查来源。开发环境 `COOKIE_SECURE=false`。
   5. `DEMO_ADMIN_PASSWORD`、`DEMO_USER_PASSWORD`、`DEMO_VOTER_PASSWORD` 是演示账户密码，长度 12 到 128。`DEMO_POLL_PASSWORD` 是私密样例场次的访问密码，长度 8 到 128。浏览器测试使用的课程样例写在 `frontend/tests/e2e/support.ts`，持续集成使用同一组。本地要跑这组浏览器测试时，演示账户密码必须与该文件一致。
 
@@ -18,13 +18,21 @@
   docker compose up -d --build
   ```
 
-  浏览器访问 `http://localhost`。首次启动会自动建表并幂等创建演示账户；要再新建四场演示投票，执行：
+  浏览器访问 `http://localhost:8188`。首次启动会自动建表并幂等创建演示账户；要再新建四场演示投票，执行：
 
   ```bash
   docker compose exec backend /app/backend/.venv/bin/python -m src.main.python.cli new-demo-round
   ```
 
   停止：`docker compose down`；连同数据卷一起删除：`docker compose down -v`；改了代码或依赖后重新构建：`docker compose up -d --build`。
+
+* **部署到服务器。** 对外端口是 Nginx 的 8188（`compose.yml` 里 `"8188:80"`，服务器按需在防火墙放行 8188）。把仓库推到服务器后，只需改 `.env` 里这几个值，其余保持不动，再 `docker compose up -d --build`：
+
+  1. `PUBLIC_BASE_URL` 与 `ALLOWED_ORIGINS`：从 `http://localhost:8188` 改成 `http://<服务器公网IP或域名>:8188`。两者主机和端口必须一致；`ALLOWED_ORIGINS` 是严格跨源白名单，没有同源豁免，写错会把所有写请求拦成 403。
+  2. 把课程样例密钥换成真实值：`ANON_VOTER_HMAC_KEY`（≥32 字节，每次重启保持同一值）、`POSTGRES_PASSWORD`。四个 `DEMO_*_PASSWORD` 必须先在 `.env` 填好——docker 启动是无交互的，留空会让 `seed-demo` 调 `getpass` 读终端而失败。
+  3. 前面有 HTTPS（TLS 终结）时把 `COOKIE_SECURE` 设为 `true`；本机直连 HTTP 保持 `false`。
+
+  内部地址不用动：`DATABASE_URL`、`TEST_DATABASE_URL` 保持 `127.0.0.1`，docker 模式由 `compose.yml` 覆盖成容器内 `postgres` 服务名；`VITE_API_PROXY` 只用于本机 Vite 开发代理，docker 里浏览器走同源 `/api/v1`，用不到它。反向代理与 TLS 细节见 `deploy/README.md`。
 
 * **启动（本机直跑，不用 Docker）。** 需要本机装好 Python/uv 和 Node。先在仓库根目录只起数据库：
 

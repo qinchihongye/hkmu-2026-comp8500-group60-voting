@@ -42,7 +42,7 @@ services:
       dockerfile: frontend/Dockerfile
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8188:80"
     depends_on:
       - backend
 
