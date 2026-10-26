@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { useI18n } from "../../i18n/LocaleProvider";
 
@@ -13,14 +13,47 @@ export function SharePanel({
 }) {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
+  const fieldRef = useRef<HTMLInputElement>(null);
   const note = [
     requiresLogin ? t("share.login") : t("share.noLogin"),
     requiresPassword ? t("share.password") : t("share.noPassword"),
   ].join(" ");
 
-  async function copy() {
-    await navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
+  function copyFromField(): boolean {
+    const field = fieldRef.current;
+    if (!field) {
+      return false;
+    }
+    const wasReadOnly = field.readOnly;
+    field.readOnly = false;
+    field.focus();
+    field.select();
+    let ok = false;
+    try {
+      ok = document.execCommand("copy");
+    } catch {
+      ok = false;
+    } finally {
+      field.readOnly = wasReadOnly;
+    }
+    return ok;
+  }
+
+  function copy() {
+    if (window.isSecureContext && navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText(shareUrl).then(
+        () => setCopied(true),
+        () => {
+          if (copyFromField()) {
+            setCopied(true);
+          }
+        },
+      );
+      return;
+    }
+    if (copyFromField()) {
+      setCopied(true);
+    }
   }
 
   return (
@@ -45,6 +78,7 @@ export function SharePanel({
         <div style={{ display: "flex", gap: 8 }}>
           <input
             id="share-url-field"
+            ref={fieldRef}
             aria-label={t("share.link")}
             data-testid="share-url"
             readOnly
@@ -64,7 +98,7 @@ export function SharePanel({
             <button
               type="button"
               className="view-btn view-btn-primary"
-              onClick={() => void copy()}
+              onClick={copy}
               style={{ whiteSpace: "nowrap", padding: "0 22px" }}
             >
               {t("share.copy")}
