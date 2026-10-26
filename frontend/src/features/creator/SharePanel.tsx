@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 
 import { useI18n } from "../../i18n/LocaleProvider";
 
@@ -104,6 +105,30 @@ export function SharePanel({
               {t("share.copy")}
             </button>
           </div>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "#334155", marginBottom: 8 }}>
+          {t("share.qr")}
+        </div>
+        <div
+          style={{
+            display: "inline-flex",
+            padding: 8,
+            borderRadius: 10,
+            border: "1.5px solid #cbd5e1",
+            background: "#ffffff",
+          }}
+        >
+          <QRCodeSVG
+            value={shareUrl}
+            size={168}
+            level="M"
+            marginSize={2}
+            role="img"
+            aria-label={t("share.qr")}
+          />
+        </div>
       </div>
 
       {copied ? (
