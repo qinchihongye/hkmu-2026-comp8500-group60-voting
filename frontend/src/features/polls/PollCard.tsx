@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
 
 import { useI18n } from "../../i18n/LocaleProvider";
-import { formatHongKong } from "../../lib/time";
 import type { PollSummary } from "../../lib/api-types";
+import { pollScheduleText } from "./scheduleLabel";
 
 export function PollCard({ poll }: { poll: PollSummary }) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const isOpen = poll.effective_status === "OPEN";
   const isClosed = poll.effective_status === "CLOSED";
   const isScheduled = poll.effective_status === "SCHEDULED";
@@ -51,9 +51,7 @@ export function PollCard({ poll }: { poll: PollSummary }) {
           <circle cx="12" cy="12" r="10" />
           <polyline points="12 6 12 12 14 14" />
         </svg>
-        <span>
-          {formatHongKong(poll.starts_at)} – {formatHongKong(poll.ends_at)}
-        </span>
+        <span>{pollScheduleText(poll, locale, t)}</span>
       </div>
 
       <div className="plaza-card-footer">
