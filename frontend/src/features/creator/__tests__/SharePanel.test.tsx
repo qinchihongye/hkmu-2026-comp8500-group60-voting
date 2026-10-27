@@ -19,6 +19,9 @@ describe("SharePanel", () => {
     const field = screen.getByLabelText("Poll link");
     expect(field).toHaveValue("http://localhost:5173/s/share-code");
     expect(screen.getByRole("img", { name: "QR code" })).toBeInTheDocument();
+    const logo = document.querySelector(".share-qr-box image");
+    expect(logo?.getAttribute("href")).toBe("/favicon.png");
+    expect(document.querySelector(".share-qr-box text")).toBeNull();
     expect(screen.queryByText("access-pass1")).not.toBeInTheDocument();
     expect(screen.getByText(/The link does not contain it/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Copy link" }));

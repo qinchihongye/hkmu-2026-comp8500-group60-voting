@@ -4,11 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useI18n } from "../../i18n/LocaleProvider";
 import "./SharePanel.css";
 
-const QR_LOGO =
-  "data:image/svg+xml," +
-  encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#ffffff"/><text x="32" y="44" text-anchor="middle" font-family="Arial,sans-serif" font-size="36" font-weight="700" fill="#1363df">V</text></svg>`,
-  );
+const QR_LOGO = "/favicon.png";
 
 export function SharePanel({
   shareUrl,
@@ -108,15 +104,26 @@ export function SharePanel({
         ctx.beginPath();
         ctx.roundRect(cx - badge / 2, cy - badge / 2, badge, badge, 18);
         ctx.fill();
-        ctx.fillStyle = "#1363df";
-        ctx.font = "700 64px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("V", cx, cy + 4);
-        const a = document.createElement("a");
-        a.download = "poll-qr-code.png";
-        a.href = canvas.toDataURL("image/png");
-        a.click();
+        const logo = new Image();
+        const save = () => {
+          const a = document.createElement("a");
+          a.download = "poll-qr-code.png";
+          a.href = canvas.toDataURL("image/png");
+          a.click();
+        };
+        logo.onload = () => {
+          const inset = 16;
+          ctx.drawImage(
+            logo,
+            cx - badge / 2 + inset,
+            cy - badge / 2 + inset,
+            badge - inset * 2,
+            badge - inset * 2,
+          );
+          save();
+        };
+        logo.onerror = save;
+        logo.src = QR_LOGO;
       };
       img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
     } catch {
