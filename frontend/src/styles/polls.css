@@ -313,18 +313,6 @@
   color: #334155;
 }
 
-.plaza-target-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #ffedd5;
-  color: #ea580c;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 8px;
-}
-
 .plaza-card-ribbon {
   position: absolute;
   right: -10px;
