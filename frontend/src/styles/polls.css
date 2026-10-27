@@ -209,26 +209,25 @@
 
 .plaza-card-top {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
-.plaza-card-badges {
+.plaza-card-title-group {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 
 .plaza-card-title {
-  font-size: 1.22rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: #0f172a;
-  line-height: 1.4;
-  margin: 0 0 10px 0;
+  line-height: 1.35;
+  margin: 0;
   letter-spacing: -0.01em;
 }
 
@@ -254,56 +253,115 @@
 }
 
 .plaza-card-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.84rem;
+  font-size: 0.8rem;
+  font-weight: 600;
   color: #64748b;
-  padding-top: 14px;
-  border-top: 1px solid #f1f5f9;
-  margin-bottom: 18px;
+}
+
+.plaza-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.plaza-badge-open {
+  background: #ecfdf5;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.plaza-badge-private {
+  background: #fff1f2;
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+}
+
+.plaza-badge-upcoming {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.plaza-badge-closed {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.plaza-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.plaza-card-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+.plaza-target-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ffedd5;
+  color: #ea580c;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.plaza-card-ribbon {
+  position: absolute;
+  right: -10px;
+  bottom: -10px;
+  width: 110px;
+  height: 90px;
+  pointer-events: none;
 }
 
 .plaza-card-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding-top: 4px;
+  justify-content: flex-start;
+  margin-top: auto;
 }
 
-.plaza-action-btn {
+.plaza-card-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
   padding: 8px 18px;
-  border-radius: 10px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #0f172a;
   font-size: 0.88rem;
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: none;
   transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
-.plaza-action-btn.primary {
-  background: #1363df;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(19, 99, 223, 0.25);
-}
-
-.plaza-action-btn.primary:hover {
-  background: #0f52ba;
-  color: #ffffff;
+.plaza-card-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #1363df;
   transform: translateY(-1px);
-}
-
-.plaza-action-btn.secondary {
-  background: #f1f5f9;
-  color: #334155;
-  border: 1px solid #e2e8f0;
-}
-
-.plaza-action-btn.secondary:hover {
-  background: #e2e8f0;
-  color: #0f172a;
 }
 
 /* =========================================================
@@ -660,12 +718,10 @@
   }
 
   .plaza-card-footer {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
+    width: 100%;
   }
 
-  .plaza-action-btn {
+  .plaza-card-btn {
     width: 100%;
     justify-content: center;
     padding: 10px 16px;

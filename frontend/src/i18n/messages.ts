@@ -212,6 +212,9 @@ export const en = {
     openWorkspace: "Open",
     searchPublic: "Search by title",
     searchMine: "Search by title",
+    viewPoll: "View poll",
+    viewDetails: "View details",
+    viewResults: "View results",
   },
   votes: {
     title: "My votes",
@@ -600,6 +603,9 @@ export const zh: StringTree<typeof en> = {
     openWorkspace: "打开",
     searchPublic: "搜索标题",
     searchMine: "搜索标题",
+    viewPoll: "查看投票",
+    viewDetails: "查看详情",
+    viewResults: "查看结果",
   },
   votes: {
     title: "投票记录",
