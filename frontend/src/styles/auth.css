@@ -140,8 +140,9 @@
 }
 
 .auth-brand-icon {
-  width: 68px;
-  height: 68px;
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
 }
 
 .auth-brand-title {
@@ -598,8 +599,8 @@ button.auth-primary-btn:disabled,
   }
 
   .auth-brand-icon {
-    width: 50px;
-    height: 50px;
+    width: 70px;
+    height: 70px;
   }
 
   .auth-brand-title {

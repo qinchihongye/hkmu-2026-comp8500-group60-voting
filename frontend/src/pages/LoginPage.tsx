@@ -106,37 +106,7 @@ export function LoginPage() {
           {/* Center Brand Badge & Description */}
           <div className="auth-hero-center">
             <div className="auth-brand-badge">
-              <svg className="auth-brand-icon" viewBox="0 0 64 64" fill="none">
-                {/* Ballot Box Base Shadow */}
-                <ellipse cx="32" cy="57" rx="20" ry="3" fill="#0c4cb3" opacity="0.18" />
-
-                {/* Ballot Box Body */}
-                <rect x="13" y="27" width="38" height="28" rx="8" fill="url(#boxGradLogin)" />
-
-                {/* Front Security Verification Seal */}
-                <circle cx="32" cy="42" r="7" fill="#ffffff" opacity="0.95" />
-                <path d="M29 42L31.2 44.2L35.2 40.2" stroke="#1363df" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-
-                {/* Ballot Box Top Slot */}
-                <rect x="23" y="25" width="18" height="4" rx="2" fill="#0a3d8f" />
-
-                {/* White Ballot Paper Card sliding into slot */}
-                <g>
-                  <rect x="21" y="7" width="22" height="22" rx="4" fill="#ffffff" stroke="#e2e8f0" strokeWidth="1" filter="drop-shadow(0 3px 6px rgba(0,0,0,0.12))" />
-                  {/* Verified Emerald Checkmark Badge */}
-                  <circle cx="32" cy="15" r="5" fill="#ecfdf5" />
-                  <path d="M29.5 15L31.2 16.7L34.5 13.3" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  {/* Security/Candidate lines on ballot slip */}
-                  <line x1="26" y1="22" x2="38" y2="22" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round" />
-                </g>
-
-                <defs>
-                  <linearGradient id="boxGradLogin" x1="13" y1="27" x2="51" y2="55" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stopColor="#2563eb" />
-                    <stop offset="100%" stopColor="#1363df" />
-                  </linearGradient>
-                </defs>
-              </svg>
+              <img className="auth-brand-icon" src="/favicon.png" alt="" />
             </div>
             <div className="auth-brand-title">VoteMaster</div>
             <p className="auth-brand-desc">{t("auth.loginPitch")}</p>

@@ -104,22 +104,7 @@ export function AppLayout() {
         {/* Brand & Collapse Toggle */}
         <div className="sidebar-header">
           <Link to="/overview" className="brand" aria-label={t("nav.home")} title={t("nav.home")}>
-            <svg className="brand-logo-icon" viewBox="0 0 36 36" fill="none">
-              <path
-                d="M6 8L18 30L30 8"
-                stroke="#0f172a"
-                strokeWidth="5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M11 18L16 23L27 10"
-                stroke="#1363df"
-                strokeWidth="4.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <img className="brand-logo-icon" src="/favicon.png" alt="" />
             {!collapsed && <span className="brand-name">VOTE</span>}
           </Link>
 
@@ -299,10 +284,7 @@ export function AppLayout() {
         <header className="topbar">
           <div className="topbar-mobile-left">
             <Link to="/overview" className="topbar-mobile-brand" aria-label={t("nav.home")}>
-              <svg className="brand-logo-icon" viewBox="0 0 36 36" fill="none" style={{ width: 24, height: 24 }}>
-                <path d="M6 8L18 30L30 8" stroke="#0f172a" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M11 18L16 23L27 10" stroke="#1363df" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <img className="brand-logo-icon" src="/favicon.png" alt="" style={{ width: 24, height: 24 }} />
               <span className="brand-name" style={{ fontSize: "1.15rem" }}>VOTE</span>
             </Link>
           </div>
