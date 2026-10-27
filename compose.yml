@@ -19,8 +19,8 @@ services:
       interval: 2s
       timeout: 5s
       retries: 30
-      start_period: 5s
-    # 不映射端口到宿主机，只有同网络的 backend 能访问。
+    ports:
+      - "127.0.0.1:5432:5432"
 
   backend:
     build:

@@ -1,0 +1,350 @@
+.share-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px -12px rgba(15, 23, 42, 0.18);
+  padding: 22px 22px 18px;
+  margin-top: 24px;
+}
+
+.share-panel-header {
+  margin-bottom: 18px;
+}
+
+.share-panel-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.share-panel-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: #e8f1ff;
+  color: #1363df;
+}
+
+.share-panel-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 750;
+  color: #0f172a;
+}
+
+.share-panel-note {
+  margin: 12px 0 0;
+  color: #64748b;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.share-panel-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(240px, 0.8fr);
+  border: 1px solid #e6edf5;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.share-left-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px 22px 18px;
+  background: #ffffff;
+}
+
+.share-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.share-field-label {
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #334155;
+}
+
+.share-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+.share-url-shell {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.share-url-icon {
+  display: none;
+}
+
+.share-url-input {
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1.5px solid #d7e0ea;
+  background: #f8fafc;
+  color: #334155;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.92rem;
+  outline: none;
+}
+
+.share-url-input:focus {
+  border-color: #1363df;
+  background: #ffffff;
+}
+
+.share-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  background: #1363df;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.share-copy-btn:hover {
+  background: #0f56c8;
+}
+
+.share-copy-btn.copied {
+  background: #059669;
+}
+
+.share-passcode-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.share-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.share-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid #d7e0ea;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.9rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.share-secondary-btn:hover {
+  border-color: #1363df;
+  color: #1363df;
+}
+
+.share-manual-hint {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.share-right-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 28px 18px 18px;
+  background: #eef3fb;
+}
+
+.share-qr-card {
+  position: relative;
+  width: min(100%, 230px);
+  padding: 28px 16px 16px;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px -16px rgba(15, 23, 42, 0.45);
+}
+
+.share-scan-pill {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100% - 16px);
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #e7eefb;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.share-qr-box {
+  display: flex;
+  justify-content: center;
+}
+
+.share-qr-download-btn {
+  width: min(100%, 230px);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid #d5deea;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.share-qr-download-btn:hover {
+  border-color: #1363df;
+  color: #1363df;
+}
+
+@media (max-width: 768px) {
+  .share-panel {
+    padding: 18px 14px 14px;
+    border-radius: 16px;
+  }
+
+  .share-panel-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border: 0;
+    overflow: visible;
+  }
+
+  .share-left-section {
+    display: contents;
+  }
+
+  .share-field-group {
+    order: 1;
+  }
+
+  .share-passcode-chip {
+    order: 2;
+    background: #e8f1ff;
+    border-color: #d6e6fb;
+    color: #1363df;
+  }
+
+  .share-right-section {
+    order: 3;
+    margin-top: 0;
+    padding: 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 8px 20px -16px rgba(15, 23, 42, 0.4);
+  }
+
+  .share-actions-row {
+    order: 4;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .share-manual-hint {
+    order: 5;
+  }
+
+  .share-url-shell {
+    width: 100%;
+  }
+
+  .share-url-icon {
+    display: inline-flex;
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    z-index: 1;
+  }
+
+  .share-input-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .share-url-input {
+    width: 100%;
+    padding-left: 40px;
+  }
+
+  .share-copy-btn {
+    width: 100%;
+  }
+
+  .share-secondary-btn {
+    width: 100%;
+    padding: 0 8px;
+  }
+
+  .share-qr-card {
+    width: 100%;
+    padding: 8px 8px 0;
+    box-shadow: none;
+  }
+
+  .share-scan-pill {
+    position: static;
+    transform: none;
+    display: block;
+    max-width: none;
+    margin-top: 12px;
+    background: transparent;
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #64748b;
+    white-space: normal;
+  }
+
+  .share-qr-download-btn {
+    width: 100%;
+    border-radius: 12px;
+    background: #ffffff;
+  }
+}

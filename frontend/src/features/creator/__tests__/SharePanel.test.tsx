@@ -16,7 +16,7 @@ describe("SharePanel", () => {
         requiresLogin
       />,
     );
-    const field = screen.getByLabelText("Link");
+    const field = screen.getByLabelText("Poll link");
     expect(field).toHaveValue("http://localhost:5173/s/share-code");
     expect(screen.getByRole("img", { name: "QR code" })).toBeInTheDocument();
     expect(screen.queryByText("access-pass1")).not.toBeInTheDocument();
@@ -25,7 +25,7 @@ describe("SharePanel", () => {
     expect(writeText).toHaveBeenCalledWith("http://localhost:5173/s/share-code");
   });
 
-  it("非安全地址点击后从输入框复制", async () => {
+  it("非安全地址点击后仍能复制，输入框保持只读", async () => {
     Object.defineProperty(window, "isSecureContext", { configurable: true, value: false });
     const execCommand = vi.fn().mockReturnValue(true);
     Object.defineProperty(document, "execCommand", { configurable: true, value: execCommand });
@@ -41,7 +41,7 @@ describe("SharePanel", () => {
 
     expect(execCommand).toHaveBeenCalledWith("copy");
     expect(screen.getByText("Copied")).toBeInTheDocument();
-    expect(screen.getByLabelText("Link")).toHaveProperty("readOnly", true);
+    expect(screen.getByLabelText("Poll link")).toHaveProperty("readOnly", true);
     execCommand.mockRestore();
   });
 });

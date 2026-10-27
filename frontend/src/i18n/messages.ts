@@ -259,7 +259,7 @@ export const en = {
   },
   share: {
     title: "Share link",
-    link: "Link",
+    link: "Poll link",
     copy: "Copy link",
     qr: "QR code",
     login: "Participants must sign in.",
@@ -267,6 +267,11 @@ export const en = {
     password: "They also need the access passcode. The link does not contain it.",
     noPassword: "No access passcode is required.",
     manual: "Send the link yourself. The system does not send email or messages.",
+    downloadQr: "Download QR (PNG)",
+    preview: "Open preview",
+    scanHint: "Scan to vote instantly",
+    invite: "Copy invitation text",
+    passcodeChip: "Access passcode required",
   },
   results: {
     finalTitle: "Final results",
@@ -642,7 +647,7 @@ export const zh: StringTree<typeof en> = {
   },
   share: {
     title: "分享链接",
-    link: "链接",
+    link: "投票链接",
     copy: "复制链接",
     qr: "二维码",
     login: "参与者需要登录。",
@@ -650,6 +655,11 @@ export const zh: StringTree<typeof en> = {
     password: "参与者还要输入访问密码。链接里没有密码。",
     noPassword: "这场投票不需要访问密码。",
     manual: "请自行把链接发给参与者。系统不会发送邮件或消息。",
+    downloadQr: "下载二维码图片",
+    preview: "新窗口打开",
+    scanHint: "扫码立即参与投票",
+    invite: "复制邀请文字",
+    passcodeChip: "需要访问密码",
   },
   results: {
     finalTitle: "最终结果",

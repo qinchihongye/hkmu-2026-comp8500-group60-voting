@@ -3,7 +3,7 @@ import { expect, type APIRequestContext, type Page } from "@playwright/test";
 export const origin = "http://localhost:5173";
 export const accountPassword = "password-ada-1";
 export const accessPassword = "access-pass1";
-export const adminPassword = "demo-admin-pass1";
+export const adminPassword = process.env.DEMO_ADMIN_PASSWORD ?? "comp8500sefgroup60";
 
 export function uniqueName(prefix: string): string {
   const raw = `${prefix}_${Date.now().toString(36)}_${Math.floor(Math.random() * 1000)}`;
