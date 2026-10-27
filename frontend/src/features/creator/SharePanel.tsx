@@ -189,29 +189,29 @@ export function SharePanel({
             </div>
           ) : null}
 
-          <div className="share-actions-row">
-            <button
-              type="button"
-              className="share-secondary-btn"
-              onClick={() => copyText(`${shareUrl}\n${note}`, "invite")}
-            >
-              {copied === "invite" ? t("common.copied") : t("share.invite")}
-            </button>
-            <button
-              type="button"
-              className="share-secondary-btn"
-              onClick={() => window.open(shareUrl, "_blank", "noopener,noreferrer")}
-            >
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-              <span>{t("share.preview")}</span>
-            </button>
-          </div>
-
           <p className="share-manual-hint">{t("share.manual")}</p>
+        </div>
+
+        <div className="share-actions-row">
+          <button
+            type="button"
+            className="share-secondary-btn"
+            onClick={() => copyText(`${shareUrl}\n${note}`, "invite")}
+          >
+            {copied === "invite" ? t("common.copied") : t("share.invite")}
+          </button>
+          <button
+            type="button"
+            className="share-secondary-btn"
+            onClick={() => window.open(shareUrl, "_blank", "noopener,noreferrer")}
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+            <span>{t("share.preview")}</span>
+          </button>
         </div>
 
         <div className="share-right-section">
@@ -234,6 +234,8 @@ export function SharePanel({
             </div>
             <div className="share-scan-pill">{t("share.scanHint")}</div>
           </div>
+        </div>
+        <div className="share-download-row">
           <button type="button" className="share-qr-download-btn" onClick={downloadQrCode}>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
