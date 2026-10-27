@@ -9,6 +9,7 @@ import hmac
 import re
 import secrets
 from enum import StrEnum
+from urllib.parse import urlsplit
 
 from fastapi import Request
 from pwdlib import PasswordHash
@@ -235,7 +236,7 @@ def enforce_write_guard(
         AppError: 来源不在白名单，或 CSRF 缺失、不匹配。
     """
     origin = request.headers.get("origin")
-    if origin not in settings.allowed_origins:
+    if not _origin_allowed(origin, request.headers.get("host"), settings.allowed_origins):
         raise AppError(403, ApiCode.CSRF_FAILED, ApiCode.CSRF_FAILED.default_message)
     if source is CsrfSource.NONE:
         return
@@ -243,6 +244,38 @@ def enforce_write_guard(
     provided = request.headers.get(CSRF_HEADER)
     if expected is None or not tokens_match(provided, expected):
         raise AppError(403, ApiCode.CSRF_FAILED, ApiCode.CSRF_FAILED.default_message)
+
+
+def _origin_allowed(origin: str | None, host: str | None, allowed_origins: list[str]) -> bool:
+    """判断写请求来源是否可接受。
+
+    白名单仍接受开发服务器等跨端口来源。浏览器直接打开本服务的 IP 或域名时，
+    Origin 的主机和端口与 Host 相同，也视为本站请求。
+
+    Args:
+        origin: 浏览器 Origin 头。没有该头时拒绝。
+        host: 请求的 Host 头，可带端口。
+        allowed_origins: 配置中的来源白名单。
+
+    Returns:
+        来源在白名单中，或与当前 Host 为同一主机和端口时为 True。
+    """
+    if origin is None:
+        return False
+    if origin in allowed_origins:
+        return True
+    if host is None:
+        return False
+    parsed = urlsplit(origin)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        return False
+    if parsed.username or parsed.password or parsed.query or parsed.fragment:
+        return False
+    if parsed.path not in {"", "/"}:
+        return False
+    origin_host = parsed.netloc.lower()
+    request_host = host.split(",")[0].strip().lower()
+    return origin_host == request_host
 
 
 def mark_private(response: Response) -> None:

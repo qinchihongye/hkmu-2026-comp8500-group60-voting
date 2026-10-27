@@ -181,6 +181,18 @@ def test_inactive_user_cannot_login_or_resume(auth_client: TestClient) -> None:
     error_body(login, 401, int(ApiCode.INVALID_CREDENTIALS))
 
 
+def test_same_host_origin_can_register(auth_client: TestClient) -> None:
+    """浏览器地址与 Host 一致时允许注册，即使该地址不在白名单。"""
+    response = post_json(
+        auth_client,
+        "/api/v1/auth/register",
+        register_payload(username="samehost", display_name="同源"),
+        origin="http://testserver",
+    )
+    data = envelope(response, 201)
+    assert data["username"] == "samehost"
+
+
 def test_wrong_origin_is_rejected_before_register(auth_client: TestClient) -> None:
     """来源不在白名单时拒绝写请求，并且不创建账户。"""
     response = post_json(

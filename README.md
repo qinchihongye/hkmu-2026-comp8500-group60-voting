@@ -28,7 +28,7 @@
 
 * **部署到服务器。** 对外端口是 Nginx 的 8188（`compose.yml` 里 `"8188:80"`，服务器按需在防火墙放行 8188）。把仓库推到服务器后，只需改 `.env` 里这几个值，其余保持不动，再 `docker compose up -d --build`：
 
-  1. `PUBLIC_BASE_URL` 与 `ALLOWED_ORIGINS`：从 `http://localhost:8188` 改成 `http://<服务器公网IP或域名>:8188`。两者主机和端口必须一致；`ALLOWED_ORIGINS` 是严格跨源白名单，没有同源豁免，写错会把所有写请求拦成 403。
+  1. `PUBLIC_BASE_URL` 改成浏览器实际打开的地址，例如 `http://<服务器公网IP或域名>:8188`。`ALLOWED_ORIGINS` 仍要包含开发时用的来源。写请求还接受与当前 Host 主机和端口相同的 Origin，所以用 IP 打开本站可以注册和登录。其他网站的 Origin 仍会得到 403。
   2. 把课程样例密钥换成真实值：`ANON_VOTER_HMAC_KEY`（≥32 字节，每次重启保持同一值）、`POSTGRES_PASSWORD`。四个 `DEMO_*_PASSWORD` 必须先在 `.env` 填好——docker 启动是无交互的，留空会让 `seed-demo` 调 `getpass` 读终端而失败。
   3. 前面有 HTTPS（TLS 终结）时把 `COOKIE_SECURE` 设为 `true`；本机直连 HTTP 保持 `false`。
 
