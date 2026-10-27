@@ -5,7 +5,7 @@ import { renderWithProviders } from "../../../test/fixtures";
 import { SharePanel } from "../SharePanel";
 
 describe("SharePanel", () => {
-  it("复制的链接不含访问密码", async () => {
+  it("分开复制链接和访问密码，邀请文字按三段排列", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(window, "isSecureContext", { configurable: true, value: true });
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
@@ -14,6 +14,7 @@ describe("SharePanel", () => {
         shareUrl="http://localhost:5173/s/share-code"
         requiresPassword
         requiresLogin
+        accessPassword="access-pass1"
       />,
     );
     const field = screen.getByLabelText("Poll link");
@@ -22,10 +23,22 @@ describe("SharePanel", () => {
     const logo = document.querySelector(".share-qr-box image");
     expect(logo?.getAttribute("href")).toBe("/favicon.png");
     expect(document.querySelector(".share-qr-box text")).toBeNull();
-    expect(screen.queryByText("access-pass1")).not.toBeInTheDocument();
+    expect(screen.getByText("Access passcode: access-pass1")).toBeInTheDocument();
     expect(screen.getByText(/The link does not contain it/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Copy link" }));
-    expect(writeText).toHaveBeenCalledWith("http://localhost:5173/s/share-code");
+    await userEvent.click(screen.getByRole("button", { name: "Copy access passcode" }));
+    await userEvent.click(screen.getByRole("button", { name: "Copy invitation text" }));
+    expect(writeText).toHaveBeenNthCalledWith(1, "http://localhost:5173/s/share-code");
+    expect(writeText).toHaveBeenNthCalledWith(2, "access-pass1");
+    expect(writeText).toHaveBeenNthCalledWith(
+      3,
+      [
+        "http://localhost:5173/s/share-code",
+        "Participants must sign in. They also need the access passcode. The link does not contain it.",
+        "password: access-pass1",
+      ].join("\n\n"),
+    );
+    expect(document.querySelector(".share-qr-box")?.innerHTML).not.toContain("access-pass1");
   });
 
   it("非安全地址点击后仍能复制，输入框保持只读", async () => {

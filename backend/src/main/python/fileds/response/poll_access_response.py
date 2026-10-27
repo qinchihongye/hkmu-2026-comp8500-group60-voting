@@ -46,6 +46,7 @@ class ShareLink(BaseModel):
         share_url: 对外分享地址。
         requires_password: 参与者是否还要输入访问密码。
         requires_login: 参与者是否必须登录。
+        access_password: 创建者可复制的访问密码。旧场次只剩散列时为空。
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -53,3 +54,4 @@ class ShareLink(BaseModel):
     share_url: str
     requires_password: bool
     requires_login: bool
+    access_password: str | None = None

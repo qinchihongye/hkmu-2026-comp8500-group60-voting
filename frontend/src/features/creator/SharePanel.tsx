@@ -6,17 +6,21 @@ import "./SharePanel.css";
 
 const QR_LOGO = "/favicon.png";
 
+type CopyTarget = "link" | "invite" | "passcode";
+
 export function SharePanel({
   shareUrl,
   requiresPassword,
   requiresLogin,
+  accessPassword = null,
 }: {
   shareUrl: string;
   requiresPassword: boolean;
   requiresLogin: boolean;
+  accessPassword?: string | null;
 }) {
   const { t } = useI18n();
-  const [copied, setCopied] = useState<"link" | "invite" | null>(null);
+  const [copied, setCopied] = useState<CopyTarget | null>(null);
   const qrRef = useRef<HTMLDivElement>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const note = [
@@ -32,7 +36,15 @@ export function SharePanel({
     };
   }, []);
 
-  function handleCopied(target: "link" | "invite") {
+  function invitationText(): string {
+    const parts = [shareUrl, note];
+    if (accessPassword) {
+      parts.push(`password: ${accessPassword}`);
+    }
+    return parts.join("\n\n");
+  }
+
+  function handleCopied(target: CopyTarget) {
     setCopied(target);
     if (copyTimerRef.current) {
       clearTimeout(copyTimerRef.current);
@@ -60,7 +72,7 @@ export function SharePanel({
     return ok;
   }
 
-  function copyText(text: string, target: "link" | "invite") {
+  function copyText(text: string, target: CopyTarget) {
     if (window.isSecureContext && navigator.clipboard?.writeText) {
       void navigator.clipboard.writeText(text).then(
         () => handleCopied(target),
@@ -187,12 +199,31 @@ export function SharePanel({
           </div>
 
           {requiresPassword ? (
-            <div className="share-passcode-chip">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="5" y="11" width="14" height="10" rx="2" />
-                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-              </svg>
-              <span>{t("share.passcodeChip")}</span>
+            <div className="share-passcode-block">
+              <div className="share-passcode-chip">
+                <span className="share-passcode-main">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="5" y="11" width="14" height="10" rx="2" />
+                    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                  </svg>
+                  <span>
+                    {accessPassword ? t("share.passcodeValue", { password: accessPassword }) : t("share.passcodeChip")}
+                  </span>
+                </span>
+                {accessPassword ? (
+                  <button
+                    type="button"
+                    className={`share-passcode-copy ${copied === "passcode" ? "copied" : ""}`}
+                    aria-label={t("share.copyPasscode")}
+                    onClick={() => copyText(accessPassword, "passcode")}
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="9" y="9" width="13" height="13" rx="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                  </button>
+                ) : null}
+              </div>
             </div>
           ) : null}
 
@@ -203,7 +234,7 @@ export function SharePanel({
           <button
             type="button"
             className="share-secondary-btn"
-            onClick={() => copyText(`${shareUrl}\n${note}`, "invite")}
+            onClick={() => copyText(invitationText(), "invite")}
           >
             {copied === "invite" ? t("common.copied") : t("share.invite")}
           </button>

@@ -22,7 +22,7 @@ from src.main.python.database.models import Poll, PollOption, User, Vote
 
 DEFAULT_DEV_URL = "postgresql+psycopg://voting:change-me@127.0.0.1:5432/voting"
 DEFAULT_TEST_URL = "postgresql+psycopg://voting:change-me@127.0.0.1:5433/voting_test"
-REVISION = "cdc412846524"
+REVISION = "f3b8a1c04e27"
 
 APPLICATION_TABLES = frozenset(
     {

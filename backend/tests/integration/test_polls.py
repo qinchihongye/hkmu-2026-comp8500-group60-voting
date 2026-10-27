@@ -5,12 +5,14 @@ from datetime import timedelta
 from fastapi.testclient import TestClient
 
 from src.main.python.constants.error_codes import ApiCode
+from src.main.python.database.models import Poll
 from tests.auth_support import PASSWORD, envelope, error_body, patch_json, post_json
 from tests.poll_support import (
     ACCESS_PASSWORD,
     audit_actions,
     clock_of,
     create_poll,
+    open_session,
     poll_body,
     poll_row,
     publish_poll,
@@ -102,9 +104,10 @@ def test_creator_draft_publish_close_and_version(auth_client: TestClient) -> Non
     error_body(again, 409, int(ApiCode.POLL_IMMUTABLE))
 
     link = envelope(auth_client.get(f"/api/v1/me/polls/{poll_id}/share"), 200)
-    assert set(link) == {"share_url", "requires_password", "requires_login"}
+    assert set(link) == {"share_url", "requires_password", "requires_login", "access_password"}
     assert str(link["share_url"]).startswith("http://localhost:5173/s/")
     assert "password" not in str(link["share_url"])
+    assert link["access_password"] is None
     assert link["requires_password"] is False
     assert link["requires_login"] is True
     assert auth_client.get(f"/api/v1/me/polls/{poll_id}/share").headers["referrer-policy"] == (
@@ -133,8 +136,10 @@ def test_creator_draft_publish_close_and_version(auth_client: TestClient) -> Non
     assert audit_actions(auth_client, poll_id) == ["CREATE", "UPDATE", "PUBLISH", "CLOSE"]
 
 
-def test_private_password_is_hashed_and_replaced_only_when_sent(auth_client: TestClient) -> None:
-    """未提交新密码时保留原散列；改成公开后散列消失。"""
+def test_private_password_is_stored_in_plaintext_and_replaced_only_when_sent(
+    auth_client: TestClient,
+) -> None:
+    """未提交新密码时保留原明文；改成公开后明文消失。管理详情不返回密码。"""
     csrf = register_and_login(auth_client, "ada")
     created = create_poll(
         auth_client,
@@ -144,14 +149,14 @@ def test_private_password_is_hashed_and_replaced_only_when_sent(auth_client: Tes
     )
     poll_id = int(created["id"])
     assert created["has_access_password"] is True
-    original = poll_row(auth_client, poll_id)[2]
-    assert isinstance(original, str) and original.startswith("$argon2")
-    assert ACCESS_PASSWORD not in original
+    assert poll_row(auth_client, poll_id)[2] is None
+    assert _plain_password(auth_client, poll_id) == ACCESS_PASSWORD
+    assert ACCESS_PASSWORD not in auth_client.get(f"/api/v1/me/polls/{poll_id}").text
 
     kept = update_poll(auth_client, csrf, poll_id, title="仍是私密", visibility="PRIVATE")
     assert kept["has_access_password"] is True
-    assert poll_row(auth_client, poll_id)[2] == original
-    assert ACCESS_PASSWORD not in auth_client.get(f"/api/v1/me/polls/{poll_id}").text
+    assert _plain_password(auth_client, poll_id) == ACCESS_PASSWORD
+    assert ACCESS_PASSWORD not in str(kept)
 
     replacement = "replacement-pass"
     changed = update_poll(
@@ -161,16 +166,14 @@ def test_private_password_is_hashed_and_replaced_only_when_sent(auth_client: Tes
         visibility="PRIVATE",
         access_password=replacement,
     )
-    updated_hash = poll_row(auth_client, poll_id)[2]
-    assert isinstance(updated_hash, str)
-    assert updated_hash != original
-    assert auth_client.app.state.passwords.verify(replacement, updated_hash)
-    assert not auth_client.app.state.passwords.verify(ACCESS_PASSWORD, updated_hash)
+    assert poll_row(auth_client, poll_id)[2] is None
+    assert _plain_password(auth_client, poll_id) == replacement
     assert replacement not in str(changed)
 
     public = update_poll(auth_client, csrf, poll_id, visibility="PUBLIC")
     assert public["has_access_password"] is False
     assert poll_row(auth_client, poll_id)[2] is None
+    assert _plain_password(auth_client, poll_id) is None
 
     private_again = patch_json(
         auth_client,
@@ -180,6 +183,40 @@ def test_private_password_is_hashed_and_replaced_only_when_sent(auth_client: Tes
     )
     error_body(private_again, 422, int(ApiCode.VALIDATION_ERROR))
     assert ACCESS_PASSWORD not in private_again.text
+
+
+def test_creator_share_returns_plaintext(
+    auth_client: TestClient,
+) -> None:
+    """分享响应带明文，链接不含密码。"""
+    csrf = register_and_login(auth_client, "ada")
+    created = create_poll(
+        auth_client,
+        csrf,
+        visibility="PRIVATE",
+        access_password=ACCESS_PASSWORD,
+    )
+    poll_id = int(created["id"])
+    publish_poll(auth_client, csrf, poll_id, int(created["version"]))
+    link = envelope(auth_client.get(f"/api/v1/me/polls/{poll_id}/share"), 200)
+    assert link["access_password"] == ACCESS_PASSWORD
+    assert ACCESS_PASSWORD not in str(link["share_url"])
+
+
+def _plain_password(client: TestClient, poll_id: int) -> str | None:
+    """读取库存的访问密码明文。
+
+    Args:
+        client: 测试客户端。
+        poll_id: 投票主键。
+
+    Returns:
+        明文。没有时为空。
+    """
+    with open_session(client) as session:
+        poll = session.get(Poll, poll_id)
+        assert poll is not None
+        return poll.private_password
 
 
 def test_publish_rejects_stale_version_ended_window_and_draft_share(

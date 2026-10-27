@@ -160,13 +160,12 @@ def poll_service_for(request: Request) -> PollService:
         request: 当前 HTTP 请求。
 
     Returns:
-        使用本进程会话工厂、时钟和密码散列器的服务。
+        使用本进程会话工厂和时钟的服务。
     """
     settings: Settings = request.app.state.settings
     return PollService(
         request.app.state.session_factory,
         request.app.state.clock,
-        password_hash_for(request),
         settings.public_base_url,
     )
 

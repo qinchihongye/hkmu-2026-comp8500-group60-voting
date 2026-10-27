@@ -27,7 +27,8 @@ class Poll(Base):
         description: 说明，可空。
         identity_mode: NAMED 或 ANONYMOUS。
         visibility: PUBLIC 或 PRIVATE。
-        private_password_hash: 私密投票的密码散列。公开投票必须为空。
+        private_password_hash: 旧私密投票留下的密码散列。新投票不再写入。
+        private_password: 私密投票的访问密码明文。公开投票必须为空。
         share_code: 分享定位码。草稿可为空，有值时唯一。
         lifecycle: DRAFT、PUBLISHED 或 CLOSED。
         starts_at: 开始时间，UTC。结束时间必须更晚。
@@ -50,8 +51,10 @@ class Poll(Base):
             name="ck_polls_lifecycle",
         ),
         CheckConstraint(
-            "(visibility = 'PRIVATE' AND private_password_hash IS NOT NULL) "
-            "OR (visibility = 'PUBLIC' AND private_password_hash IS NULL)",
+            "(visibility = 'PUBLIC' AND private_password_hash IS NULL "
+            "AND private_password IS NULL) OR "
+            "(visibility = 'PRIVATE' AND (private_password IS NOT NULL "
+            "OR private_password_hash IS NOT NULL))",
             name="ck_polls_visibility_password",
         ),
         CheckConstraint("ends_at > starts_at", name="ck_polls_time_window"),
@@ -70,6 +73,7 @@ class Poll(Base):
     identity_mode: Mapped[str] = mapped_column(String(16), nullable=False)
     visibility: Mapped[str] = mapped_column(String(16), nullable=False)
     private_password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    private_password: Mapped[str | None] = mapped_column(Text, nullable=True)
     share_code: Mapped[str | None] = mapped_column(String(128), nullable=True, unique=True)
     lifecycle: Mapped[str] = mapped_column(String(16), nullable=False)
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

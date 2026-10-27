@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from pwdlib import PasswordHash
 from sqlalchemy import Select, and_, func, or_, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
@@ -80,7 +79,6 @@ class PollService:
     Attributes:
         _factory: 会话工厂。
         _clock: 服务端时钟。
-        _passwords: 访问密码散列器。
         _public_base_url: 分享链接的基址。
         _audit: 与本事务一起提交的审计。
     """
@@ -89,7 +87,6 @@ class PollService:
         self,
         session_factory: sessionmaker[Session],
         clock: Clock,
-        passwords: PasswordHash,
         public_base_url: str,
     ) -> None:
         """保存会话工厂、时钟和分享基址。
@@ -97,12 +94,10 @@ class PollService:
         Args:
             session_factory: 数据库会话工厂。
             clock: 服务端 UTC 时钟。
-            passwords: Argon2 散列器，用于访问密码。
             public_base_url: 对外站点基址。
         """
         self._factory = session_factory
         self._clock = clock
-        self._passwords = passwords
         self._public_base_url = public_base_url
         self._audit = AuditService()
 
@@ -127,7 +122,8 @@ class PollService:
                     description=payload.description,
                     identity_mode=payload.identity_mode.value,
                     visibility=payload.visibility.value,
-                    private_password_hash=_password_hash(self._passwords, payload),
+                    private_password_hash=None,
+                    private_password=_password_text(payload),
                     share_code=None,
                     lifecycle=PollLifecycle.DRAFT,
                     starts_at=payload.starts_at,
@@ -194,8 +190,10 @@ class PollService:
                 poll.description = payload.description
                 poll.identity_mode = payload.identity_mode.value
                 poll.visibility = payload.visibility.value
-                poll.private_password_hash = _next_password_hash(
-                    self._passwords, poll.private_password_hash, payload
+                poll.private_password_hash, poll.private_password = _next_password(
+                    poll.private_password_hash,
+                    poll.private_password,
+                    payload,
                 )
                 poll.starts_at = payload.starts_at
                 poll.ends_at = payload.ends_at
@@ -449,7 +447,7 @@ class PollService:
             poll_id: 投票主键。
 
         Returns:
-            不含密码的分享信息。
+            分享信息。链接不含密码。已保存明文时附带创建者可复制的访问密码。
 
         Raises:
             AppError: 不是创建者，或投票还不能分享。
@@ -461,16 +459,8 @@ class PollService:
                 raise _unavailable() from None
             if poll is None or poll.creator_id != principal.user_id:
                 raise _missing()
-            if poll.lifecycle not in {PollLifecycle.PUBLISHED, PollLifecycle.CLOSED}:
-                raise _not_open()
-            if not poll.share_code:
-                raise _not_open()
-            base = self._public_base_url.rstrip("/")
-            return ShareLink(
-                share_url=f"{base}/s/{poll.share_code}",
-                requires_password=poll.visibility == Visibility.PRIVATE,
-                requires_login=poll.identity_mode == IdentityMode.NAMED,
-            )
+            _require_shareable(poll)
+            return _share_link(self._public_base_url, poll)
 
     def _page[T](
         self,
@@ -503,47 +493,78 @@ class PollService:
         return Page(items=items, page=filters.page, page_size=filters.page_size, total=total)
 
 
-def _password_hash(passwords: PasswordHash, payload: PollCreate) -> str | None:
-    """为新建的私密投票计算散列。
+def _share_link(public_base_url: str, poll: Poll) -> ShareLink:
+    """组装创建者的分享信息。
 
     Args:
-        passwords: 密码散列器。
+        public_base_url: 对外站点基址。
+        poll: 已发布或已关闭、且带分享码的投票。
+
+    Returns:
+        链接不含密码的分享信息。明文为空时表示还不能复制。
+    """
+    base = public_base_url.rstrip("/")
+    return ShareLink(
+        share_url=f"{base}/s/{poll.share_code}",
+        requires_password=poll.visibility == Visibility.PRIVATE,
+        requires_login=poll.identity_mode == IdentityMode.NAMED,
+        access_password=poll.private_password,
+    )
+
+
+def _require_shareable(poll: Poll) -> None:
+    """确认这场投票已经可以分享。
+
+    Args:
+        poll: 已加载的投票。
+
+    Raises:
+        AppError: 还是草稿，或没有分享码。
+    """
+    if poll.lifecycle not in {PollLifecycle.PUBLISHED, PollLifecycle.CLOSED} or not poll.share_code:
+        raise _not_open()
+
+
+def _password_text(payload: PollCreate) -> str | None:
+    """读取新建私密投票要保存的明文。
+
+    Args:
         payload: 已确认私密场次带有密码的创建参数。
 
     Returns:
-        私密投票的散列。公开投票为空。
+        访问密码。公开投票为空。
     """
     if payload.visibility != Visibility.PRIVATE or payload.access_password is None:
         return None
-    return passwords.hash(payload.access_password)
+    return payload.access_password
 
 
-def _next_password_hash(
-    passwords: PasswordHash,
+def _next_password(
     current_hash: str | None,
+    current_password: str | None,
     payload: PollUpdate,
-) -> str | None:
-    """决定草稿保存后的访问密码散列。
+) -> tuple[str | None, str | None]:
+    """决定草稿保存后的散列和明文。
 
-    改成公开时清掉散列。继续私密且没有新密码时保留原散列。
+    新密码只写明文。未提交新密码时保留原值。改成公开时两者都清空。
 
     Args:
-        passwords: 密码散列器。
-        current_hash: 更新前的散列。
+        current_hash: 更新前的旧散列。
+        current_password: 更新前的明文。
         payload: 草稿更新参数。
 
     Returns:
-        新的散列或空值。
+        散列和明文。
 
     Raises:
         AppError: 改成私密但没有可用密码。
     """
     if payload.visibility == Visibility.PUBLIC:
-        return None
+        return None, None
     if payload.access_password is not None:
-        return passwords.hash(payload.access_password)
-    if current_hash is not None:
-        return current_hash
+        return None, payload.access_password
+    if current_hash is not None or current_password is not None:
+        return current_hash, current_password
     raise AppError(422, ApiCode.VALIDATION_ERROR, "私密投票需要访问密码")
 
 
@@ -806,7 +827,9 @@ def _manage_detail(
         version=poll.version,
         creator_id=poll.creator_id,
         closed_at=poll.closed_at,
-        has_access_password=poll.private_password_hash is not None,
+        has_access_password=(
+            poll.private_password is not None or poll.private_password_hash is not None
+        ),
         server_time=now,
         can_manage=poll.creator_id == principal.user_id,
         can_view_results=True,

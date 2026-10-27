@@ -157,7 +157,6 @@ def _run_new_demo_round() -> int:
     try:
         create_demo_round(
             factory,
-            PasswordHash.recommended(),
             Clock(),
             settings.public_base_url,
             password,
@@ -214,7 +213,6 @@ def _poll_password_from_env() -> str:
 
 def create_demo_round(
     session_factory: sessionmaker[Session],
-    passwords: PasswordHash,
     clock: Clock,
     public_base_url: str,
     access_password: str,
@@ -222,11 +220,10 @@ def create_demo_round(
     """用 demo_user 新建四场投票，不修改已有场次。
 
     组合是记名公开、匿名公开、记名私密、匿名私密。生命周期分别是开放、关闭、
-    已排期和草稿。私密密码只写入散列。
+    已排期和草稿。私密访问密码写入明文，不写入散列。
 
     Args:
         session_factory: 数据库会话工厂。
-        passwords: 访问密码散列器。
         clock: 服务端时钟。
         public_base_url: 分享链接基址。命令不打印链接或密码。
         access_password: 两场私密样例共用的访问密码。
@@ -240,7 +237,7 @@ def create_demo_round(
     """
     check_access_password(access_password)
     principal = _demo_creator(session_factory)
-    service = PollService(session_factory, clock, passwords, public_base_url)
+    service = PollService(session_factory, clock, public_base_url)
     batch = secrets.token_hex(3)
     created: list[int] = []
     for title, identity, visibility, scheduled, action in _ROUND_SPECS:

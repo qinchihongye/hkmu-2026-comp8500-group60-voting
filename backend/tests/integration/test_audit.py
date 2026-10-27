@@ -97,14 +97,12 @@ def test_new_demo_round_does_not_overwrite_history(
     caplog.set_level(logging.INFO, logger="voting")
     first = create_demo_round(
         auth_client.app.state.session_factory,
-        auth_client.app.state.passwords,
         auth_client.app.state.clock,
         "http://localhost:5173",
         ACCESS_PASSWORD,
     )
     second = create_demo_round(
         auth_client.app.state.session_factory,
-        auth_client.app.state.passwords,
         auth_client.app.state.clock,
         "http://localhost:5173",
         ACCESS_PASSWORD,
@@ -128,6 +126,7 @@ def test_new_demo_round_does_not_overwrite_history(
         draft = next(row for row in rows if row.lifecycle == "DRAFT")
         private_share = private.share_code
         private_hash = private.private_password_hash
+        private_password = private.private_password
         draft_share = draft.share_code
     assert modes == {
         ("NAMED", "PUBLIC", "PUBLISHED"),
@@ -137,7 +136,8 @@ def test_new_demo_round_does_not_overwrite_history(
     }
     assert private_share
     assert ACCESS_PASSWORD not in private_share
-    assert private_hash != ACCESS_PASSWORD
+    assert private_hash is None
+    assert private_password == ACCESS_PASSWORD
     assert draft_share is None
     with open_session(auth_client) as session:
         total = session.scalar(select(func.count()).select_from(Poll))

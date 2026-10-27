@@ -134,18 +134,59 @@
   background: #059669;
 }
 
+.share-passcode-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .share-passcode-chip {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   min-height: 44px;
-  padding: 8px 14px;
+  padding: 8px 10px 8px 14px;
   border-radius: 12px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   color: #475569;
   font-size: 0.9rem;
   font-weight: 600;
+}
+
+.share-passcode-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.share-passcode-main span {
+  overflow-wrap: anywhere;
+}
+
+.share-passcode-copy {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #1363df;
+  cursor: pointer;
+}
+
+.share-passcode-copy:hover,
+.share-passcode-copy.copied {
+  background: #e8f1ff;
+}
+
+.share-passcode-copy.copied {
+  color: #059669;
 }
 
 .share-actions-row {
@@ -280,8 +321,11 @@
     order: 1;
   }
 
-  .share-passcode-chip {
+  .share-passcode-block {
     order: 2;
+  }
+
+  .share-passcode-chip {
     background: #e8f1ff;
     border-color: #d6e6fb;
     color: #1363df;

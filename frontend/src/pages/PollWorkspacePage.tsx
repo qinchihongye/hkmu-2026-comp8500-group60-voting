@@ -2,7 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { ModeTags, StatusTag } from "../components/StatusTag";
-import { closePoll, getOwnedPoll, getShareInfo, publishPoll } from "../features/creator/api";
+import {
+  closePoll,
+  getOwnedPoll,
+  getShareInfo,
+  publishPoll,
+} from "../features/creator/api";
 import { SharePanel } from "../features/creator/SharePanel";
 import { getResults } from "../features/polls/api";
 import { ResultsPanel } from "../features/polls/ResultsPanel";
@@ -206,7 +211,12 @@ export function PollWorkspacePage() {
       </div>
 
       {share ? (
-        <SharePanel shareUrl={share.share_url} requiresPassword={share.requires_password} requiresLogin={share.requires_login} />
+        <SharePanel
+          shareUrl={share.share_url}
+          requiresPassword={share.requires_password}
+          requiresLogin={share.requires_login}
+          accessPassword={share.access_password}
+        />
       ) : null}
 
       {results ? <ResultsPanel results={results} /> : null}

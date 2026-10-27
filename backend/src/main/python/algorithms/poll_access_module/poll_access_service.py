@@ -1,5 +1,6 @@
 """分享入口、私密授权和参与者可见的投票详情。"""
 
+import hmac
 import secrets
 from datetime import timedelta
 
@@ -213,11 +214,15 @@ class PollAccessService:
             分享码和密码都匹配时为真。
         """
         code_ok = _codes_match(payload.share_code, poll.share_code)
-        stored = poll.private_password_hash if code_ok and poll.private_password_hash else None
-        if stored is None:
+        if not code_ok:
             verify_password(self._passwords, payload.password, self._dummy_hash)
             return False
-        return verify_password(self._passwords, payload.password, stored)
+        if poll.private_password is not None:
+            return hmac.compare_digest(poll.private_password, payload.password)
+        if poll.private_password_hash:
+            return verify_password(self._passwords, payload.password, poll.private_password_hash)
+        verify_password(self._passwords, payload.password, self._dummy_hash)
+        return False
 
     def _vote_for(
         self,

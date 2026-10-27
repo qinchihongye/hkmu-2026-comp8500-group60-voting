@@ -141,7 +141,7 @@ def get_my_share(
     response: Response,
     principal: Principal = Depends(require_user),
 ) -> ResponseModel[ShareLink]:
-    """读取自己已发布投票的分享链接。链接里没有密码。
+    """读取自己已发布投票的分享链接。链接里没有密码，明文只在单独字段返回。
 
     Args:
         poll_id: 投票主键。

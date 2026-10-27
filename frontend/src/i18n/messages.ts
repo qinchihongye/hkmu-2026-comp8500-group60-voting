@@ -275,6 +275,8 @@ export const en = {
     scanHint: "Scan to vote instantly",
     invite: "Copy invitation text",
     passcodeChip: "Access passcode required",
+    passcodeValue: "Access passcode: {password}",
+    copyPasscode: "Copy access passcode",
   },
   results: {
     finalTitle: "Final results",
@@ -666,6 +668,8 @@ export const zh: StringTree<typeof en> = {
     scanHint: "扫码立即参与投票",
     invite: "复制邀请文字",
     passcodeChip: "需要访问密码",
+    passcodeValue: "访问密码：{password}",
+    copyPasscode: "复制访问密码",
   },
   results: {
     finalTitle: "最终结果",

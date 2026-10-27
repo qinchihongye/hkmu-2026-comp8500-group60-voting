@@ -113,6 +113,7 @@ export type ShareLink = {
   share_url: string;
   requires_password: boolean;
   requires_login: boolean;
+  access_password: string | null;
 };
 
 export type AccessGrantPublic = {
