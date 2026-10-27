@@ -227,7 +227,7 @@ export function RegisterPage() {
                 <button type="submit" disabled={busy} className="auth-primary-btn">
                   {busy ? t("auth.creating") : t("nav.signUp")}
                 </button>
-                <Link to="/polls" className="auth-guest-btn">
+                <Link to="/public-polls" className="auth-guest-btn">
                   {t("auth.guest")}
                 </Link>
               </div>

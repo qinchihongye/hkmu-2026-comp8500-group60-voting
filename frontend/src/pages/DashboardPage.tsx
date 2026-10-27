@@ -35,7 +35,7 @@ function mockCards(t: Translate): DisplayCard[] {
       progressDetail: t("dashboard.park.detail"),
       description: t("dashboard.park.description"),
       actionText: t("dashboard.park.action"),
-      actionUrl: "/polls",
+      actionUrl: "/public-polls",
       avatars: [
         "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80",
         "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80",
@@ -53,7 +53,7 @@ function mockCards(t: Translate): DisplayCard[] {
       progressDetail: t("dashboard.bylaw.detail"),
       description: t("dashboard.bylaw.description"),
       actionText: t("dashboard.bylaw.action"),
-      actionUrl: "/polls",
+      actionUrl: "/public-polls",
     },
     {
       id: "mock-3",
@@ -66,7 +66,7 @@ function mockCards(t: Translate): DisplayCard[] {
       progressDetail: t("dashboard.awards.detail"),
       description: t("dashboard.awards.description"),
       actionText: t("dashboard.awards.action"),
-      actionUrl: "/polls",
+      actionUrl: "/public-polls",
       avatars: [
         "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&auto=format&fit=crop&q=80",
       ],
@@ -81,7 +81,7 @@ function mockCards(t: Translate): DisplayCard[] {
       progressLabel: t("dashboard.goals.progress"),
       description: t("dashboard.goals.description"),
       actionText: t("dashboard.goals.action"),
-      actionUrl: "/polls",
+      actionUrl: "/public-polls",
       isUpcoming: true,
     },
   ];

@@ -18,7 +18,7 @@ function renderAs(session: () => Response, path = "/overview") {
 
 describe("AppLayout", () => {
   it("登录用户看到创建入口，管理员才看到监督", async () => {
-    renderAs(meAnonymous, "/polls");
+    renderAs(meAnonymous, "/public-polls");
     const anonymousNav = await screen.findByRole("navigation", { name: "Main" });
     expect(within(anonymousNav).getByRole("link", { name: "Polls" })).toBeInTheDocument();
     expect(within(anonymousNav).queryByRole("link", { name: "Create poll" })).not.toBeInTheDocument();
@@ -40,7 +40,7 @@ describe("AppLayout", () => {
   });
 
   it("已登录把语言开关放进账户菜单，未登录顶栏不显示语言开关", async () => {
-    renderAs(meAnonymous, "/polls");
+    renderAs(meAnonymous, "/public-polls");
     expect(document.querySelector(".locale-switch")).toBeNull();
     expect(screen.queryByRole("button", { name: "Language" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Log in" })).toBeInTheDocument();

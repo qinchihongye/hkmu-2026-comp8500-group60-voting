@@ -82,7 +82,7 @@ export function PollResultPage() {
               {t("resultPage.back")}
             </Link>
           ) : (
-            <Link to="/polls" className="view-btn view-btn-secondary" style={{ textDecoration: "none" }}>
+            <Link to="/public-polls" className="view-btn view-btn-secondary" style={{ textDecoration: "none" }}>
               {t("resultPage.plaza")}
             </Link>
           )}

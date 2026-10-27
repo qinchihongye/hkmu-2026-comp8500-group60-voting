@@ -216,7 +216,7 @@ export function LoginPage() {
                 <button type="submit" disabled={busy} className="auth-primary-btn">
                   {busy ? t("auth.loggingIn") : t("nav.logIn")}
                 </button>
-                <Link to="/polls" className="auth-guest-btn">
+                <Link to="/public-polls" className="auth-guest-btn">
                   {t("auth.guest")}
                 </Link>
               </div>

@@ -33,7 +33,7 @@ test("四个宽度都能完成导航、表单、分享和结果，页面不横�
   expect(titleBox?.height ?? 0).toBeGreaterThanOrEqual(44);
   await page.getByLabel("Title").focus();
   await expect(page.getByLabel("Title")).toBeFocused();
-  await page.goto("/polls");
+  await page.goto("/public-polls");
   const squareOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   expect(squareOverflow).toBe(false);
 });

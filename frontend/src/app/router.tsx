@@ -28,7 +28,7 @@ export function AppRouter() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/overview" element={<RequireAuth><DashboardPage /></RequireAuth>} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/polls" element={<PollListPage />} />
+        <Route path="/public-polls" element={<PollListPage />} />
         <Route path="/polls/:id" element={<PollDetailPage />} />
         <Route path="/polls/:id/results" element={<PollResultPage />} />
         <Route path="/s/:shareCode" element={<ShareEntryPage />} />

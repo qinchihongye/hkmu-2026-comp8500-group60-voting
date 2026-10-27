@@ -158,7 +158,7 @@ export function AppLayout() {
 
           {/* Public Polls */}
           <NavLink
-            to="/polls"
+            to="/public-polls"
             className="sidebar-nav-item"
             aria-label={t("nav.polls")}
             title={t("nav.polls")}
@@ -462,7 +462,7 @@ export function AppLayout() {
               <TabIcon name="overview" />
               <span>{t("nav.overview")}</span>
             </NavLink>
-            <NavLink to="/polls" className="mobile-tab" aria-label={t("nav.polls")}>
+            <NavLink to="/public-polls" className="mobile-tab" aria-label={t("nav.polls")}>
               <TabIcon name="polls" />
               <span>{t("nav.polls")}</span>
             </NavLink>
