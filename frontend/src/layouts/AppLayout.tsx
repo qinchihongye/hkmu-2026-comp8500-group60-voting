@@ -82,7 +82,7 @@ export function AppLayout() {
 
   async function logout() {
     await auth.logout();
-    navigate("/");
+    navigate("/login");
   }
 
   if (isAuthPage) {
@@ -103,7 +103,7 @@ export function AppLayout() {
       <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
         {/* Brand & Collapse Toggle */}
         <div className="sidebar-header">
-          <Link to="/" className="brand" aria-label={t("nav.home")} title={t("nav.home")}>
+          <Link to="/overview" className="brand" aria-label={t("nav.home")} title={t("nav.home")}>
             <svg className="brand-logo-icon" viewBox="0 0 36 36" fill="none">
               <path
                 d="M6 8L18 30L30 8"
@@ -153,7 +153,7 @@ export function AppLayout() {
         <nav className="sidebar-nav-group" aria-label={t("nav.main")}>
           {/* Overview */}
           <NavLink
-            to="/"
+            to="/overview"
             end
             className="sidebar-nav-item"
             aria-label={t("nav.overview")}
@@ -298,7 +298,7 @@ export function AppLayout() {
         {/* Topbar Navigation Header */}
         <header className="topbar">
           <div className="topbar-mobile-left">
-            <Link to="/" className="topbar-mobile-brand" aria-label={t("nav.home")}>
+            <Link to="/overview" className="topbar-mobile-brand" aria-label={t("nav.home")}>
               <svg className="brand-logo-icon" viewBox="0 0 36 36" fill="none" style={{ width: 24, height: 24 }}>
                 <path d="M6 8L18 30L30 8" stroke="#0f172a" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
                 <path d="M11 18L16 23L27 10" stroke="#1363df" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -476,7 +476,7 @@ export function AppLayout() {
         </main>
         {mobileNav ? (
           <nav className="mobile-tabbar" aria-label={t("nav.mobile")}>
-            <NavLink to="/" end className="mobile-tab" aria-label={t("nav.overview")}>
+            <NavLink to="/overview" end className="mobile-tab" aria-label={t("nav.overview")}>
               <TabIcon name="overview" />
               <span>{t("nav.overview")}</span>
             </NavLink>

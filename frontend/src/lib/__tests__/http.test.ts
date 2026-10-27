@@ -121,8 +121,9 @@ describe("apiClient", () => {
 describe("safeNextPath", () => {
   it("只接受站内相对路径", () => {
     expect(safeNextPath("/s/abc")).toBe("/s/abc");
-    expect(safeNextPath("https://evil.example/s/abc")).toBe("/");
-    expect(safeNextPath("//evil.example")).toBe("/");
-    expect(safeNextPath(null)).toBe("/");
+    expect(safeNextPath("/")).toBe("/overview");
+    expect(safeNextPath("https://evil.example/s/abc")).toBe("/overview");
+    expect(safeNextPath("//evil.example")).toBe("/overview");
+    expect(safeNextPath(null)).toBe("/overview");
   });
 });

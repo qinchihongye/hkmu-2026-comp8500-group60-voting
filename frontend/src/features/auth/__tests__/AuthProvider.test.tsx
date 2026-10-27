@@ -5,7 +5,7 @@ import { getCsrfToken } from "../../../lib/http";
 import { emptyPage, guestOk, installFetch, meAnonymous, renderRoute, sessionOf } from "../../../test/fixtures";
 
 describe("AuthProvider", () => {
-  it("公开广场在会话 401 时仍可访问，且不把令牌写入 localStorage", async () => {
+  it("未登录直接打开首页时进入登录页，且不把令牌写入 localStorage", async () => {
     installFetch((url) => {
       if (url.includes("/auth/me")) {
         return meAnonymous();
@@ -19,8 +19,8 @@ describe("AuthProvider", () => {
       return meAnonymous();
     });
     renderRoute("/");
-    expect(await screen.findByText("The public poll list shows published public polls only.")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Log in" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Log in" })).toBeInTheDocument();
+    expect(screen.queryByText("The public poll list shows published public polls only.")).not.toBeInTheDocument();
     expect(localStorage.length).toBe(0);
     expect(getCsrfToken("guest")).toBe("guest-csrf");
   });

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 
 import { emptyPage, guestOk, installFetch, meAnonymous, renderRoute, sessionOf } from "../../test/fixtures";
 
-function renderAs(session: () => Response, path = "/") {
+function renderAs(session: () => Response, path = "/overview") {
   installFetch((url) => {
     if (url.includes("/auth/me")) {
       return session();
@@ -18,7 +18,7 @@ function renderAs(session: () => Response, path = "/") {
 
 describe("AppLayout", () => {
   it("登录用户看到创建入口，管理员才看到监督", async () => {
-    renderAs(meAnonymous);
+    renderAs(meAnonymous, "/polls");
     const anonymousNav = await screen.findByRole("navigation", { name: "Main" });
     expect(within(anonymousNav).getByRole("link", { name: "Polls" })).toBeInTheDocument();
     expect(within(anonymousNav).queryByRole("link", { name: "Create poll" })).not.toBeInTheDocument();
@@ -26,6 +26,7 @@ describe("AppLayout", () => {
 
     renderAs(() => sessionOf("USER"));
     const userNav = await screen.findByRole("navigation", { name: "Main" });
+    expect(within(userNav).getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/overview");
     expect(within(userNav).getByRole("link", { name: "Create poll" })).toBeInTheDocument();
     expect(within(userNav).getByRole("link", { name: "My polls" })).toBeInTheDocument();
     expect(within(userNav).getByRole("link", { name: "History" })).toBeInTheDocument();
@@ -39,7 +40,7 @@ describe("AppLayout", () => {
   });
 
   it("已登录把语言开关放进账户菜单，未登录顶栏不显示语言开关", async () => {
-    renderAs(meAnonymous);
+    renderAs(meAnonymous, "/polls");
     expect(document.querySelector(".locale-switch")).toBeNull();
     expect(screen.queryByRole("button", { name: "Language" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Log in" })).toBeInTheDocument();

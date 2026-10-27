@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 
 import { RequireAuth } from "../features/auth/RequireAuth";
 import { AppLayout } from "../layouts/AppLayout";
@@ -23,9 +23,10 @@ import { ShareEntryPage } from "../pages/ShareEntryPage";
 export function AppRouter() {
   return (
     <Routes>
+      <Route path="/" element={<Navigate to="/login" replace />} />
       <Route element={<AppLayout />}>
-        <Route path="/" element={<DashboardPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/overview" element={<RequireAuth><DashboardPage /></RequireAuth>} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/polls" element={<PollListPage />} />
         <Route path="/polls/:id" element={<PollDetailPage />} />

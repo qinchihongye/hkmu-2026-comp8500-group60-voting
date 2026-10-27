@@ -32,7 +32,7 @@ describe("DashboardPage", () => {
       }
       return envelope(null, 404, ApiCode.NOT_FOUND, "资源不存在");
     });
-    renderRoute("/");
+    renderRoute("/overview");
     await waitFor(() => expect(screen.getByTestId("open-total")).toHaveTextContent("40"));
     await waitFor(() => expect(screen.getByTestId("named-total")).toHaveTextContent("7"));
   });
