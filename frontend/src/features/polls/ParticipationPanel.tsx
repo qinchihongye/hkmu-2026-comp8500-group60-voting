@@ -1,12 +1,16 @@
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { ModeTags, StatusTag } from "../../components/StatusTag";
+import { useFailure } from "../../i18n/errors";
 import { useI18n } from "../../i18n/LocaleProvider";
+import type { PollDetail, PollResults } from "../../lib/api-types";
 import { formatHongKong } from "../../lib/time";
 import { useGuest } from "../poll-access/GuestProvider";
 import type { PollAccessView } from "../poll-access/usePollAccess";
-import { castVote, getPoll } from "./api";
+import { castVote, getPoll, getResults } from "./api";
 import { BallotForm } from "./BallotForm";
+import { ResultsPanel } from "./ResultsPanel";
 
 export function ParticipationPanel({
   access,
@@ -111,7 +115,7 @@ export function ParticipationPanel({
       </header>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
-        {detail.can_view_results ? (
+        {detail.effective_status !== "CLOSED" && detail.can_view_results ? (
           <Link to={resultsHref} className="view-btn view-btn-secondary" style={{ textDecoration: "none" }}>
             {t("access.viewResults")}
           </Link>
@@ -124,22 +128,76 @@ export function ParticipationPanel({
       </div>
 
       {access.phase === "submission_unknown" ? <p data-testid="unknown-status">{t("access.notFound")}</p> : null}
-      <BallotForm
-        poll={detail}
-        guestReady={guest.guestStatus === "ready"}
-        loginHref={loginHref}
-        onCast={(optionId) => castVote(detail.id, optionId)}
-        onRecover={async () => {
-          try {
-            const next = await getPoll(detail.id);
-            access.reload();
-            return next;
-          } catch {
-            access.markUnknown();
-            return null;
-          }
-        }}
-      />
+      {detail.effective_status === "CLOSED" ? (
+        <ClosedPollBody detail={detail} />
+      ) : (
+        <BallotForm
+          poll={detail}
+          guestReady={guest.guestStatus === "ready"}
+          loginHref={loginHref}
+          onCast={(optionId) => castVote(detail.id, optionId)}
+          onRecover={async () => {
+            try {
+              const next = await getPoll(detail.id);
+              access.reload();
+              return next;
+            } catch {
+              access.markUnknown();
+              return null;
+            }
+          }}
+        />
+      )}
     </div>
   );
+}
+
+function ClosedPollBody({ detail }: { detail: PollDetail }) {
+  const { t } = useI18n();
+  const receipt = detail.receipt;
+  return (
+    <>
+      {receipt ? (
+        <p data-testid="closed-receipt" className="view-subtitle" style={{ marginBottom: 16 }}>
+          {t("ballot.recorded")}
+          {" · "}
+          {t("ballot.receipt")} {receipt.receipt_id}
+          {" · "}
+          {t("ballot.submitted", { time: formatHongKong(receipt.submitted_at), zone: t("common.hkt") })}
+        </p>
+      ) : null}
+      {detail.can_view_results ? <FinalResults pollId={detail.id} /> : null}
+    </>
+  );
+}
+
+function FinalResults({ pollId }: { pollId: number }) {
+  const failure = useFailure("error.resultsLoad");
+  const { setCause, clear } = failure;
+  const [results, setResults] = useState<PollResults | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getResults(pollId)
+      .then((next) => {
+        if (cancelled) {
+          return;
+        }
+        setResults(next);
+        clear();
+      })
+      .catch((caught: unknown) => {
+        if (!cancelled) {
+          setCause(caught);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pollId, setCause, clear]);
+
+  if (failure.message) {
+    return <p role="alert">{failure.message}</p>;
+  }
+  return results ? <ResultsPanel results={results} /> : null;
 }
