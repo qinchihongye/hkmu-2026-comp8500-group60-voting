@@ -1,6 +1,6 @@
 # 数据库快照
 
-* **范围。** 2026-10-28 的迁移 head 是 `6154e827a884`，文件为 `db/migrations/versions/6154e827a884_add_vote_limit_and_multi_selection.py`，上一条是明文访问密码 `f3b8a1c04e27`。空库升级、带历史票升级和安全降级演练只连 `127.0.0.1:5433` 的 `voting_test`。开发库前进到同一条，不在这里降级或清表。
+* **范围。** 2026-10-28 的迁移 head 是 `c4e8a1b07d33`，文件为 `db/migrations/versions/c4e8a1b07d33_cap_vote_limit_at_100000.py`，上一条是选票上限和多选 `6154e827a884`。空库升级、带历史票升级和安全降级演练只连 `127.0.0.1:5433` 的 `voting_test`。开发库前进到同一条，不在这里降级或清表。
 
 * **九张业务表。** 另有 Alembic 自己的 `alembic_version`。`poll_options` 写在 `backend/src/main/python/database/models/poll.py`，没有单独的选项文件。主键是数据库生成的整数，选票回执是 UUID。业务时间是 `timestamptz`。角色、记名方式、公开性、生命周期和选择方式用 CHECK 保存字符串，不用 PostgreSQL 枚举类型。
 
@@ -28,7 +28,7 @@
   | `fk_vote_selections_vote` | `(poll_id, vote_id)` 指向 `votes(poll_id, id)` |
   | `fk_vote_selections_option` | `(poll_id, option_id)` 指向 `poll_options(poll_id, id)` |
   | `ix_vote_selections_poll_option` | `(poll_id, option_id)`，供本场选项聚合 |
-  | `ck_polls_vote_limit` | `vote_limit` 为空，或是 1 到 2147483647 的整数 |
+  | `ck_polls_vote_limit` | `vote_limit` 为空，或是 1 到 100000 的整数 |
   | `ck_polls_selection_mode` | `selection_mode` 只能是 `SINGLE` 或 `MULTIPLE` |
   | `fk_votes_poll_mode` | `(poll_id, identity_mode)` 指向 `polls(id, identity_mode)` |
   | `uq_polls_id_identity_mode` | 给票种组合外键提供唯一目标 |

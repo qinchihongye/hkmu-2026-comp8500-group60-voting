@@ -15,6 +15,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
+from src.main.python.constants.limits import MAX_VOTE_LIMIT
 from src.main.python.database.models.base import Base
 
 
@@ -29,7 +30,7 @@ class Poll(Base):
         visibility: PUBLIC 或 PRIVATE。
         private_password_hash: 旧私密投票留下的密码散列。新投票不再写入。
         private_password: 私密投票的访问密码明文。公开投票必须为空。
-        vote_limit: 整场最多接收的选票份数。为空表示不限。
+        vote_limit: 整场最多接收的选票份数。为空表示不限，填写时为 1 到 100000。
         selection_mode: SINGLE 或 MULTIPLE。
         share_code: 分享定位码。草稿可为空，有值时唯一。
         lifecycle: DRAFT、PUBLISHED 或 CLOSED。
@@ -67,7 +68,8 @@ class Poll(Base):
         ),
         CheckConstraint("version >= 1", name="ck_polls_version"),
         CheckConstraint(
-            "vote_limit IS NULL OR (vote_limit >= 1 AND vote_limit <= 2147483647)",
+            "vote_limit IS NULL OR (vote_limit >= 1 AND vote_limit <= "
+            f"{MAX_VOTE_LIMIT})",
             name="ck_polls_vote_limit",
         ),
         CheckConstraint(

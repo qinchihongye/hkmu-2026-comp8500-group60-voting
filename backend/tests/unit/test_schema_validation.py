@@ -69,12 +69,12 @@ def test_poll_create_normalizes_text_and_rejects_shape_errors() -> None:
 
 
 def test_vote_limit_accepts_null_and_strict_positive_integers() -> None:
-    """上限允许空、1 和 32 位整数最大值，拒绝 0、负数、越界、小数、布尔和字符串。"""
+    """上限允许空、1 和 100000，拒绝 0、负数、越界、小数、布尔和字符串。"""
     assert PollCreate.model_validate(_body()).vote_limit is None
     assert PollCreate.model_validate(_body(vote_limit=None)).vote_limit is None
     assert PollCreate.model_validate(_body(vote_limit=1)).vote_limit == 1
-    assert PollCreate.model_validate(_body(vote_limit=2147483647)).vote_limit == 2147483647
-    for value in (0, -1, 2147483648, 1.5, True, "10"):
+    assert PollCreate.model_validate(_body(vote_limit=100000)).vote_limit == 100000
+    for value in (0, -1, 100001, 2147483647, 1.5, True, "10"):
         with pytest.raises(ValidationError):
             PollCreate.model_validate(_body(vote_limit=value))
 

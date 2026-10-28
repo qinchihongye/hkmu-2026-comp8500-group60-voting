@@ -2,9 +2,9 @@
 
 * **这个仓库做什么。** 它是一个可在本机安装的投票系统：注册用户创建投票，参与者按记名或匿名、公开或私密四种组合投票，创建者和管理员按权限看汇总。运行不读取 `references/`。下面的值都是课程样例，不能当作生产密钥。
 
-* **选票份数和选择方式。** 新建投票默认不限份数，并且是单选。份数上限为空表示不限；填写时必须是 1 到 2147483647 的整数。至少三个有效选项才能改成多选。一份多选只占一个名额、只产生一个回执，可以选择一项直到全部选项。达到上限的那一份提交成功时，场次同时结束。百分比按全部选择次数计算，结果同时给出选票份数和选择次数。当前迁移是 `6154e827a884`。
+* **选票份数和选择方式。** 新建投票默认不限份数，并且是单选。份数上限为空表示不限；填写时必须是 1 到 100000 的整数。至少三个有效选项才能改成多选。一份多选只占一个名额、只产生一个回执，可以选择一项直到全部选项。达到上限的那一份提交成功时，场次同时结束。百分比按全部选择次数计算，结果同时给出选票份数和选择次数。当前迁移是 `c4e8a1b07d33`。
 
-* **Ballot limit and selection mode.** A new poll is unlimited and single-choice. An empty limit means unlimited; a set limit is an integer from 1 to 2147483647. Multiple choice needs at least three options. One multiple-choice submission uses one ballot and one receipt, and can select anywhere from one option to every option. The ballot that fills the limit closes the poll in the same commit. Percentages use all selections, and results show both the ballot count and the selection count. The current migration is `6154e827a884`.
+* **Ballot limit and selection mode.** A new poll is unlimited and single-choice. An empty limit means unlimited; a set limit is an integer from 1 to 100000. Multiple choice needs at least three options. One multiple-choice submission uses one ballot and one receipt, and can select anywhere from one option to every option. The ballot that fills the limit closes the poll in the same commit. Percentages use all selections, and results show both the ballot count and the selection count. The current migration is `c4e8a1b07d33`.
 
 * **环境。** 后端使用 Python 3.12 和 [uv](https://docs.astral.sh/uv/)。前端目标是 Node.js 22.12 或更新的 22。数据库是 PostgreSQL 17，由 Compose 启动。2026-10-25 在本机验证时，Python 是 3.12.15，uv 是 0.13.5，Node 是 v23.9.0。组件测试和浏览器测试在这台 Node 23 上通过。持续集成仍使用 Node 22。
 

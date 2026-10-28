@@ -142,7 +142,7 @@ describe("PollForm", () => {
     expect(screen.getByRole("button", { name: "Decrease ballot limit" })).toBeDisabled();
 
     fireEvent.change(limit, { target: { value: "1" } });
-    fireEvent.change(limit, { target: { value: "2147483647" } });
+    fireEvent.change(limit, { target: { value: "100000" } });
     expect(screen.getByRole("button", { name: "Increase ballot limit" })).toBeDisabled();
 
     fireEvent.change(limit, { target: { value: "40" } });
@@ -153,7 +153,7 @@ describe("PollForm", () => {
     fireEvent.change(limit, { target: { value: "1.5" } });
     await fillRequired();
     await userEvent.click(screen.getByTestId("save-poll"));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Enter a whole number from 1 to 2,147,483,647.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Enter a whole number from 1 to 100,000.");
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.queryByDisplayValue("NaN")).not.toBeInTheDocument();
   });
@@ -163,7 +163,8 @@ describe("PollForm", () => {
       <PollForm initial={emptyPollForm(fixedNow)} mode="create" now={fixedNow} onSubmit={vi.fn()} />,
     );
     expect(screen.getByText("Vote Limit")).toBeInTheDocument();
-    expect(screen.getByText("/ 最高投票数")).toBeInTheDocument();
+    expect(screen.queryByText("最高投票数")).not.toBeInTheDocument();
+    expect(screen.queryByText("是否可以一人多投")).not.toBeInTheDocument();
     expect(screen.getByText("Unlimited")).toBeInTheDocument();
     expect(document.body.textContent).toContain("[👤 Named]");
     expect(document.body.textContent).toContain("[🔒 Private]");
@@ -177,7 +178,10 @@ describe("PollForm", () => {
       <PollForm initial={emptyPollForm(fixedNow)} mode="create" now={fixedNow} onSubmit={vi.fn()} />,
     );
     expect(screen.getByText("最高投票数")).toBeInTheDocument();
-    expect(screen.getByText("/ Vote Limit")).toBeInTheDocument();
+    expect(screen.queryByText("Vote Limit")).not.toBeInTheDocument();
+    expect(screen.queryByText("Vote Allowance")).not.toBeInTheDocument();
+    expect(screen.queryByText("(Single Vote)")).not.toBeInTheDocument();
+    expect(screen.queryByText("(Multi-Vote)")).not.toBeInTheDocument();
     expect(screen.getByText("不限")).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "不记名投票" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "私密投票" })).toBeInTheDocument();

@@ -5,6 +5,7 @@ from datetime import datetime
 from pydantic import Field, StrictInt, field_validator, model_validator
 
 from src.main.python.constants.enums import IdentityMode, SelectionMode, Visibility
+from src.main.python.constants.limits import MAX_VOTE_LIMIT
 from src.main.python.fileds.request.request import BaseRequestData
 from src.main.python.utils.security_util import check_access_password
 
@@ -49,7 +50,7 @@ class _PollFields(BaseRequestData):
         identity_mode: 记名方式。
         visibility: 公开性。
         access_password: 私密投票密码。公开投票不能携带。
-        vote_limit: 整场最多接收的选票份数。为空表示不限。
+        vote_limit: 整场最多接收的选票份数。为空表示不限，填写时为 1 到 100000。
         selection_mode: 一份选票是单选还是多选。
         options: 2 到 10 个选项。
     """
@@ -61,7 +62,7 @@ class _PollFields(BaseRequestData):
     identity_mode: IdentityMode
     visibility: Visibility
     access_password: str | None = None
-    vote_limit: StrictInt | None = Field(default=None, ge=1, le=2147483647)
+    vote_limit: StrictInt | None = Field(default=None, ge=1, le=MAX_VOTE_LIMIT)
     selection_mode: SelectionMode = SelectionMode.SINGLE
     options: list[OptionInput] = Field(min_length=2, max_length=10)
 
@@ -186,12 +187,12 @@ class PollUpdate(_PollFields):
     上限和选择模式必须随这次完整替换一起提交。
 
     Attributes:
-        vote_limit: 整场选票份数上限。空表示不限。
+        vote_limit: 整场选票份数上限。空表示不限，填写时为 1 到 100000。
         selection_mode: 一份选票是单选还是多选。
         expected_version: 客户端看到的版本。
     """
 
-    vote_limit: StrictInt | None = Field(ge=1, le=2147483647)
+    vote_limit: StrictInt | None = Field(ge=1, le=MAX_VOTE_LIMIT)
     selection_mode: SelectionMode
     expected_version: int = Field(ge=1)
 
