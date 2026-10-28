@@ -13,6 +13,7 @@ from uuid import uuid4
 import pytest
 from alembic import command
 from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session
@@ -22,7 +23,6 @@ from src.main.python.database.models import Poll, PollOption, User, Vote, VoteSe
 
 DEFAULT_DEV_URL = "postgresql+psycopg://voting:change-me@127.0.0.1:5432/voting"
 DEFAULT_TEST_URL = "postgresql+psycopg://voting:change-me@127.0.0.1:5433/voting_test"
-REVISION = "6154e827a884"
 
 APPLICATION_TABLES = frozenset(
     {
@@ -91,6 +91,25 @@ def alembic_config(url: str) -> Config:
     config = Config(str(backend_root / "alembic.ini"))
     config.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
     return config
+
+
+def head_revision() -> str:
+    """读取迁移脚本中的唯一头部版本。
+
+    Returns:
+        当前 Alembic head 的 revision。
+
+    Raises:
+        RuntimeError: 脚本存在多个头部时。
+    """
+    script = ScriptDirectory.from_config(alembic_config("postgresql+psycopg://unused"))
+    heads = script.get_heads()
+    if len(heads) != 1:
+        raise RuntimeError("迁移脚本必须只有一个头部")
+    return heads[0]
+
+
+REVISION = head_revision()
 
 
 def reset_public_schema(test_url: str, dev_url: str) -> None:
