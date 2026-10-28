@@ -156,7 +156,9 @@ export function PollForm({
   const multipleReady = canChooseMultiple(value.options);
   const numericLimit = limitFromText(limitText);
   const sliderPosition = valueToSlider(value.voteLimit);
-  const sliderPercent = (sliderPosition / SLIDER_STEPS) * 100;
+  const sliderPercent = value.voteLimit === null
+    ? 0
+    : 28 + (Math.log(value.voteLimit) / Math.log(MAX_VOTE_LIMIT)) * 72;
 
   function patch(partial: Partial<PollFormValue>) {
     setValue((current) => ({ ...current, ...partial }));
@@ -347,7 +349,7 @@ export function PollForm({
                 />
                 <SettingMark
                   active={value.identityMode === "ANONYMOUS"}
-                  icon="😎"
+                  icon="🎭"
                   label={t("identity.anonymous")}
                 />
               </div>
@@ -404,50 +406,10 @@ export function PollForm({
               <span className="poll-setting-name">
                 {t("form.voteLimit")}
               </span>
-              <div className="poll-limit-control">
-                <div className="poll-limit-entry">
-                  <input
-                    className={limitText.length > 6 ? "poll-limit-input is-long" : "poll-limit-input"}
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="off"
-                    aria-label={t("form.ballotLimit")}
-                    value={limitText}
-                    placeholder="∞"
-                    onChange={(event) => changeLimit(event.target.value)}
-                    onBlur={blurLimit}
-                    onKeyDown={onLimitKey}
-                  />
-                  <span className="poll-limit-unit">{limitText.trim() === "" ? t("form.unlimited") : t("form.voteUnit")}</span>
-                  <div className="poll-limit-stepper">
-                    <button
-                      type="button"
-                      className="poll-step-btn"
-                      aria-label={t("form.decreaseLimit")}
-                      disabled={numericLimit === null}
-                      onClick={() => stepLimit(-1)}
-                    >
-                      −
-                    </button>
-                    <button
-                      type="button"
-                      className="poll-step-btn"
-                      aria-label={t("form.increaseLimit")}
-                      disabled={numericLimit === MAX_VOTE_LIMIT}
-                      onClick={() => stepLimit(1)}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
+              <div className="poll-limit-slider">
                 <div className="poll-limit-track">
                   <div className="poll-limit-rail" />
                   {sliderPercent > 0 ? <div className="poll-limit-fill" style={{ width: `${sliderPercent}%` }} /> : null}
-                  <span
-                    className="poll-limit-thumb"
-                    style={{ left: `clamp(8px, ${sliderPercent}%, calc(100% - 8px))` }}
-                    aria-hidden="true"
-                  />
                   <input
                     className="poll-limit-range"
                     type="range"
@@ -458,6 +420,44 @@ export function PollForm({
                     aria-label={t("form.limitSlider")}
                     onChange={(event) => applyLimit(sliderToValue(Number(event.target.value)))}
                   />
+                  <div
+                    className={limitText.length > 4 ? "poll-limit-badge is-wide" : "poll-limit-badge"}
+                    style={{ left: `clamp(36px, ${sliderPercent}%, calc(100% - 36px))` }}
+                  >
+                    <input
+                      className={limitText.length > 4 ? "poll-limit-input is-long" : "poll-limit-input"}
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      aria-label={t("form.ballotLimit")}
+                      value={limitText}
+                      placeholder="∞"
+                      onChange={(event) => changeLimit(event.target.value)}
+                      onBlur={blurLimit}
+                      onKeyDown={onLimitKey}
+                    />
+                    <span className="poll-limit-unit">{limitText.trim() === "" ? t("form.unlimited") : t("form.voteUnit")}</span>
+                  </div>
+                </div>
+                <div className="poll-limit-stepper">
+                  <button
+                    type="button"
+                    className="poll-step-btn"
+                    aria-label={t("form.decreaseLimit")}
+                    disabled={numericLimit === null}
+                    onClick={() => stepLimit(-1)}
+                  >
+                    −
+                  </button>
+                  <button
+                    type="button"
+                    className="poll-step-btn"
+                    aria-label={t("form.increaseLimit")}
+                    disabled={numericLimit === MAX_VOTE_LIMIT}
+                    onClick={() => stepLimit(1)}
+                  >
+                    +
+                  </button>
                 </div>
               </div>
             </div>
@@ -642,7 +642,7 @@ export function PollForm({
 function SettingMark({ active, icon, label }: { active: boolean; icon: string; label: string }) {
   return (
     <span className={active ? "poll-switch-side is-active" : "poll-switch-side"}>
-      [<span aria-hidden="true">{icon}</span> {label}]
+      [{icon} {label}]
     </span>
   );
 }
