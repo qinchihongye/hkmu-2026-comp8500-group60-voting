@@ -16,7 +16,7 @@ type FeedbackState = {
 export function PollTextImport({ onApply }: PollTextImportProps) {
   const { t } = useI18n();
   const [enabled, setEnabled] = useState<boolean | null>(null);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);

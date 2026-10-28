@@ -41,14 +41,13 @@ describe("PollTextImport", () => {
     const onApply = vi.fn();
     renderWithI18n(<PollTextImport onApply={onApply} />);
 
-    expect(await screen.findByRole("textbox")).toBeInTheDocument();
-    expect(screen.getByText(/Import from text|智能文本识别导入/)).toBeInTheDocument();
-    expect(screen.getByText(/Collapse ▲|收起 ▲/)).toBeInTheDocument();
-
-    // 点击收起
-    await userEvent.click(screen.getByText(/Import from text|智能文本识别导入/));
+    expect(await screen.findByText(/Import from text|智能文本识别导入/)).toBeInTheDocument();
     expect(screen.getByText(/Expand ▼|展开 ▼/)).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).toBeNull();
+
+    await userEvent.click(screen.getByText(/Import from text|智能文本识别导入/));
+    expect(screen.getByText(/Collapse ▲|收起 ▲/)).toBeInTheDocument();
+    expect(screen.getByRole("textbox")).toBeInTheDocument();
   });
 
   it("输入内容后点击清空，文本域被重置", async () => {
@@ -61,7 +60,8 @@ describe("PollTextImport", () => {
     const onApply = vi.fn();
     renderWithI18n(<PollTextImport onApply={onApply} />);
 
-    const textarea = await screen.findByRole("textbox");
+    await userEvent.click(await screen.findByText(/Import from text|智能文本识别导入/));
+    const textarea = screen.getByRole("textbox");
     await userEvent.type(textarea, "周五技术分享：\n1. React\n2. Vue");
     expect(textarea).toHaveValue("周五技术分享：\n1. React\n2. Vue");
 
@@ -90,7 +90,8 @@ describe("PollTextImport", () => {
     const onApply = vi.fn();
     renderWithI18n(<PollTextImport onApply={onApply} />);
 
-    const textarea = await screen.findByRole("textbox");
+    await userEvent.click(await screen.findByText(/Import from text|智能文本识别导入/));
+    const textarea = screen.getByRole("textbox");
     await userEvent.type(textarea, "周五技术分享：\n1. React\n2. Vue\n3. Angular");
 
     await userEvent.click(screen.getByRole("button", { name: /Parse & Auto-fill|识别并自动填充/ }));
