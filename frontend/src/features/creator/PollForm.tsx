@@ -96,9 +96,6 @@ function validate(value: PollFormValue, mode: "create" | "edit", now = new Date(
     if (mode === "create" && password.length === 0) {
       return "form.error.passcodeRequired";
     }
-    if (password.length > 0 && (password.length < 8 || password.length > 128)) {
-      return "form.error.passcodeLength";
-    }
   }
   try {
     const starts = new Date(hongKongToIso(value.startsDate, value.startsTime));
@@ -399,7 +396,7 @@ export function PollForm({
                     className="poll-form-input"
                     value={value.accessPassword}
                     onChange={(event) => patch({ accessPassword: event.target.value })}
-                    placeholder={mode === "edit" ? t("form.passcodeEdit") : t("form.passcodeCreate")}
+                    placeholder={mode === "edit" ? t("form.passcodeEdit") : undefined}
                   />
                 </div>
               ) : null}

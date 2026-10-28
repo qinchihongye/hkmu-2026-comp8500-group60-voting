@@ -14,7 +14,7 @@
   2. `ANON_VOTER_HMAC_KEY` 一旦填写，至少 32 字节，并且每次重启保持同一值。匿名防重复依赖这把密钥。示例文件留空。
   3. `PUBLIC_BASE_URL` 和 `ALLOWED_ORIGINS` 填浏览器访问地址。Docker 模式是 `http://localhost:8188`（Nginx 8188 端口）；本机直跑 Vite 则是 `http://localhost:5173`。`ALLOWED_ORIGINS` 是 JSON 列表，写成不带方括号的字符串会在启动时失败。部署到服务器时改成服务器实际域名或 IP。
   4. 账户 Cookie 是 `voting_session`，访客 Cookie 是 `voting_guest`。写请求还要带 `X-CSRF-Token`。账户 CSRF 和访客 CSRF 不能互换。注册、登录和首次建立访客只检查来源。开发环境 `COOKIE_SECURE=false`。
-  5. `DEMO_ADMIN_PASSWORD`、`DEMO_USER_PASSWORD`、`DEMO_VOTER_PASSWORD` 是演示账户密码，长度 12 到 128。`DEMO_POLL_PASSWORD` 是私密样例场次的访问密码，长度 8 到 128。浏览器测试使用的课程样例写在 `frontend/tests/e2e/support.ts`，持续集成使用同一组。本地要跑这组浏览器测试时，演示账户密码必须与该文件一致。
+  5. `DEMO_ADMIN_PASSWORD`、`DEMO_USER_PASSWORD`、`DEMO_VOTER_PASSWORD` 是演示账户密码，长度 12 到 128。`DEMO_POLL_PASSWORD` 是私密样例场次的访问密码，不能为空，不限制长度。浏览器测试使用的课程样例写在 `frontend/tests/e2e/support.ts`，持续集成使用同一组。本地要跑这组浏览器测试时，演示账户密码必须与该文件一致。
 
 * **启动（Docker 一键，推荐）。** 先按上面填好 `.env`，然后在仓库根目录一条命令起整个系统（数据库 + 后端 + 前端 Nginx）：
 

@@ -128,7 +128,7 @@ class _PollFields(BaseRequestData):
     @field_validator("access_password")
     @classmethod
     def check_secret(cls, value: str | None) -> str | None:
-        """检查已提交的访问密码长度。不裁剪内容。
+        """检查已提交的访问密码非空。不裁剪内容。
 
         Args:
             value: 访问密码。未提交时为空。

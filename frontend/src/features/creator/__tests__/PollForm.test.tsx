@@ -19,17 +19,18 @@ describe("PollForm", () => {
     await userEvent.click(screen.getByRole("switch", { name: "Anonymous voting" }));
     await userEvent.click(screen.getByRole("switch", { name: "Private poll" }));
     expect(screen.getByTestId("access-password")).toBeInTheDocument();
+    expect(screen.getByTestId("access-password")).not.toHaveAttribute("placeholder");
     await userEvent.click(screen.getByTestId("save-poll"));
     expect(await screen.findByRole("alert")).toHaveTextContent("A private poll needs a passcode");
     expect(onSubmit).not.toHaveBeenCalled();
 
-    await userEvent.type(screen.getByTestId("access-password"), "access-pass1");
+    await userEvent.type(screen.getByTestId("access-password"), "a");
     await userEvent.click(screen.getByTestId("save-poll"));
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({
       identity_mode: "ANONYMOUS",
       visibility: "PRIVATE",
-      access_password: "access-pass1",
+      access_password: "a",
     });
     expect(String(onSubmit.mock.calls[0]?.[0].starts_at)).toContain("+08:00");
   });

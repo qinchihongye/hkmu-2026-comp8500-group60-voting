@@ -43,12 +43,18 @@ def test_poll_create_normalizes_text_and_rejects_shape_errors() -> None:
     assert created.title == "课堂投票"
     assert created.description is None
     assert created.options[0].label == "同意"
+    short = PollCreate.model_validate(_body(visibility="PRIVATE", access_password="short"))
+    assert short.access_password == "short"
+    long_password = "p" * 129
+    long_secret = PollCreate.model_validate(
+        _body(visibility="PRIVATE", access_password=long_password)
+    )
+    assert long_secret.access_password == long_password
 
     rejected = [
         _body(visibility="PUBLIC", access_password="access-pass1"),
         _body(visibility="PRIVATE"),
-        _body(visibility="PRIVATE", access_password="short"),
-        _body(visibility="PRIVATE", access_password="p" * 129),
+        _body(visibility="PRIVATE", access_password=""),
         _body(options=[{"label": "只有一个"}]),
         _body(options=[{"label": f"项{index}"} for index in range(11)]),
         _body(options=[{"label": " 同意 "}, {"label": "同意"}]),
@@ -134,8 +140,12 @@ def test_wrappers_reject_extra_and_bad_version() -> None:
         RequestModel[PollCreate].model_validate({"data": _body(), "lifecycle": "OPEN"})
     with pytest.raises(ValidationError):
         VersionRequest.model_validate({"expected_version": 0})
+    unlocked = UnlockRequest.model_validate({"share_code": "code", "password": "short"})
+    assert unlocked.password == "short"
+    long_unlock = UnlockRequest.model_validate({"share_code": "code", "password": "p" * 129})
+    assert long_unlock.password == "p" * 129
     with pytest.raises(ValidationError):
-        UnlockRequest.model_validate({"share_code": "code", "password": "short"})
+        UnlockRequest.model_validate({"share_code": "code", "password": ""})
     updated = PollUpdate.model_validate(
         {
             **_body(visibility="PRIVATE", vote_limit=None, selection_mode="SINGLE"),

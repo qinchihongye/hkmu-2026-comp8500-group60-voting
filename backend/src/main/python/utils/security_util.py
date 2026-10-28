@@ -72,7 +72,7 @@ def normalize_display_name(value: str) -> str:
 
 
 def check_access_password(value: str) -> str:
-    """检查私密投票密码长度。不裁剪、不改写内容。
+    """检查私密投票密码非空。不裁剪、不改写内容，也不限制长度。
 
     Args:
         value: 调用方提交的访问密码。
@@ -81,10 +81,10 @@ def check_access_password(value: str) -> str:
         原密码。
 
     Raises:
-        ValueError: 长度不在 8 到 128 个字符之间。
+        ValueError: 密码为空。
     """
-    if not 8 <= len(value) <= 128:
-        raise ValueError("访问密码长度需为 8 到 128 个字符")
+    if value == "":
+        raise ValueError("访问密码不能为空")
     return value
 
 

@@ -95,7 +95,7 @@
 
   匿名已投状态用 `voting-anon-v1`、场次编号和原访客令牌计算 HMAC。没有访客 Cookie 时不计算，`has_voted` 为假。密钥缺失却要计算时返回 HTTP 503，`code` 为 `50301`，不把状态说成未投。
 
-* **私密解锁。** `POST /polls/{poll_id}/unlock` 的 `data` 含 `share_code` 和 `password`。密码长度为 8 到 128，不裁剪。成功时 HTTP 200，`data` 只有 `poll_id` 和 `expires_at`。到期时间是当前时间加 `POLL_ACCESS_TTL_MINUTES`（默认 60）与访客到期时间中较早的一个。同一浏览器再次解锁会续期，不因为唯一键失败。
+* **私密解锁。** `POST /polls/{poll_id}/unlock` 的 `data` 含 `share_code` 和 `password`。密码不能为空，不限制长度，不裁剪。成功时 HTTP 200，`data` 只有 `poll_id` 和 `expires_at`。到期时间是当前时间加 `POLL_ACCESS_TTL_MINUTES`（默认 60）与访客到期时间中较早的一个。同一浏览器再次解锁会续期，不因为唯一键失败。
 
   分享码错误和密码错误都返回 HTTP 403，`code` 为 `40304`，说明都是 `投票密码错误`。同一访客对同一场连续 5 次失败后返回 HTTP 429，`code` 为 `42901`，并带 `Retry-After`。锁定 5 分钟，期间不再核对密码，也不把窗口往后推。公开投票调用解锁返回 HTTP 409，`code` 为 `40902`。这些失败响应同样 `no-store`。
 

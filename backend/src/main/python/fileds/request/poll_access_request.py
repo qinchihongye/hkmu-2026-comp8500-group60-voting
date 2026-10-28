@@ -38,7 +38,7 @@ class UnlockRequest(BaseRequestData):
     @field_validator("password")
     @classmethod
     def check_password(cls, value: str) -> str:
-        """检查访问密码长度。
+        """检查访问密码非空。不限制长度。
 
         Args:
             value: 提交的密码。

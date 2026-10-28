@@ -150,7 +150,7 @@ def _run_new_demo_round() -> int:
     try:
         password = _poll_password_from_env()
     except ValueError:
-        logger.error("演示场次访问密码长度需为 8 到 128 个字符")
+        logger.error("演示场次访问密码不能为空")
         return 1
     settings = get_settings()
     factory = create_session_factory(settings.database_url)
@@ -200,10 +200,10 @@ def _poll_password_from_env() -> str:
     """读取演示场次的访问密码。
 
     Returns:
-        访问密码。为空时由长度检查拒绝。
+        访问密码。为空时由检查拒绝。
 
     Raises:
-        ValueError: 长度不在 8 到 128 个字符之间。
+        ValueError: 访问密码为空。
     """
     password = os.environ.get("DEMO_POLL_PASSWORD", "")
     if password == "":
@@ -233,7 +233,7 @@ def create_demo_round(
 
     Raises:
         SeedConflict: 演示用户不存在，或角色不是 USER。
-        ValueError: 访问密码长度不合法。
+        ValueError: 访问密码为空。
     """
     check_access_password(access_password)
     principal = _demo_creator(session_factory)
