@@ -10,6 +10,24 @@ import type { PollFormValue } from "./types";
 import "./PollForm.css";
 
 const MAX_VOTE_LIMIT = 2_147_483_647;
+const SLIDER_STEPS = 1000;
+
+function valueToSlider(value: number | null): number {
+  if (value === null || value < 1) {
+    return 0;
+  }
+  const ratio = Math.log(value) / Math.log(MAX_VOTE_LIMIT);
+  return Math.round(1 + Math.min(1, Math.max(0, ratio)) * (SLIDER_STEPS - 1));
+}
+
+function sliderToValue(position: number): number | null {
+  if (position <= 0) {
+    return null;
+  }
+  const ratio = (position - 1) / (SLIDER_STEPS - 1);
+  const raw = Math.round(Math.exp(ratio * Math.log(MAX_VOTE_LIMIT)));
+  return Math.min(MAX_VOTE_LIMIT, Math.max(1, raw));
+}
 
 function limitFromText(text: string): number | null {
   const trimmed = text.trim();
@@ -131,7 +149,6 @@ export function PollForm({
   const { t } = useI18n();
   const opened = withSingleChoice(initial);
   const [value, setValue] = useState(opened);
-  const [limitOn, setLimitOn] = useState(opened.voteLimit !== null);
   const [limitText, setLimitText] = useState(opened.voteLimit === null ? "" : String(opened.voteLimit));
   const [singleNotice, setSingleNotice] = useState(opened.selectionMode !== initial.selectionMode);
   const [errorKey, setErrorKey] = useState<MessageKey | null>(null);
@@ -141,6 +158,10 @@ export function PollForm({
   const current = hongKongParts(clock);
   const multipleReady = canChooseMultiple(value.options);
   const numericLimit = limitFromText(limitText);
+  const sliderPosition = valueToSlider(value.voteLimit);
+  const sliderPercent = value.voteLimit === null
+    ? 0
+    : 28 + (Math.log(value.voteLimit) / Math.log(MAX_VOTE_LIMIT)) * 72;
 
   function patch(partial: Partial<PollFormValue>) {
     setValue((current) => ({ ...current, ...partial }));
@@ -159,21 +180,19 @@ export function PollForm({
     patch({ options });
   }
 
-  function toggleLimit(on: boolean) {
-    setLimitOn(on);
-    if (!on) {
-      setLimitText("");
-      patch({ voteLimit: null });
-      clearLimitError();
-      return;
-    }
-    setLimitText("100");
-    patch({ voteLimit: 100 });
+  function applyLimit(next: number | null) {
+    setLimitText(next === null ? "" : String(next));
+    patch({ voteLimit: next });
     clearLimitError();
   }
 
   function changeLimit(text: string) {
     setLimitText(text);
+    if (text.trim() === "") {
+      patch({ voteLimit: null });
+      clearLimitError();
+      return;
+    }
     const parsed = limitFromText(text);
     if (parsed !== null) {
       patch({ voteLimit: parsed });
@@ -182,15 +201,23 @@ export function PollForm({
   }
 
   function stepLimit(delta: number) {
-    const base = numericLimit ?? 0;
-    const next = Math.min(MAX_VOTE_LIMIT, Math.max(1, base + delta));
-    setLimitText(String(next));
-    patch({ voteLimit: next });
-    clearLimitError();
+    if (numericLimit === null) {
+      if (delta > 0) {
+        applyLimit(1);
+      }
+      return;
+    }
+    const next = numericLimit + delta;
+    if (next < 1) {
+      applyLimit(null);
+      return;
+    }
+    applyLimit(Math.min(MAX_VOTE_LIMIT, next));
   }
 
   function blurLimit() {
-    if (!limitOn) {
+    if (limitText.trim() === "") {
+      applyLimit(null);
       return;
     }
     const parsed = limitFromText(limitText);
@@ -199,9 +226,7 @@ export function PollForm({
       setErrorKey("form.error.voteLimit");
       return;
     }
-    setLimitText(String(parsed));
-    patch({ voteLimit: parsed });
-    clearLimitError();
+    applyLimit(parsed);
   }
 
   function onLimitKey(event: KeyboardEvent<HTMLInputElement>) {
@@ -216,7 +241,7 @@ export function PollForm({
 
   async function submit() {
     let voteLimit: number | null = null;
-    if (limitOn) {
+    if (limitText.trim() !== "") {
       const parsed = limitFromText(limitText);
       if (parsed === null) {
         setFailure(null);
@@ -312,9 +337,11 @@ export function PollForm({
             <div className="poll-setting-card">
               <span className="poll-setting-name">{t("form.identity")}</span>
               <div className="poll-switch-row">
-                <span className={value.identityMode === "NAMED" ? "poll-switch-side is-active" : "poll-switch-side"}>
-                  {t("identity.named")}
-                </span>
+                <SettingMark
+                  active={value.identityMode === "NAMED"}
+                  icon="👤"
+                  label={t("identity.named")}
+                />
                 <input
                   className="poll-switch"
                   type="checkbox"
@@ -323,18 +350,22 @@ export function PollForm({
                   checked={value.identityMode === "ANONYMOUS"}
                   onChange={(event) => patch({ identityMode: event.target.checked ? "ANONYMOUS" : "NAMED" })}
                 />
-                <span className={value.identityMode === "ANONYMOUS" ? "poll-switch-side is-active" : "poll-switch-side"}>
-                  {t("identity.anonymous")}
-                </span>
+                <SettingMark
+                  active={value.identityMode === "ANONYMOUS"}
+                  icon="😎"
+                  label={t("identity.anonymous")}
+                />
               </div>
             </div>
 
             <div className="poll-setting-card">
               <span className="poll-setting-name">{t("form.visibility")}</span>
               <div className="poll-switch-row">
-                <span className={value.visibility === "PUBLIC" ? "poll-switch-side is-active" : "poll-switch-side"}>
-                  {t("visibility.public")}
-                </span>
+                <SettingMark
+                  active={value.visibility === "PUBLIC"}
+                  icon="🌐"
+                  label={t("visibility.public")}
+                />
                 <input
                   className="poll-switch"
                   type="checkbox"
@@ -349,9 +380,11 @@ export function PollForm({
                     patch({ visibility: "PUBLIC", accessPassword: "" });
                   }}
                 />
-                <span className={value.visibility === "PRIVATE" ? "poll-switch-side is-active" : "poll-switch-side"}>
-                  {t("visibility.private")}
-                </span>
+                <SettingMark
+                  active={value.visibility === "PRIVATE"}
+                  icon="🔒"
+                  label={t("visibility.private")}
+                />
               </div>
               {value.visibility === "PRIVATE" ? (
                 <div className="poll-passcode-box">
@@ -373,40 +406,53 @@ export function PollForm({
             </div>
 
             <div className="poll-setting-card">
-              <span className="poll-setting-name">{t("form.voteLimit")}</span>
-              <div className="poll-switch-row">
-                <span className={!limitOn ? "poll-switch-side is-active" : "poll-switch-side"}>{t("form.unlimited")}</span>
-                <input
-                  className="poll-switch"
-                  type="checkbox"
-                  role="switch"
-                  aria-label={t("form.limitBallots")}
-                  checked={limitOn}
-                  onChange={(event) => toggleLimit(event.target.checked)}
-                />
-              </div>
-              {limitOn ? (
-                <div className="poll-limit-row">
+              <span className="poll-setting-name">
+                {t("form.voteLimit")}
+                <span className="poll-setting-alt"> / {t("form.voteLimitAlt")}</span>
+              </span>
+              <div className="poll-limit-slider">
+                <div className="poll-limit-track">
+                  <div className="poll-limit-rail" />
+                  {sliderPercent > 0 ? <div className="poll-limit-fill" style={{ width: `${sliderPercent}%` }} /> : null}
+                  <input
+                    className="poll-limit-range"
+                    type="range"
+                    min={0}
+                    max={SLIDER_STEPS}
+                    step={1}
+                    value={sliderPosition}
+                    aria-label={t("form.limitSlider")}
+                    onChange={(event) => applyLimit(sliderToValue(Number(event.target.value)))}
+                  />
+                  <div
+                    className={limitText.length > 4 ? "poll-limit-badge is-wide" : "poll-limit-badge"}
+                    style={{ left: `clamp(36px, ${sliderPercent}%, calc(100% - 36px))` }}
+                  >
+                    <input
+                      className={limitText.length > 4 ? "poll-limit-input is-long" : "poll-limit-input"}
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      aria-label={t("form.ballotLimit")}
+                      value={limitText}
+                      placeholder="∞"
+                      onChange={(event) => changeLimit(event.target.value)}
+                      onBlur={blurLimit}
+                      onKeyDown={onLimitKey}
+                    />
+                    <span className="poll-limit-unit">{limitText.trim() === "" ? t("form.unlimited") : t("form.voteUnit")}</span>
+                  </div>
+                </div>
+                <div className="poll-limit-stepper">
                   <button
                     type="button"
                     className="poll-step-btn"
                     aria-label={t("form.decreaseLimit")}
-                    disabled={numericLimit === null || numericLimit <= 1}
+                    disabled={numericLimit === null}
                     onClick={() => stepLimit(-1)}
                   >
                     −
                   </button>
-                  <input
-                    className="poll-form-input poll-limit-input"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="off"
-                    aria-label={t("form.ballotLimit")}
-                    value={limitText}
-                    onChange={(event) => changeLimit(event.target.value)}
-                    onBlur={blurLimit}
-                    onKeyDown={onLimitKey}
-                  />
                   <button
                     type="button"
                     className="poll-step-btn"
@@ -417,27 +463,35 @@ export function PollForm({
                     +
                   </button>
                 </div>
-              ) : null}
+              </div>
             </div>
 
             <div className="poll-setting-card">
-              <span className="poll-setting-name" id="poll-selection-label">{t("form.selectionMode")}</span>
+              <span className="poll-setting-name" id="poll-selection-label">
+                {t("form.selectionMode")}
+                <span className="poll-setting-alt"> / {t("form.selectionModeAlt")}</span>
+              </span>
               <div className="poll-segment" role="radiogroup" aria-labelledby="poll-selection-label">
                 <label className="poll-segment-option">
                   <input
                     className="poll-segment-input"
                     type="radio"
                     name="selection-mode"
+                    aria-label={t("form.single")}
                     checked={value.selectionMode === "SINGLE"}
                     onChange={() => patch({ selectionMode: "SINGLE" })}
                   />
-                  <span>{t("form.single")}</span>
+                  <span className="poll-segment-copy">
+                    <span>{t("form.single")}</span>
+                    <span className="poll-segment-sub">{t("form.singleHint")}</span>
+                  </span>
                 </label>
                 <label className={multipleReady ? "poll-segment-option" : "poll-segment-option is-disabled"}>
                   <input
                     className="poll-segment-input"
                     type="radio"
                     name="selection-mode"
+                    aria-label={t("form.multiple")}
                     disabled={!multipleReady}
                     checked={value.selectionMode === "MULTIPLE"}
                     onChange={() => {
@@ -445,7 +499,10 @@ export function PollForm({
                       patch({ selectionMode: "MULTIPLE" });
                     }}
                   />
-                  <span>{t("form.multiple")}</span>
+                  <span className="poll-segment-copy">
+                    <span>{t("form.multiple")}</span>
+                    <span className="poll-segment-sub">{t("form.multipleHint")}</span>
+                  </span>
                 </label>
               </div>
               {singleNotice ? (
@@ -586,6 +643,14 @@ export function PollForm({
         </div>
       </form>
     </div>
+  );
+}
+
+function SettingMark({ active, icon, label }: { active: boolean; icon: string; label: string }) {
+  return (
+    <span className={active ? "poll-switch-side is-active" : "poll-switch-side"}>
+      [<span aria-hidden="true">{icon}</span> {label}]
+    </span>
   );
 }
 

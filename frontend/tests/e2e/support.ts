@@ -82,10 +82,9 @@ export async function createDraft(
     await page.getByRole("textbox", { name: `Option ${index + 1}`, exact: true }).fill(labels[index] ?? "");
   }
   if (options.multiple) {
-    await page.getByRole("radio", { name: "Multiple choices" }).check();
+    await page.getByRole("radio", { name: "Multi-Vote" }).check();
   }
   if (options.voteLimit !== undefined) {
-    await page.getByRole("switch", { name: "Limit ballots" }).check();
     const limit = page.getByRole("textbox", { name: "Ballot limit", exact: true });
     await limit.fill(String(options.voteLimit));
     await limit.blur();

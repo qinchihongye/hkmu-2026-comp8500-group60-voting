@@ -110,18 +110,18 @@ describe("PollForm", () => {
     renderWithProviders(
       <PollForm initial={emptyPollForm(fixedNow)} mode="create" now={fixedNow} onSubmit={onSubmit} />,
     );
-    expect(screen.getByRole("switch", { name: "Limit ballots" })).not.toBeChecked();
-    expect(screen.queryByLabelText("Ballot limit")).not.toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Single choice" })).toBeChecked();
+    expect(screen.getByLabelText("Ballot limit")).toHaveValue("");
+    expect(screen.getByText("Unlimited")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Single Vote" })).toBeChecked();
     expect(screen.queryByText(/This browser is the credential/)).not.toBeInTheDocument();
 
     await fillRequired();
     await userEvent.click(screen.getByTestId("save-poll"));
     expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({ vote_limit: null, selection_mode: "SINGLE" });
 
-    await userEvent.click(screen.getByRole("switch", { name: "Limit ballots" }));
+    await userEvent.click(screen.getByRole("button", { name: "Increase ballot limit" }));
     const limit = screen.getByLabelText("Ballot limit");
-    expect(limit).toHaveValue("100");
+    expect(limit).toHaveValue("1");
     await userEvent.clear(limit);
     await userEvent.type(limit, "250");
     await userEvent.click(screen.getByTestId("save-poll"));
@@ -133,13 +133,14 @@ describe("PollForm", () => {
     renderWithProviders(
       <PollForm initial={emptyPollForm(fixedNow)} mode="create" now={fixedNow} onSubmit={onSubmit} />,
     );
-    await userEvent.click(screen.getByRole("switch", { name: "Limit ballots" }));
     const limit = screen.getByLabelText("Ballot limit");
+    await userEvent.click(screen.getByRole("button", { name: "Increase ballot limit" }));
+    expect(limit).toHaveValue("1");
     await userEvent.click(screen.getByRole("button", { name: "Decrease ballot limit" }));
-    expect(limit).toHaveValue("99");
+    expect(limit).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Decrease ballot limit" })).toBeDisabled();
 
     fireEvent.change(limit, { target: { value: "1" } });
-    expect(screen.getByRole("button", { name: "Decrease ballot limit" })).toBeDisabled();
     fireEvent.change(limit, { target: { value: "2147483647" } });
     expect(screen.getByRole("button", { name: "Increase ballot limit" })).toBeDisabled();
 
@@ -160,11 +161,14 @@ describe("PollForm", () => {
     const { unmount } = renderWithProviders(
       <PollForm initial={emptyPollForm(fixedNow)} mode="create" now={fixedNow} onSubmit={vi.fn()} />,
     );
-    expect(screen.getByText("Vote limit")).toBeInTheDocument();
+    expect(screen.getByText("Vote Limit")).toBeInTheDocument();
+    expect(screen.getByText("/ 最高投票数")).toBeInTheDocument();
     expect(screen.getByText("Unlimited")).toBeInTheDocument();
+    expect(document.body.textContent).toContain("[👤 Named]");
+    expect(document.body.textContent).toContain("[🔒 Private]");
     expect(screen.getByRole("switch", { name: "Anonymous voting" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Private poll" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Multiple choices" })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: "Multi-Vote" })).toBeDisabled();
     unmount();
 
     localStorage.setItem("voting_locale", "zh");
@@ -172,12 +176,12 @@ describe("PollForm", () => {
       <PollForm initial={emptyPollForm(fixedNow)} mode="create" now={fixedNow} onSubmit={vi.fn()} />,
     );
     expect(screen.getByText("最高投票数")).toBeInTheDocument();
+    expect(screen.getByText("/ Vote Limit")).toBeInTheDocument();
     expect(screen.getByText("不限")).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "不记名投票" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "私密投票" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "单选" })).toBeChecked();
-    expect(screen.getByRole("radio", { name: "多选" })).toBeDisabled();
-    expect(screen.queryByText("Vote limit")).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "一人一票" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "一人多投" })).toBeDisabled();
     expect(screen.queryByText("Anonymous voting")).not.toBeInTheDocument();
   });
 
@@ -188,24 +192,24 @@ describe("PollForm", () => {
     initial.options = ["赞成", "反对", ""];
     initial.selectionMode = "MULTIPLE";
     renderWithProviders(<PollForm initial={initial} mode="create" now={fixedNow} onSubmit={onSubmit} />);
-    expect(screen.getByRole("radio", { name: "Multiple choices" })).toBeDisabled();
-    expect(screen.getByRole("radio", { name: "Single choice" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Multi-Vote" })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: "Single Vote" })).toBeChecked();
     expect(screen.getByRole("status")).toHaveTextContent("Switched to single choice");
 
     await userEvent.type(screen.getByLabelText("Option 3"), "弃权");
-    expect(screen.getByRole("radio", { name: "Multiple choices" })).toBeEnabled();
-    await userEvent.click(screen.getByRole("radio", { name: "Multiple choices" }));
+    expect(screen.getByRole("radio", { name: "Multi-Vote" })).toBeEnabled();
+    await userEvent.click(screen.getByRole("radio", { name: "Multi-Vote" }));
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
 
     await userEvent.clear(screen.getByLabelText("Option 3"));
-    expect(screen.getByRole("radio", { name: "Single choice" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Single Vote" })).toBeChecked();
     expect(screen.getAllByText("Switched to single choice")).toHaveLength(1);
-    expect(screen.getByRole("radio", { name: "Multiple choices" })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: "Multi-Vote" })).toBeDisabled();
 
     await userEvent.type(screen.getByLabelText("Option 3"), "弃权");
-    await userEvent.click(screen.getByRole("radio", { name: "Multiple choices" }));
+    await userEvent.click(screen.getByRole("radio", { name: "Multi-Vote" }));
     await userEvent.click(screen.getByRole("button", { name: "Remove option 3" }));
-    expect(screen.getByRole("radio", { name: "Single choice" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Single Vote" })).toBeChecked();
     expect(screen.getAllByText("Switched to single choice")).toHaveLength(1);
 
     await userEvent.clear(screen.getByLabelText("Option 2"));
