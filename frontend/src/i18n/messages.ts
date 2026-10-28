@@ -259,6 +259,8 @@ export const en = {
     passcodeChip: "Access passcode required",
     passcodeValue: "Access passcode: {password}",
     copyPasscode: "Copy access passcode",
+    revealPasscode: "Hold to reveal passcode",
+    hidePasscode: "Release to hide passcode",
   },
   results: {
     finalTitle: "Final results",
@@ -642,6 +644,8 @@ export const zh: StringTree<typeof en> = {
     passcodeChip: "需要访问密码",
     passcodeValue: "访问密码：{password}",
     copyPasscode: "复制访问密码",
+    revealPasscode: "按住查看密码",
+    hidePasscode: "松开隐藏密码",
   },
   results: {
     finalTitle: "最终结果",

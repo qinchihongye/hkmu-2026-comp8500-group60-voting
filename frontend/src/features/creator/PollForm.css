@@ -274,10 +274,22 @@
   font-weight: 650;
   color: #94a3b8;
   white-space: nowrap;
+  background: transparent;
+  border: 0;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.poll-switch-side:hover {
+  color: #475569;
 }
 
 .poll-switch-side.is-active {
-  color: #334155;
+  color: #0f172a;
+  font-weight: 750;
 }
 
 

@@ -166,6 +166,13 @@
   overflow-wrap: anywhere;
 }
 
+.share-passcode-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.share-passcode-toggle,
 .share-passcode-copy {
   display: inline-flex;
   flex: none;
@@ -176,8 +183,22 @@
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: #1363df;
+  color: #64748b;
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: all 0.15s ease;
+}
+
+.share-passcode-toggle:hover,
+.share-passcode-toggle.active {
+  background: #e8f1ff;
+  color: #1363df;
+}
+
+.share-passcode-copy {
+  color: #1363df;
 }
 
 .share-passcode-copy:hover,
@@ -191,13 +212,14 @@
 
 .share-actions-row {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 12px;
   grid-column: 1;
   grid-row: 2;
   padding: 8px 22px 18px;
   background: #ffffff;
+  box-sizing: border-box;
 }
 
 .share-secondary-btn {

@@ -347,6 +347,7 @@ export function PollForm({
                   active={value.identityMode === "NAMED"}
                   icon="👤"
                   label={t("identity.named")}
+                  onClick={() => patch({ identityMode: "NAMED" })}
                 />
                 <input
                   className="poll-switch"
@@ -360,6 +361,7 @@ export function PollForm({
                   active={value.identityMode === "ANONYMOUS"}
                   icon="🎭"
                   label={t("identity.anonymous")}
+                  onClick={() => patch({ identityMode: "ANONYMOUS" })}
                 />
               </div>
             </div>
@@ -371,6 +373,7 @@ export function PollForm({
                   active={value.visibility === "PUBLIC"}
                   icon="🌐"
                   label={t("visibility.public")}
+                  onClick={() => patch({ visibility: "PUBLIC", accessPassword: "" })}
                 />
                 <input
                   className="poll-switch"
@@ -390,6 +393,7 @@ export function PollForm({
                   active={value.visibility === "PRIVATE"}
                   icon="🔒"
                   label={t("visibility.private")}
+                  onClick={() => patch({ visibility: "PRIVATE" })}
                 />
               </div>
             </div>
@@ -660,11 +664,25 @@ export function PollForm({
   );
 }
 
-function SettingMark({ active, icon, label }: { active: boolean; icon: string; label: string }) {
+function SettingMark({
+  active,
+  icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  icon: string;
+  label: string;
+  onClick?: () => void;
+}) {
   return (
-    <span className={active ? "poll-switch-side is-active" : "poll-switch-side"}>
+    <button
+      type="button"
+      className={active ? "poll-switch-side is-active" : "poll-switch-side"}
+      onClick={onClick}
+    >
       [{icon} {label}]
-    </span>
+    </button>
   );
 }
 

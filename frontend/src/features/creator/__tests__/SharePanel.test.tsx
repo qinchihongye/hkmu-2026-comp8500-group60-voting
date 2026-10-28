@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { renderWithProviders } from "../../../test/fixtures";
@@ -23,7 +23,12 @@ describe("SharePanel", () => {
     const logo = document.querySelector(".share-qr-box image");
     expect(logo?.getAttribute("href")).toBe("/favicon.png");
     expect(document.querySelector(".share-qr-box text")).toBeNull();
+    expect(screen.getByText("Access passcode: ••••••")).toBeInTheDocument();
+    const eyeBtn = screen.getByRole("button", { name: "Hold to reveal passcode" });
+    fireEvent.mouseDown(eyeBtn);
     expect(screen.getByText("Access passcode: access-pass1")).toBeInTheDocument();
+    fireEvent.mouseUp(eyeBtn);
+    expect(screen.getByText("Access passcode: ••••••")).toBeInTheDocument();
     expect(screen.getByText(/The link does not contain it/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Copy link" }));
     await userEvent.click(screen.getByRole("button", { name: "Copy access passcode" }));
