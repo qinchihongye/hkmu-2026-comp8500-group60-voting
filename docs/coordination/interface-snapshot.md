@@ -91,7 +91,7 @@
 
   `GET /polls/{poll_id}` 先取共享锁，再按服务端时间判断状态和已投记录。草稿返回 HTTP 404。私密投票没有创建者、管理员或未过期授权时也返回 HTTP 404，避免确认场次存在。公开记名投票在确认可见后，未登录返回 HTTP 401，`code` 为 `40101`。详情带 `Cache-Control: no-store`；私密详情同时带 `Referrer-Policy: no-referrer`。
 
-  `can_vote` 同时要求有效状态为 `OPEN`、记名已登录或匿名已有访客、尚未投票，并且未达选票份数上限。私密场次还要有未过期授权，创建者和管理员不能跳过这一步。尚未授权时 `needs_access_password` 为真，并给出 `passcode_entry_path`（`/s/{share_code}/access`）。该路径不含访问密码；已授权、公开场次或没有分享码时为空。`can_view_results` 对创建者和管理员为真；其他已经能看这场的人只在有效状态为 `CLOSED` 时为真。`results_access_reason` 依次是 `creator`、`admin`、`closed`、`unavailable`。详情和列表带 `vote_limit`、`selection_mode`。公开列表不返回当前票数或剩余名额。
+  `can_vote` 同时要求有效状态为 `OPEN`、记名已登录或匿名已有访客、尚未投票，并且未达选票份数上限。私密场次还要有未过期授权，创建者和管理员不能跳过这一步。尚未授权时 `needs_access_password` 为真，并给出 `passcode_entry_path`（`/s/{share_code}/access`）。该路径不含访问密码；已授权、公开场次或没有分享码时为空。`can_view_results` 对创建者和管理员为真。其他已经能看这场的人，在 `CLOSED` 时为真；在 `OPEN` 且 `allow_live_results` 为真时也为真。未开始仍然不能看。`results_access_reason` 依次是 `creator`、`admin`、`closed`、`live`、`unavailable`。详情和列表带 `vote_limit`、`selection_mode`、`allow_live_results`。公开列表不返回当前票数或剩余名额。
 
   匿名已投状态用 `voting-anon-v1`、场次编号和原访客令牌计算 HMAC。没有访客 Cookie 时不计算，`has_voted` 为假。密钥缺失却要计算时返回 HTTP 503，`code` 为 `50301`，不把状态说成未投。
 
@@ -103,7 +103,7 @@
 
   | 模型 | 字段 |
   | --- | --- |
-  | `PollSummary` | `id`、`title`、`identity_mode`、`visibility`、`vote_limit`、`selection_mode`、`starts_at`、`ends_at`、`effective_status`、`created_at`。`vote_limit` 为空表示不限，`selection_mode` 默认 `SINGLE` |
+  | `PollSummary` | `id`、`title`、`identity_mode`、`visibility`、`vote_limit`、`selection_mode`、`allow_live_results`、`starts_at`、`ends_at`、`effective_status`、`created_at`。`vote_limit` 为空表示不限，`selection_mode` 默认 `SINGLE`，`allow_live_results` 默认关闭 |
   | `ManagePollSummary` | `PollSummary` 再加 `lifecycle`、`version`、`creator_id` |
   | `ManagePollDetail` | `ManagePollSummary` 的列表字段，再加 `description`、`options`、`closed_at`、`has_access_password`、`server_time`、`can_manage`、`can_view_results` |
   | `PollDetail` | `PollSummary` 再加 `description`、`options`、`has_voted`、`receipt`、`server_time`、`can_vote`、`can_manage`、`can_view_results`、`results_access_reason`、`needs_access_password`、`passcode_entry_path` |

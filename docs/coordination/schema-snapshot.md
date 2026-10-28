@@ -10,7 +10,7 @@
   | `auth_sessions` | `id`, `user_id`, `token_hash`, `csrf_token`, `created_at`, `expires_at` |
   | `guest_sessions` | `id`, `token_hash`, `csrf_token`, `created_at`, `expires_at` |
   | `poll_access_grants` | `id`, `poll_id`, `guest_session_id`, `expires_at` |
-  | `polls` | `id`, `title`, `description`, `identity_mode`, `visibility`, `private_password_hash`, `private_password`, `vote_limit`, `selection_mode`, `share_code`, `lifecycle`, `starts_at`, `ends_at`, `creator_id`, `version`, `closed_at`, `created_at`, `updated_at` |
+  | `polls` | `id`, `title`, `description`, `identity_mode`, `visibility`, `private_password_hash`, `private_password`, `vote_limit`, `selection_mode`, `allow_live_results`, `share_code`, `lifecycle`, `starts_at`, `ends_at`, `creator_id`, `version`, `closed_at`, `created_at`, `updated_at` |
   | `poll_options` | `id`, `poll_id`, `label`, `position` |
   | `votes` | `id`, `receipt_id`, `poll_id`, `identity_mode`, `voter_id`, `anonymous_voter_hash`, `submitted_at` |
   | `vote_selections` | `vote_id`, `poll_id`, `option_id` |

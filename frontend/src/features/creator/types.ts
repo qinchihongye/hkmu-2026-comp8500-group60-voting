@@ -8,6 +8,7 @@ export type PollFormValue = {
   accessPassword: string;
   voteLimit: number | null;
   selectionMode: SelectionMode;
+  allowLiveResults: boolean;
   options: string[];
   startsDate: string;
   startsTime: string;

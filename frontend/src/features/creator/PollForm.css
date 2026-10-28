@@ -65,6 +65,26 @@
   margin: 0;
 }
 
+.poll-options-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.poll-options-heading .poll-segment {
+  flex: 0 1 320px;
+  margin-left: auto;
+}
+
+.poll-setting-hint {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
 .poll-section-desc {
   font-size: 0.88rem;
   color: #64748b;
@@ -396,14 +416,7 @@
   box-shadow: 0 0 0 3px rgba(19, 99, 223, 0.15);
 }
 
-/* Vote Limit: Separated Card Top & Slider Track */
-.poll-setting-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
+/* Vote Limit: title, then the number row, then the slider */
 .poll-limit-entry {
   display: flex;
   align-items: center;
@@ -510,7 +523,6 @@
 .poll-limit-track {
   position: relative;
   height: 28px;
-  margin-top: 4px;
   display: flex;
   align-items: center;
 }
@@ -875,6 +887,15 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .poll-options-heading {
+    flex-wrap: wrap;
+  }
+
+  .poll-options-heading .poll-segment {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+
   .poll-form-card {
     padding: 22px 18px;
   }

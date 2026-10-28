@@ -13,6 +13,7 @@ function detail(overrides: Partial<ManagePollDetail> = {}): ManagePollDetail {
     visibility: "PUBLIC",
     vote_limit: 80,
     selection_mode: "MULTIPLE",
+    allow_live_results: false,
     starts_at: "2026-10-26T05:34:00Z",
     ends_at: "2026-10-26T07:34:00Z",
     effective_status: "DRAFT",

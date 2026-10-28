@@ -4,7 +4,7 @@ export type Visibility = "PUBLIC" | "PRIVATE";
 export type SelectionMode = "SINGLE" | "MULTIPLE";
 export type PollLifecycle = "DRAFT" | "PUBLISHED" | "CLOSED";
 export type EffectiveStatus = "DRAFT" | "SCHEDULED" | "OPEN" | "CLOSED";
-export type ResultsAccessReason = "creator" | "admin" | "closed" | "unavailable";
+export type ResultsAccessReason = "creator" | "admin" | "closed" | "live" | "unavailable";
 
 export type UserPublic = {
   id: number;
@@ -60,6 +60,7 @@ export type PollSummary = {
   visibility: Visibility | string;
   vote_limit: number | null;
   selection_mode: SelectionMode | string;
+  allow_live_results: boolean;
   starts_at: string;
   ends_at: string;
   effective_status: EffectiveStatus | string;
@@ -175,6 +176,7 @@ export type PollWriteBody = {
   access_password: string | null;
   vote_limit: number | null;
   selection_mode: SelectionMode;
+  allow_live_results: boolean;
   options: OptionInput[];
 };
 

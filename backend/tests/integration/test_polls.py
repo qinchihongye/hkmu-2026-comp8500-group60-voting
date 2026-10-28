@@ -30,6 +30,7 @@ MANAGE_FIELDS = {
     "visibility",
     "vote_limit",
     "selection_mode",
+    "allow_live_results",
     "starts_at",
     "ends_at",
     "effective_status",
@@ -219,6 +220,7 @@ def test_vote_limit_and_selection_mode_round_trip_only_while_draft(
     created = envelope(post_json(auth_client, "/api/v1/polls", omitted, csrf=csrf), 201)
     assert created["vote_limit"] is None
     assert created["selection_mode"] == "SINGLE"
+    assert created["allow_live_results"] is False
     poll_id = int(created["id"])
 
     updated = update_poll(
@@ -227,10 +229,12 @@ def test_vote_limit_and_selection_mode_round_trip_only_while_draft(
         poll_id,
         vote_limit=25,
         selection_mode="MULTIPLE",
+        allow_live_results=True,
         options=[{"label": "甲"}, {"label": "乙"}, {"label": "丙"}],
     )
     assert updated["vote_limit"] == 25
     assert updated["selection_mode"] == "MULTIPLE"
+    assert updated["allow_live_results"] is True
     assert [item["label"] for item in updated["options"]] == ["甲", "乙", "丙"]
 
     too_few = patch_json(
@@ -270,11 +274,13 @@ def test_vote_limit_and_selection_mode_round_trip_only_while_draft(
         poll_id,
         vote_limit=25,
         selection_mode="MULTIPLE",
+        allow_live_results=True,
         options=[{"label": "甲"}, {"label": "乙"}, {"label": "丙"}],
     )
     published = publish_poll(auth_client, csrf, poll_id, int(restored["version"]))
     assert published["vote_limit"] == 25
     assert published["selection_mode"] == "MULTIPLE"
+    assert published["allow_live_results"] is True
     frozen = patch_json(
         auth_client,
         f"/api/v1/polls/{poll_id}",
@@ -291,6 +297,7 @@ def test_vote_limit_and_selection_mode_round_trip_only_while_draft(
     after = envelope(auth_client.get(f"/api/v1/me/polls/{poll_id}"), 200)
     assert after["vote_limit"] == 25
     assert after["selection_mode"] == "MULTIPLE"
+    assert after["allow_live_results"] is True
 
     with TestClient(auth_app) as other:
         other_csrf = register_and_login(other, "bob")

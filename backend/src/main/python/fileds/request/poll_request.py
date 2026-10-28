@@ -52,6 +52,7 @@ class _PollFields(BaseRequestData):
         access_password: 私密投票密码。公开投票不能携带。
         vote_limit: 整场最多接收的选票份数。为空表示不限，填写时为 1 到 100000。
         selection_mode: 一份选票是单选还是多选。
+        allow_live_results: 进行中是否允许参与者查看汇总。未提交时关闭。
         options: 2 到 10 个选项。
     """
 
@@ -64,6 +65,7 @@ class _PollFields(BaseRequestData):
     access_password: str | None = None
     vote_limit: StrictInt | None = Field(default=None, ge=1, le=MAX_VOTE_LIMIT)
     selection_mode: SelectionMode = SelectionMode.SINGLE
+    allow_live_results: bool = False
     options: list[OptionInput] = Field(min_length=2, max_length=10)
 
     @field_validator("title")

@@ -118,7 +118,11 @@ describe("PollForm", () => {
 
     await fillRequired();
     await userEvent.click(screen.getByTestId("save-poll"));
-    expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({ vote_limit: null, selection_mode: "SINGLE" });
+    expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({
+      vote_limit: null,
+      selection_mode: "SINGLE",
+      allow_live_results: false,
+    });
 
     await userEvent.click(screen.getByRole("button", { name: "Increase ballot limit" }));
     const limit = screen.getByLabelText("Ballot limit");
@@ -171,6 +175,10 @@ describe("PollForm", () => {
     expect(screen.getByRole("switch", { name: "Anonymous voting" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Private poll" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Multi-Vote" })).toBeDisabled();
+    expect(screen.queryByText("Vote Allowance")).not.toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Live results" })).not.toBeChecked();
+    expect(screen.getByText("Voters only see the totals, not who chose each option.")).toBeInTheDocument();
+    expect(screen.queryByText("实时票况")).not.toBeInTheDocument();
     unmount();
 
     localStorage.setItem("voting_locale", "zh");
@@ -188,6 +196,8 @@ describe("PollForm", () => {
     expect(screen.getByRole("radio", { name: "一人一票" })).toBeChecked();
     expect(screen.getByRole("radio", { name: "一人多投" })).toBeDisabled();
     expect(screen.queryByText("Anonymous voting")).not.toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "实时票况" })).not.toBeChecked();
+    expect(screen.queryByText("Live results")).not.toBeInTheDocument();
   });
 
   it("少于三个有效选项不能多选，降回两项时只提示一次并改回单选", async () => {

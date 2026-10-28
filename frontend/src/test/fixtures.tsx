@@ -57,6 +57,7 @@ export function samplePoll(overrides: Partial<PollDetail> = {}): PollDetail {
     visibility: "PUBLIC",
     vote_limit: null,
     selection_mode: "SINGLE",
+    allow_live_results: false,
     starts_at: "2026-10-24T00:00:00Z",
     ends_at: "2026-10-24T12:00:00Z",
     effective_status: "OPEN",

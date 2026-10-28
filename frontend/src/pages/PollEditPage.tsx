@@ -20,6 +20,7 @@ function fromDetail(poll: ManagePollDetail): PollFormValue {
     accessPassword: "",
     voteLimit: poll.vote_limit,
     selectionMode: poll.selection_mode === "MULTIPLE" ? "MULTIPLE" : "SINGLE",
+    allowLiveResults: poll.allow_live_results,
     options: poll.options.slice().sort((left, right) => left.position - right.position).map((option) => option.label),
     startsDate: starts.date,
     startsTime: starts.time,
@@ -119,6 +120,10 @@ export function PollEditPage() {
             <div>
               <dt>{t("form.selectionMode")}</dt>
               <dd>{initial.selectionMode === "MULTIPLE" ? t("form.multiple") : t("form.single")}</dd>
+            </div>
+            <div>
+              <dt>{t("form.liveResults")}</dt>
+              <dd>{initial.allowLiveResults ? t("form.liveVisible") : t("form.liveHidden")}</dd>
             </div>
           </dl>
           <button

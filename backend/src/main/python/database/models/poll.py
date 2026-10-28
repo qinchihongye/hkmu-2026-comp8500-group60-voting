@@ -3,6 +3,7 @@
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -32,6 +33,7 @@ class Poll(Base):
         private_password: 私密投票的访问密码明文。公开投票必须为空。
         vote_limit: 整场最多接收的选票份数。为空表示不限，填写时为 1 到 100000。
         selection_mode: SINGLE 或 MULTIPLE。
+        allow_live_results: 进行中是否允许参与者查看汇总。结束后仍可查看。
         share_code: 分享定位码。草稿可为空，有值时唯一。
         lifecycle: DRAFT、PUBLISHED 或 CLOSED。
         starts_at: 开始时间，UTC。结束时间必须更晚。
@@ -89,6 +91,9 @@ class Poll(Base):
     vote_limit: Mapped[int | None] = mapped_column(Integer, nullable=True)
     selection_mode: Mapped[str] = mapped_column(
         String(16), nullable=False, default="SINGLE", server_default="SINGLE"
+    )
+    allow_live_results: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
     )
     share_code: Mapped[str | None] = mapped_column(String(128), nullable=True, unique=True)
     lifecycle: Mapped[str] = mapped_column(String(16), nullable=False)

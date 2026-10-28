@@ -33,6 +33,7 @@ class PollSummary(BaseModel):
         visibility: PUBLIC 或 PRIVATE。
         vote_limit: 整场选票份数上限。为空表示不限。
         selection_mode: SINGLE 或 MULTIPLE。
+        allow_live_results: 进行中是否允许参与者查看汇总。
         starts_at: 开始时间，UTC。
         ends_at: 结束时间，UTC。
         effective_status: 按当前时间计算出的状态。
@@ -47,6 +48,7 @@ class PollSummary(BaseModel):
     visibility: str
     vote_limit: int | None
     selection_mode: str
+    allow_live_results: bool
     starts_at: datetime
     ends_at: datetime
     effective_status: str
@@ -79,7 +81,7 @@ class PollDetail(PollSummary):
         can_vote: 当前身份现在能否提交。
         can_manage: 当前账户是否为创建者。
         can_view_results: 当前身份能否看汇总。
-        results_access_reason: creator、admin、closed 或 unavailable。
+        results_access_reason: creator、admin、closed、live 或 unavailable。
         needs_access_password: 私密场次是否还没有这个浏览器的有效授权。
         passcode_entry_path: 密码页路径。不含访问密码；不需要时为空。
     """

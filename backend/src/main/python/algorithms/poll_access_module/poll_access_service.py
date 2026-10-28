@@ -7,7 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
-from src.main.python.algorithms.poll_module.poll_service import effective_status
+from src.main.python.algorithms.poll_module.poll_service import effective_status, results_access
 from src.main.python.config.logger_config import get_logger
 from src.main.python.config.server_config import Settings
 from src.main.python.constants.enums import IdentityMode, PollLifecycle, PollStatus, Visibility
@@ -390,18 +390,12 @@ def _detail(
     status = effective_status(poll, now)
     creator = principal is not None and principal.user_id == poll.creator_id
     admin = principal is not None and principal.role == "ADMIN"
-    if creator:
-        reason = "creator"
-        can_view = True
-    elif admin:
-        reason = "admin"
-        can_view = True
-    elif status == PollStatus.CLOSED:
-        reason = "closed"
-        can_view = True
-    else:
-        reason = "unavailable"
-        can_view = False
+    can_view, reason = results_access(
+        status,
+        poll.allow_live_results,
+        creator=creator,
+        admin=admin,
+    )
     needs_access_password = poll.visibility == Visibility.PRIVATE and not grant_ok
     private_ready = not needs_access_password
     named_ready = poll.identity_mode == IdentityMode.NAMED and principal is not None
@@ -429,6 +423,7 @@ def _detail(
         visibility=poll.visibility,
         vote_limit=poll.vote_limit,
         selection_mode=poll.selection_mode,
+        allow_live_results=poll.allow_live_results,
         starts_at=poll.starts_at,
         ends_at=poll.ends_at,
         effective_status=status,

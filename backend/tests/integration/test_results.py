@@ -212,6 +212,38 @@ def test_open_results_follow_role(auth_app: FastAPI, auth_client: TestClient) ->
         error_body(close, 403, int(ApiCode.FORBIDDEN))
 
 
+def test_open_results_follow_live_switch(auth_app: FastAPI, auth_client: TestClient) -> None:
+    """进行中只有打开实时票况时，普通参与者才能看汇总。"""
+    csrf = register_and_login(auth_client, "ada")
+    hidden_id, _hidden = _published_detail(auth_client, csrf, title="结束后才公开")
+    live_id, live_detail = _published_detail(
+        auth_client,
+        csrf,
+        title="进行中可看",
+        allow_live_results=True,
+    )
+    assert live_detail["allow_live_results"] is True
+    assert live_detail["can_view_results"] is True
+    assert live_detail["results_access_reason"] == "creator"
+
+    with TestClient(auth_app) as voter:
+        register_and_login(voter, "bob")
+        error_body(
+            voter.get(f"/api/v1/polls/{hidden_id}/results"),
+            403,
+            int(ApiCode.RESULTS_NOT_AVAILABLE),
+        )
+        hidden_detail = envelope(voter.get(f"/api/v1/polls/{hidden_id}"), 200)
+        assert hidden_detail["can_view_results"] is False
+        assert hidden_detail["results_access_reason"] == "unavailable"
+        visible = envelope(voter.get(f"/api/v1/polls/{live_id}/results"), 200)
+        assert visible["is_final"] is False
+        assert "voter_id" not in visible
+        live_view = envelope(voter.get(f"/api/v1/polls/{live_id}"), 200)
+        assert live_view["can_view_results"] is True
+        assert live_view["results_access_reason"] == "live"
+
+
 def test_private_history_hides_expired_grant(auth_app: FastAPI, auth_client: TestClient) -> None:
     """私密授权到期后，结果和记名历史的总数都不泄露；重新解锁后恢复。"""
     csrf = register_and_login(auth_client, "ada")

@@ -124,6 +124,7 @@ export function toPollBody(value: PollFormValue): PollWriteBody {
     access_password: value.visibility === "PRIVATE" && value.accessPassword.length > 0 ? value.accessPassword : null,
     vote_limit: value.voteLimit,
     selection_mode: value.selectionMode,
+    allow_live_results: value.allowLiveResults,
     options: value.options.map((label) => label.trim()).filter((label) => label.length > 0).map((label) => ({ label })),
   };
 }
@@ -421,11 +422,8 @@ export function PollForm({
             ) : null}
 
             <div className="poll-setting-card">
-              <div className="poll-setting-card-top">
-                <span className="poll-setting-name">
-                  {t("form.voteLimit")}
-                </span>
-                <div className="poll-limit-entry">
+              <span className="poll-setting-name">{t("form.voteLimit")}</span>
+              <div className="poll-limit-entry">
                   <div className="poll-limit-input-wrap">
                     <input
                       className={limitText.length > 5 ? "poll-limit-input is-long" : "poll-limit-input"}
@@ -463,7 +461,6 @@ export function PollForm({
                       +
                     </button>
                   </div>
-                </div>
               </div>
 
               <div className="poll-limit-track">
@@ -488,44 +485,30 @@ export function PollForm({
             </div>
 
             <div className="poll-setting-card">
-              <span className="poll-setting-name" id="poll-selection-label">
-                {t("form.selectionMode")}
-              </span>
-              <div className="poll-segment" role="radiogroup" aria-labelledby="poll-selection-label">
-                <label className="poll-segment-option">
-                  <input
-                    className="poll-segment-input"
-                    type="radio"
-                    name="selection-mode"
-                    aria-label={t("form.single")}
-                    checked={value.selectionMode === "SINGLE"}
-                    onChange={() => patch({ selectionMode: "SINGLE" })}
-                  />
-                  <span className="poll-segment-copy">
-                    <span>{t("form.single")}</span>
-                  </span>
-                </label>
-                <label className={multipleReady ? "poll-segment-option" : "poll-segment-option is-disabled"}>
-                  <input
-                    className="poll-segment-input"
-                    type="radio"
-                    name="selection-mode"
-                    aria-label={t("form.multiple")}
-                    disabled={!multipleReady}
-                    checked={value.selectionMode === "MULTIPLE"}
-                    onChange={() => {
-                      setSingleNotice(false);
-                      patch({ selectionMode: "MULTIPLE" });
-                    }}
-                  />
-                  <span className="poll-segment-copy">
-                    <span>{t("form.multiple")}</span>
-                  </span>
-                </label>
+              <span className="poll-setting-name">{t("form.liveResults")}</span>
+              <div className="poll-switch-row">
+                <SettingMark
+                  active={!value.allowLiveResults}
+                  icon="🔒"
+                  label={t("form.liveHidden")}
+                  onClick={() => patch({ allowLiveResults: false })}
+                />
+                <input
+                  className="poll-switch"
+                  type="checkbox"
+                  role="switch"
+                  aria-label={t("form.liveResults")}
+                  checked={value.allowLiveResults}
+                  onChange={(event) => patch({ allowLiveResults: event.target.checked })}
+                />
+                <SettingMark
+                  active={value.allowLiveResults}
+                  icon="📊"
+                  label={t("form.liveVisible")}
+                  onClick={() => patch({ allowLiveResults: true })}
+                />
               </div>
-              {singleNotice ? (
-                <p className="poll-inline-status" role="status">{t("form.switchedSingle")}</p>
-              ) : null}
+              <p className="poll-setting-hint">{t("form.liveHint")}</p>
             </div>
           </div>
         </section>
@@ -582,10 +565,44 @@ export function PollForm({
 
         {/* ================= SECTION 4: OPTIONS ================= */}
         <section className="poll-form-section">
-          <h2 className="poll-section-title">
-            <span>🗳️</span>
-            <span>{t("form.options")}</span>
-          </h2>
+          <div className="poll-options-heading">
+            <h2 className="poll-section-title">
+              <span>🗳️</span>
+              <span>{t("form.options")}</span>
+            </h2>
+            <div className="poll-segment" role="radiogroup" aria-label={t("form.selectionMode")}>
+              <label className="poll-segment-option">
+                <input
+                  className="poll-segment-input"
+                  type="radio"
+                  name="selection-mode"
+                  aria-label={t("form.single")}
+                  checked={value.selectionMode === "SINGLE"}
+                  onChange={() => patch({ selectionMode: "SINGLE" })}
+                />
+                <span className="poll-segment-copy">
+                  <span>{t("form.single")}</span>
+                </span>
+              </label>
+              <label className={multipleReady ? "poll-segment-option" : "poll-segment-option is-disabled"}>
+                <input
+                  className="poll-segment-input"
+                  type="radio"
+                  name="selection-mode"
+                  aria-label={t("form.multiple")}
+                  disabled={!multipleReady}
+                  checked={value.selectionMode === "MULTIPLE"}
+                  onChange={() => {
+                    setSingleNotice(false);
+                    patch({ selectionMode: "MULTIPLE" });
+                  }}
+                />
+                <span className="poll-segment-copy">
+                  <span>{t("form.multiple")}</span>
+                </span>
+              </label>
+            </div>
+          </div>
 
           <div className="poll-options-list">
             {value.options.map((option, index) => (
@@ -630,6 +647,9 @@ export function PollForm({
               <span>+</span>
               <span>{t("form.addOption", { n: value.options.length })}</span>
             </button>
+            {singleNotice ? (
+              <p className="poll-inline-status" role="status">{t("form.switchedSingle")}</p>
+            ) : null}
           </div>
         </section>
 
@@ -696,6 +716,7 @@ export function emptyPollForm(now = new Date()): PollFormValue {
     accessPassword: "",
     voteLimit: null,
     selectionMode: "SINGLE",
+    allowLiveResults: false,
     options: ["", ""],
     startsDate: window.startsDate,
     startsTime: window.startsTime,

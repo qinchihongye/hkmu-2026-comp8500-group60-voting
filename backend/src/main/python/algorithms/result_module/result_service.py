@@ -7,7 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
-from src.main.python.algorithms.poll_module.poll_service import effective_status
+from src.main.python.algorithms.poll_module.poll_service import effective_status, results_access
 from src.main.python.config.logger_config import get_logger
 from src.main.python.constants.enums import (
     IdentityMode,
@@ -111,7 +111,13 @@ def _authorize(
     if poll.identity_mode == IdentityMode.NAMED and principal is None:
         raise AppError(401, ApiCode.UNAUTHENTICATED, ApiCode.UNAUTHENTICATED.default_message)
     status = effective_status(poll, now)
-    if creator or admin or status == PollStatus.CLOSED:
+    allowed, _reason = results_access(
+        status,
+        poll.allow_live_results,
+        creator=creator,
+        admin=admin,
+    )
+    if allowed:
         return status
     raise AppError(
         403,

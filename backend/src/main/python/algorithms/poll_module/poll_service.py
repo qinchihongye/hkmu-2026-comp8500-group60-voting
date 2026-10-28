@@ -74,6 +74,38 @@ def effective_status(poll: Poll, now: datetime) -> PollStatus:
     return PollStatus.OPEN
 
 
+def results_access(
+    status: PollStatus,
+    allow_live_results: bool,
+    *,
+    creator: bool,
+    admin: bool,
+) -> tuple[bool, str]:
+    """决定当前身份能否看汇总。
+
+    创建者和管理员始终可以看。普通参与者在结束后可以看。
+    进行中只有创建者打开实时票况时可以看。未开始不能看。
+
+    Args:
+        status: 有效状态。
+        allow_live_results: 是否允许进行中查看汇总。
+        creator: 当前账户是不是创建者。
+        admin: 当前账户是不是管理员。
+
+    Returns:
+        能否查看，以及原因。原因是 creator、admin、closed、live 或 unavailable。
+    """
+    if creator:
+        return True, "creator"
+    if admin:
+        return True, "admin"
+    if status == PollStatus.CLOSED:
+        return True, "closed"
+    if status == PollStatus.OPEN and allow_live_results:
+        return True, "live"
+    return False, "unavailable"
+
+
 class PollService:
     """投票管理。写操作只允许创建者，管理员不能改别人的投票。
 
@@ -127,6 +159,7 @@ class PollService:
                     private_password=_password_text(payload),
                     vote_limit=payload.vote_limit,
                     selection_mode=payload.selection_mode.value,
+                    allow_live_results=payload.allow_live_results,
                     share_code=None,
                     lifecycle=PollLifecycle.DRAFT,
                     starts_at=payload.starts_at,
@@ -200,6 +233,7 @@ class PollService:
                 )
                 poll.vote_limit = payload.vote_limit
                 poll.selection_mode = payload.selection_mode.value
+                poll.allow_live_results = payload.allow_live_results
                 poll.starts_at = payload.starts_at
                 poll.ends_at = payload.ends_at
                 poll.version += 1
@@ -783,6 +817,7 @@ def _summary(poll: Poll, now: datetime) -> PollSummary:
         visibility=poll.visibility,
         vote_limit=poll.vote_limit,
         selection_mode=poll.selection_mode,
+        allow_live_results=poll.allow_live_results,
         starts_at=poll.starts_at,
         ends_at=poll.ends_at,
         effective_status=effective_status(poll, now),
