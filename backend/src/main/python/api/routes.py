@@ -11,6 +11,8 @@ from src.main.python.api.poll.poll_get import router as poll_get_router
 from src.main.python.api.poll.poll_patch import router as poll_patch_router
 from src.main.python.api.poll.poll_post import router as poll_post_router
 from src.main.python.api.poll_access.poll_access_post import router as poll_access_router
+from src.main.python.api.poll_import.poll_import_get import router as poll_import_get_router
+from src.main.python.api.poll_import.poll_import_post import router as poll_import_post_router
 from src.main.python.api.result.result_get import router as result_router
 from src.main.python.api.share.share_get import router as share_router
 from src.main.python.api.vote.vote_get import router as vote_get_router
@@ -25,6 +27,8 @@ api_router.include_router(poll_get_router)
 api_router.include_router(poll_post_router)
 api_router.include_router(poll_patch_router)
 api_router.include_router(poll_access_router)
+api_router.include_router(poll_import_get_router)
+api_router.include_router(poll_import_post_router)
 api_router.include_router(vote_router)
 api_router.include_router(vote_get_router)
 api_router.include_router(result_router)

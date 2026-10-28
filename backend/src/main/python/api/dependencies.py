@@ -5,10 +5,14 @@ from fastapi import Query, Request
 from src.main.python.algorithms.auth_module.auth_service import AuthService
 from src.main.python.algorithms.guest_module.guest_service import GuestService
 from src.main.python.algorithms.poll_access_module.poll_access_service import PollAccessService
+from src.main.python.algorithms.poll_import_module.poll_text_parse_service import (
+    PollTextParseService,
+)
 from src.main.python.algorithms.poll_module.poll_service import PollListFilters, PollService
-from src.main.python.config.server_config import Settings
+from src.main.python.config.server_config import Settings, poll_text_parse_configured
 from src.main.python.constants.enums import PollStatus, UserRole
 from src.main.python.constants.error_codes import ApiCode
+from src.main.python.external_services.openai_service import OpenAIService
 from src.main.python.fileds.context import GuestContext, PollAccessContext, Principal
 from src.main.python.utils.error_handlers import AppError
 from src.main.python.utils.security_util import (
@@ -151,6 +155,32 @@ def require_auth_csrf(request: Request) -> Principal:
         raise AppError(401, ApiCode.UNAUTHENTICATED, ApiCode.UNAUTHENTICATED.default_message)
     enforce_write_guard(request, settings, CsrfSource.AUTH, auth_csrf=active.csrf_token)
     return active.principal
+
+
+def poll_text_parse_service_for(request: Request) -> PollTextParseService:
+    """按当前应用状态构造文字识别服务。
+
+    Args:
+        request: 当前 HTTP 请求。
+
+    Returns:
+        使用本进程时钟和共享模型客户端的服务。未配置时不调用模型。
+    """
+    settings: Settings = request.app.state.settings
+    enabled = poll_text_parse_configured(settings)
+    client = getattr(request.app.state, "openai_client", None)
+    extractor = None
+    if enabled and client is not None:
+        extractor = OpenAIService(
+            client,
+            settings.poll_text_parse_model,
+            settings.poll_text_parse_timeout_seconds,
+            thinking=settings.poll_text_parse_thinking,
+            reasoning_effort=settings.poll_text_parse_reasoning_effort,
+            stream=settings.poll_text_parse_stream,
+            response_format=settings.poll_text_parse_response_format,
+        )
+    return PollTextParseService(request.app.state.clock, extractor, enabled=enabled)
 
 
 def poll_service_for(request: Request) -> PollService:

@@ -1,6 +1,6 @@
 # 接口快照
 
-* **范围。** 这里记录已经实现的健康检查、统一信封、账户会话、访客上下文、投票管理、分享入口、私密授权、选票提交、结果汇总、记名历史、管理员审计和前端页面。不能按本文之外的路径调用。页面路由见文末。
+* **范围。** 这里记录已经实现的健康检查、统一信封、账户会话、访客上下文、投票管理、投票文字识别、分享入口、私密授权、选票提交、结果汇总、记名历史、管理员审计和前端页面。不能按本文之外的路径调用。页面路由见文末。
 
 * **写请求。** POST 与 PATCH 的 JSON 只有顶层字段 `data`。缺少 `data`、`data` 为 null，或外层、内层出现未声明字段时，返回 HTTP 422，`code` 为 `42201`。`data.issues` 只含字段名、位置和说明，不回显提交值。GET 仍使用路径和查询参数。
 
@@ -33,6 +33,8 @@
   | `GET /auth/me` | 不检查 CSRF |
   | `POST /guest/context` | 只检查来源和 JSON。新建时设置 `voting_guest`，恢复时不写 Cookie |
   | `POST /polls`、`PATCH /polls/{poll_id}`、`POST /polls/{poll_id}/publish`、`POST /polls/{poll_id}/close` | 来源，以及与当前账户会话匹配的账户 CSRF |
+  | `POST /poll-import/parse` | 来源，以及与当前账户会话匹配的账户 CSRF。匿名用户不能调用 |
+  | `GET /poll-import/capabilities` | 有效账户会话，不检查 CSRF |
   | `POST /polls/{poll_id}/unlock` | 来源、未过期的 `voting_guest`，以及与该凭据匹配的访客 CSRF。还没有访客上下文时返回 HTTP 403，`code` 为 `40301`，`msg` 为 `需要先建立访客上下文` |
   | `POST /polls/{poll_id}/votes` | 来源、未过期的 `voting_guest`，以及与该凭据匹配的访客 CSRF。记名场次还要有有效账户会话。没有访客上下文时返回 HTTP 403，`code` 为 `40301`，`msg` 为 `需要先建立访客上下文` |
   | 读取投票、分享、汇总、本人列表、记名历史和管理员列表 | 不检查 CSRF |
@@ -158,6 +160,12 @@
   | `INTERNAL_ERROR` | `50000` | 500 |
   | `SERVICE_UNAVAILABLE` | `50301` | 503 |
   | `SUBMISSION_STATUS_UNKNOWN` | `50302` | 503 |
+  | `POLL_PARSE_INVALID_OUTPUT` | `50201` | 502 |
+  | `POLL_PARSE_DISABLED` | `50303` | 503 |
+  | `POLL_PARSE_UNAVAILABLE` | `50304` | 503 |
+  | `POLL_PARSE_TIMEOUT` | `50401` | 504 |
+
+* **投票文字识别。** 前缀是 `/api/v1`。识别不创建、不发布投票，也不写业务表。响应带 `Cache-Control: no-store`。`GET /poll-import/capabilities` 不调用模型。配置关闭或缺少密钥、模型名时 HTTP 200，`data.enabled` 为 false，同时返回 `max_text_length=10000` 和 `timezone=Asia/Hong_Kong`，不返回模型名、密钥或地址。`POST /poll-import/parse` 的 `data.text` 去掉首尾空白后为 1 到 10000 个 Unicode 码点。成功时 HTTP 200，`data.fields` 至少有 `title` 和 `options`；`description`、`starts_at`、`ends_at`、`selection_mode` 没有可靠值时省略。`issues` 只含 `field` 和 `code`。时间用香港时间、分钟精度和 `+08:00`。功能关闭返回 HTTP 503，`code` 为 `50303`。上游不可用返回 HTTP 503，`code` 为 `50304`。总时限耗尽返回 HTTP 504，`code` 为 `50401`。输出无法使用返回 HTTP 502，`code` 为 `50201`。同一账户 60 秒内超过 5 次、同时超过 1 次，或全进程同时超过 4 个模型请求，返回 HTTP 429，`code` 为 `42901`，并带 `Retry-After`。这些限额只在当前进程内有效。
 
 * **前端页面。** 页面在 `frontend/src`。Docker 入口是 `http://localhost:8188`。本机 Vite 是 `http://localhost:5173`，并把 `/api` 代理到 `http://127.0.0.1:8000`。账户 CSRF 和访客 CSRF 只留在内存，不写入 `localStorage`。POST 和 PATCH 的正文是一层 `data`，空写请求是 `{"data": {}}`。选票正文是 `{"data":{"option_ids":[...]}}`。注销允许 `data` 为 `null`。安全读取遇到网络错误或 `50301` 最多再试两次。投票、注册、发布和关闭不自动重试。写请求读到响应头后正文断开，按网络未知处理，不自动再投。单选用单选按钮，多选用复选框；确认框按界面顺序列出所选项。
 

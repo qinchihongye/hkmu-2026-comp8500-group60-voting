@@ -1,6 +1,8 @@
 """FastAPI 应用工厂。"""
 
 import time
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from uuid import uuid4
 
 from fastapi import FastAPI, Request
@@ -19,8 +21,10 @@ from src.main.python.config.logger_config import (
 )
 from src.main.python.config.server_config import Settings, get_settings
 from src.main.python.constants.error_codes import ApiCode
+from src.main.python.external_services.openai_service import open_openai_client
 from src.main.python.utils.clock_util import Clock
 from src.main.python.utils.error_handlers import log_unexpected_error, register_exception_handlers
+from src.main.python.utils.poll_parse_limit_util import PollParseLimiter
 from src.main.python.utils.rate_limit_util import AttemptLimiter
 from src.main.python.utils.response_util import error_body, json_from_model
 
@@ -171,6 +175,25 @@ def _log_access(
     )
 
 
+@asynccontextmanager
+async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """配置齐全时创建模型客户端，退出时关闭。功能关闭则不创建。
+
+    Args:
+        app: 当前应用。
+
+    Yields:
+        应用开始接收请求。
+    """
+    client = open_openai_client(app.state.settings)
+    app.state.openai_client = client
+    try:
+        yield
+    finally:
+        if client is not None:
+            await client.close()
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     """创建 FastAPI 应用。
 
@@ -187,10 +210,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     if not resolved.anon_voter_hmac_key:
         logger.warning("ANON_VOTER_HMAC_KEY 未配置，匿名防重复尚不可用")
 
-    app = FastAPI(title="COMP8500 Voting API", version="0.1.0")
+    app = FastAPI(title="COMP8500 Voting API", version="0.1.0", lifespan=_lifespan)
     app.state.settings = resolved
     app.state.clock = Clock()
     app.state.attempt_limiter = AttemptLimiter()
+    app.state.poll_parse_limiter = PollParseLimiter()
+    app.state.openai_client = None
     app.state.session_factory = create_session_factory(resolved.database_url)
     register_exception_handlers(app)
     app.include_router(api_router)

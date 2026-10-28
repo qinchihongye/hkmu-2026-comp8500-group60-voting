@@ -46,6 +46,15 @@ def build_settings(**overrides: object) -> Settings:
         "public_base_url": "http://localhost:5173",
         "cookie_secure": False,
         "anon_voter_hmac_key": "k" * 32,
+        "poll_text_parse_enabled": False,
+        "openai_api_key": "",
+        "openai_base_url": "",
+        "poll_text_parse_model": "",
+        "poll_text_parse_timeout_seconds": 20,
+        "poll_text_parse_thinking": "",
+        "poll_text_parse_reasoning_effort": "",
+        "poll_text_parse_stream": False,
+        "poll_text_parse_response_format": "json_schema",
     }
     payload.update(overrides)
     return Settings(**payload)

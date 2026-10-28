@@ -5,7 +5,8 @@ from collections.abc import Callable
 from datetime import timedelta
 from uuid import uuid4
 
-import httpx
+# Starlette 的 TestClient 在装了 httpx2 后返回的是 httpx2.Response。
+import httpx2 as httpx
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine, func, select, text

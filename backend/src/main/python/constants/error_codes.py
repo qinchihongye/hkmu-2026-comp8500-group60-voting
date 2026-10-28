@@ -32,8 +32,12 @@ class ApiCode(IntEnum):
     INVALID_SELECTION_COUNT = 42203
     TOO_MANY_ATTEMPTS = 42901
     INTERNAL_ERROR = 50000
+    POLL_PARSE_INVALID_OUTPUT = 50201
     SERVICE_UNAVAILABLE = 50301
     SUBMISSION_STATUS_UNKNOWN = 50302
+    POLL_PARSE_DISABLED = 50303
+    POLL_PARSE_UNAVAILABLE = 50304
+    POLL_PARSE_TIMEOUT = 50401
 
     @property
     def default_message(self) -> str:
@@ -69,8 +73,12 @@ _DEFAULT_MESSAGES: dict[ApiCode, str] = {
     ApiCode.INVALID_SELECTION_COUNT: "The number of selected options is not allowed.",
     ApiCode.TOO_MANY_ATTEMPTS: "尝试次数过多，请稍后再试",
     ApiCode.INTERNAL_ERROR: "服务内部错误",
+    ApiCode.POLL_PARSE_INVALID_OUTPUT: "Poll text recognition returned an unusable result.",
     ApiCode.SERVICE_UNAVAILABLE: "服务暂时不可用",
     ApiCode.SUBMISSION_STATUS_UNKNOWN: "提交结果待确认，请查询本人参与状态",
+    ApiCode.POLL_PARSE_DISABLED: "Poll text recognition is turned off.",
+    ApiCode.POLL_PARSE_UNAVAILABLE: "Poll text recognition is unavailable.",
+    ApiCode.POLL_PARSE_TIMEOUT: "Poll text recognition timed out.",
 }
 
 _STATUS_CODES: dict[int, ApiCode] = {

@@ -6,6 +6,7 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "alembic>=1.20.1",
     "fastapi>=0.115",
+    "openai>=3.40.0",
     "psycopg[binary]>=3",
     "pwdlib[argon2]>=0.3.1",
     "pydantic>=2",

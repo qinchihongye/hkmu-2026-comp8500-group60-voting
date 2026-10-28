@@ -74,7 +74,9 @@ def error_response_declarations() -> dict[int, dict[str, Any]]:
         422: {"model": ResponseModel[ValidationErrorData | None]},
         429: dict(plain),
         500: dict(plain),
+        502: dict(plain),
         503: dict(plain),
+        504: dict(plain),
     }
 
 
