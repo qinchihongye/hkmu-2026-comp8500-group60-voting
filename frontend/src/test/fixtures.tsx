@@ -73,6 +73,8 @@ export function samplePoll(overrides: Partial<PollDetail> = {}): PollDetail {
     can_manage: false,
     can_view_results: false,
     results_access_reason: "unavailable",
+    needs_access_password: false,
+    passcode_entry_path: null,
     ...overrides,
   };
 }

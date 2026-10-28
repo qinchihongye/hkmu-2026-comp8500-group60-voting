@@ -1,7 +1,5 @@
 """分享入口、私密授权和参与者可见的投票详情。"""
 
-import hmac
-import secrets
 from datetime import timedelta
 
 from pwdlib import PasswordHash
@@ -25,6 +23,7 @@ from src.main.python.utils.error_handlers import AppError
 from src.main.python.utils.rate_limit_util import AttemptLimiter
 from src.main.python.utils.security_util import (
     anonymous_voter_hash,
+    constant_text_match,
     dummy_password_hash,
     verify_password,
 )
@@ -218,7 +217,7 @@ class PollAccessService:
             verify_password(self._passwords, payload.password, self._dummy_hash)
             return False
         if poll.private_password is not None:
-            return hmac.compare_digest(poll.private_password, payload.password)
+            return constant_text_match(poll.private_password, payload.password)
         if poll.private_password_hash:
             return verify_password(self._passwords, payload.password, poll.private_password_hash)
         verify_password(self._passwords, payload.password, self._dummy_hash)
@@ -278,19 +277,34 @@ def _can_unlock(poll: Poll | None) -> bool:
     return poll.lifecycle in {PollLifecycle.PUBLISHED, PollLifecycle.CLOSED}
 
 
+def _passcode_entry_path(share_code: str | None, needs_access_password: bool) -> str | None:
+    """给出尚未授权时的密码页路径。
+
+    Args:
+        share_code: 这场投票的分享码。
+        needs_access_password: 当前浏览器是否还没有有效授权。
+
+    Returns:
+        以分享码定位的密码页路径。不需要密码或没有分享码时为空。
+    """
+    if not needs_access_password or not share_code:
+        return None
+    return f"/s/{share_code}/access"
+
+
 def _codes_match(provided: str, expected: str | None) -> bool:
-    """固定时间比较分享码。
+    """按 UTF-8 字节固定时间比较分享码。
 
     Args:
         provided: 请求里的分享码。
         expected: 库存分享码。
 
     Returns:
-        两者长度相同且内容一致时为真。
+        两边字节一致时为真。库存没有分享码时为假。
     """
-    if expected is None or len(provided) != len(expected):
+    if expected is None:
         return False
-    return secrets.compare_digest(provided, expected)
+    return constant_text_match(provided, expected)
 
 
 def _upsert_grant(
@@ -388,7 +402,8 @@ def _detail(
     else:
         reason = "unavailable"
         can_view = False
-    private_ready = poll.visibility != Visibility.PRIVATE or grant_ok
+    needs_access_password = poll.visibility == Visibility.PRIVATE and not grant_ok
+    private_ready = not needs_access_password
     named_ready = poll.identity_mode == IdentityMode.NAMED and principal is not None
     anonymous_ready = poll.identity_mode == IdentityMode.ANONYMOUS and guest is not None
     can_vote = status == PollStatus.OPEN and private_ready and (named_ready or anonymous_ready)
@@ -427,6 +442,8 @@ def _detail(
         can_manage=creator,
         can_view_results=can_view,
         results_access_reason=reason,
+        needs_access_password=needs_access_password,
+        passcode_entry_path=_passcode_entry_path(poll.share_code, needs_access_password),
     )
 
 

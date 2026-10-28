@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { ModeTags, StatusTag } from "../../components/StatusTag";
@@ -28,6 +28,36 @@ export function ParticipationPanel({
   const [kept, setKept] = useState<{ pollId: number; receipt: VoteReceipt } | null>(null);
   const keptReceipt = detail && kept?.pollId === detail.id ? kept.receipt : null;
   const next = `${location.pathname}${location.search}`;
+  const startKey = detail ? `${detail.id}:${detail.starts_at}` : "";
+  const startsAt = detail?.starts_at ?? null;
+  const pollStatus = detail?.effective_status ?? null;
+  const serverTime = detail?.server_time ?? null;
+  const reloadAccess = access.reload;
+  const refreshedStart = useRef<string | null>(null);
+  useEffect(() => {
+    if (pollStatus !== "SCHEDULED" || startsAt === null || serverTime === null) {
+      return;
+    }
+    const startMs = Date.parse(startsAt);
+    const serverMs = Date.parse(serverTime);
+    if (Number.isNaN(startMs) || Number.isNaN(serverMs)) {
+      return;
+    }
+    const delay = startMs - serverMs;
+    if (delay <= 0) {
+      if (refreshedStart.current === startKey) {
+        return;
+      }
+      refreshedStart.current = startKey;
+      reloadAccess();
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      refreshedStart.current = startKey;
+      reloadAccess();
+    }, Math.min(delay, 2_147_483_647));
+    return () => window.clearTimeout(timer);
+  }, [pollStatus, startsAt, serverTime, startKey, reloadAccess]);
   if (access.phase === "access_loading") {
     return (
       <div className="view-root" style={{ padding: "40px 0", textAlign: "center" }}>
@@ -35,12 +65,18 @@ export function ParticipationPanel({
       </div>
     );
   }
-  if (access.error && access.phase !== "password_required" && access.phase !== "login_required") {
+  if (
+    access.phase === "access_failed" ||
+    (access.error && access.phase !== "password_required" && access.phase !== "login_required")
+  ) {
     return (
       <div className="view-root view-root-narrow" style={{ paddingTop: 30 }}>
         <div className="view-card" style={{ borderLeft: "4px solid #ef4444" }}>
           <h2 style={{ margin: "0 0 8px 0", color: "#dc2626" }}>{t("access.loadFailed")}</h2>
-          <p role="alert" style={{ margin: 0, color: "#64748b" }}>{access.error}</p>
+          <p role="alert" style={{ margin: "0 0 16px 0", color: "#64748b" }}>{access.error ?? t("error.pollLoad")}</p>
+          <button type="button" className="view-btn view-btn-secondary" onClick={() => access.reload()}>
+            {t("access.retry")}
+          </button>
         </div>
       </div>
     );
@@ -139,12 +175,28 @@ export function ParticipationPanel({
           </button>
         </div>
       ) : null}
+      {detail.passcode_entry_path && !detail.has_voted && detail.effective_status !== "CLOSED" ? (
+        <div style={{ padding: "12px 18px", background: "#fef3c7", borderRadius: 12, border: "1px solid #fde68a", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+          <span style={{ color: "#92400e", fontWeight: 600 }}>{t("access.voteLocked")}</span>
+          <Link to={detail.passcode_entry_path} className="view-btn view-btn-primary" style={{ padding: "8px 18px", fontSize: "0.9rem", textDecoration: "none" }}>
+            {t("access.enterPasscode")}
+          </Link>
+        </div>
+      ) : null}
       {detail.effective_status === "CLOSED" ? (
         <ClosedPollBody detail={detail} receipt={detail.receipt ?? keptReceipt} />
       ) : (
         <BallotForm
           poll={detail}
           guestReady={guest.guestStatus === "ready"}
+          guestStatus={guest.guestStatus}
+          onRetryGuest={
+            access.phase === "submission_unknown"
+              ? undefined
+              : async () => {
+                  await guest.ensureGuest();
+                }
+          }
           loginHref={loginHref}
           onCast={async (optionIds) => {
             try {

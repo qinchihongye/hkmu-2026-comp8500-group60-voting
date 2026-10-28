@@ -88,6 +88,8 @@ export type PollDetail = PollSummary & {
   can_manage: boolean;
   can_view_results: boolean;
   results_access_reason: ResultsAccessReason | string;
+  needs_access_password: boolean;
+  passcode_entry_path: string | null;
 };
 
 export type ManagePollDetail = PollSummary & {

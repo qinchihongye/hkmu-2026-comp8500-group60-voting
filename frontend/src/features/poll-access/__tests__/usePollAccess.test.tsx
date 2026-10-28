@@ -1,5 +1,6 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 
 import { ApiCode } from "../../../lib/api-codes";
 import { envelope, fail, guestOk, installFetch, meAnonymous, renderWithProviders, samplePoll } from "../../../test/fixtures";
@@ -51,5 +52,56 @@ describe("usePollAccess", () => {
     expect(screen.getByTestId("phase")).toHaveTextContent("submission_unknown");
     expect(screen.getByRole("button", { name: "Check again" })).toBeInTheDocument();
     expect(guests).toBe(guestsBefore);
+  });
+
+  it("无效投票、无效分享码、503 和断网结束后不再显示加载中", async () => {
+    installFetch((url) => {
+      if (url.includes("/auth/me")) {
+        return meAnonymous();
+      }
+      if (url.includes("/guest/context")) {
+        return guestOk();
+      }
+      if (url.includes("/shares/missing")) {
+        return fail(ApiCode.NOT_FOUND, "分享码不存在", 404);
+      }
+      if (url.includes("/polls/503")) {
+        return fail(ApiCode.SERVICE_UNAVAILABLE, "暂不可用", 503);
+      }
+      if (url.includes("/polls/9")) {
+        throw new TypeError("offline");
+      }
+      if (url.includes("/polls/404")) {
+        return fail(ApiCode.POLL_NOT_FOUND, "投票不存在", 404);
+      }
+      return fail(ApiCode.NOT_FOUND, "资源不存在", 404);
+    });
+
+    function Switcher() {
+      const [target, setTarget] = useState<"poll" | "share" | "down" | "offline">("poll");
+      const access = usePollAccess(
+        target === "share"
+          ? { shareCode: "missing" }
+          : { pollId: target === "down" ? 503 : target === "offline" ? 9 : 404 },
+      );
+      return (
+        <div>
+          <button type="button" onClick={() => setTarget("share")}>share</button>
+          <button type="button" onClick={() => setTarget("down")}>down</button>
+          <button type="button" onClick={() => setTarget("offline")}>offline</button>
+          <p data-testid="phase">{access.phase}</p>
+        </div>
+      );
+    }
+
+    renderWithProviders(<Switcher />);
+    await waitFor(() => expect(screen.getByTestId("phase")).toHaveTextContent("access_failed"));
+    await userEvent.click(screen.getByRole("button", { name: "share" }));
+    await waitFor(() => expect(screen.getByTestId("phase")).toHaveTextContent("access_failed"));
+    await userEvent.click(screen.getByRole("button", { name: "down" }));
+    await waitFor(() => expect(screen.getByTestId("phase")).toHaveTextContent("access_failed"));
+    await userEvent.click(screen.getByRole("button", { name: "offline" }));
+    await waitFor(() => expect(screen.getByTestId("phase")).toHaveTextContent("access_failed"));
+    expect(screen.getByTestId("phase")).not.toHaveTextContent("access_loading");
   });
 });

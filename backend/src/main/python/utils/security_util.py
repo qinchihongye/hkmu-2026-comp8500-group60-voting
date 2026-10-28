@@ -200,6 +200,21 @@ def hash_token(raw_token: str) -> str:
     return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
 
 
+def constant_text_match(provided: str, expected: str) -> bool:
+    """按 UTF-8 字节做固定时间比较。
+
+    字符串形式的 compare_digest 不接受非 ASCII，会直接抛出 TypeError。
+
+    Args:
+        provided: 调用方提交的文本。
+        expected: 服务端保存的文本。
+
+    Returns:
+        两边字节一致时为 True。字节长度不同时为 False。
+    """
+    return secrets.compare_digest(provided.encode("utf-8"), expected.encode("utf-8"))
+
+
 def tokens_match(provided: str | None, expected: str) -> bool:
     """用固定时间比较两段令牌。
 
@@ -210,9 +225,9 @@ def tokens_match(provided: str | None, expected: str) -> bool:
     Returns:
         两者都非空且内容一致时为 True。
     """
-    if not provided or len(provided) != len(expected):
+    if not provided:
         return False
-    return secrets.compare_digest(provided, expected)
+    return constant_text_match(provided, expected)
 
 
 def enforce_write_guard(

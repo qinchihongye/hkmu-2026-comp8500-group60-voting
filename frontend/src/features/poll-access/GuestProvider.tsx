@@ -39,6 +39,27 @@ export function GuestProvider({ children }: { children: ReactNode }) {
   }, [apply]);
 
   useEffect(() => {
+    if (guestStatus !== "ready" || guestExpiresAt === null) {
+      return;
+    }
+    const expiresAt = Date.parse(guestExpiresAt);
+    if (Number.isNaN(expiresAt)) {
+      return;
+    }
+    let timer = 0;
+    const schedule = () => {
+      const delay = expiresAt - Date.now();
+      if (delay <= 0) {
+        setGuestStatus("expired");
+        return;
+      }
+      timer = window.setTimeout(schedule, Math.min(delay, 2_147_483_647));
+    };
+    schedule();
+    return () => window.clearTimeout(timer);
+  }, [guestStatus, guestExpiresAt]);
+
+  useEffect(() => {
     let cancelled = false;
     void loadGuest()
       .then((guest) => {

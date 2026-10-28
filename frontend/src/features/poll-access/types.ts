@@ -1,7 +1,8 @@
-export type GuestStatus = "loading" | "ready" | "missing";
+export type GuestStatus = "loading" | "ready" | "missing" | "expired";
 
 export type AccessPhase =
   | "access_loading"
+  | "access_failed"
   | "login_required"
   | "password_required"
   | "ready"

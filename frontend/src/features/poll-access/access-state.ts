@@ -35,5 +35,5 @@ export function deriveAccessState(input: {
   if (input.hasDetail) {
     return "ready";
   }
-  return "access_loading";
+  return "access_failed";
 }

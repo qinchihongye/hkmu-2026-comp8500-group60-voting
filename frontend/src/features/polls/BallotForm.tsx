@@ -9,6 +9,7 @@ import { ApiCode } from "../../lib/api-codes";
 import { isApiClientError } from "../../lib/api-error";
 import type { PollDetail, VoteReceipt } from "../../lib/api-types";
 import { formatHongKong } from "../../lib/time";
+import type { GuestStatus } from "../poll-access/types";
 import type { BallotPhase } from "./types";
 
 function shouldRecover(error: unknown): boolean {
@@ -35,12 +36,16 @@ function orderedSelection(poll: PollDetail, selectedIds: number[]): number[] {
 export function BallotForm({
   poll,
   guestReady,
+  guestStatus = guestReady ? "ready" : "loading",
+  onRetryGuest,
   loginHref,
   onCast,
   onRecover,
 }: {
   poll: PollDetail;
   guestReady: boolean;
+  guestStatus?: GuestStatus;
+  onRetryGuest?: () => Promise<void>;
   loginHref?: string;
   onCast: (optionIds: number[]) => Promise<VoteReceipt>;
   onRecover: () => Promise<PollDetail | null>;
@@ -159,9 +164,27 @@ export function BallotForm({
         </div>
       ) : null}
 
-      {!guestReady ? (
+      {guestStatus === "loading" ? (
         <div style={{ padding: "10px 16px", background: "#fffbeb", borderRadius: 10, border: "1px solid #fef3c7", color: "#b45309", marginBottom: 16, fontWeight: 600, fontSize: "0.9rem" }}>
           {t("ballot.preparing")}
+        </div>
+      ) : null}
+      {(guestStatus === "missing" || guestStatus === "expired") ? (
+        <div style={{ padding: "10px 16px", background: "#fffbeb", borderRadius: 10, border: "1px solid #fef3c7", color: "#b45309", marginBottom: 16, fontWeight: 600, fontSize: "0.9rem" }}>
+          <p style={{ margin: "0 0 10px 0" }}>
+            {guestStatus === "expired" ? t("ballot.guestExpired") : t("ballot.guestFailed")}
+          </p>
+          {onRetryGuest && phase !== "unknown" ? (
+            <button
+              type="button"
+              className="view-btn view-btn-secondary"
+              onClick={() => {
+                void onRetryGuest().catch(() => undefined);
+              }}
+            >
+              {t("ballot.retryGuest")}
+            </button>
+          ) : null}
         </div>
       ) : null}
 
@@ -197,17 +220,30 @@ export function BallotForm({
                 const isSelected = selectedOptionIds.includes(option.id);
                 const letter = String.fromCharCode(65 + (index % 26));
                 return (
-                  <div
+                  <label
                     key={option.id}
                     className={`ballot-option-tile ${isSelected ? "selected" : ""} ${multiple ? "is-multiple" : ""}`}
-                    onClick={() => toggle(option.id)}
                   >
                     <div className="ballot-option-left">
                       <span className="ballot-option-letter" aria-hidden="true">
                         {letter}
                       </span>
-                      <label
-                        htmlFor={`opt-${option.id}`}
+                      <input
+                        id={`opt-${option.id}`}
+                        type={multiple ? "checkbox" : "radio"}
+                        name={`option-${poll.id}`}
+                        value={option.id}
+                        checked={isSelected}
+                        disabled={locked}
+                        onChange={() => toggle(option.id)}
+                        style={{
+                          position: "absolute",
+                          opacity: 0,
+                          width: 1,
+                          height: 1,
+                        }}
+                      />
+                      <span
                         style={{
                           cursor: locked ? "default" : "pointer",
                           margin: 0,
@@ -216,31 +252,14 @@ export function BallotForm({
                           color: isSelected ? "#1363df" : "#1e293b",
                         }}
                       >
-                        <input
-                          id={`opt-${option.id}`}
-                          type={multiple ? "checkbox" : "radio"}
-                          name={`option-${poll.id}`}
-                          value={option.id}
-                          checked={isSelected}
-                          disabled={locked}
-                          onClick={(event) => event.stopPropagation()}
-                          onChange={() => toggle(option.id)}
-                          style={{
-                            position: "absolute",
-                            opacity: 0,
-                            cursor: "pointer",
-                            width: 20,
-                            height: 20,
-                          }}
-                        />
                         {option.label}
-                      </label>
+                      </span>
                     </div>
 
-                    <div className="ballot-option-radio-dot">
+                    <div className="ballot-option-radio-dot" aria-hidden="true">
                       <div className="ballot-option-radio-inner" />
                     </div>
-                  </div>
+                  </label>
                 );
               })}
           </div>

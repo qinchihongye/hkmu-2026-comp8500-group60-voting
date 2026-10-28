@@ -224,6 +224,28 @@ describe("PollForm", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it("第一次保存未完成时再次提交不会创建第二次", async () => {
+    let release: (() => void) | undefined;
+    const onSubmit = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        }),
+    );
+    const initial = emptyPollForm(fixedNow);
+    initial.title = "班会";
+    initial.options = ["赞成", "反对"];
+    renderWithProviders(<PollForm initial={initial} mode="create" now={fixedNow} onSubmit={onSubmit} />);
+    const save = screen.getByTestId("save-poll");
+    await userEvent.click(save);
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(save).toBeDisabled();
+    await userEvent.click(save);
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    release?.();
+    await waitFor(() => expect(save).toBeEnabled());
+  });
+
   async function fillRequired() {
     await userEvent.type(screen.getByLabelText("Title"), "班会");
     const options = screen.getAllByLabelText(/^Option /);

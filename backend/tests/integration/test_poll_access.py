@@ -72,6 +72,8 @@ def test_four_access_combinations(auth_app: FastAPI, auth_client: TestClient) ->
     creator_private = envelope(creator_response, 200)
     assert creator_private["can_manage"] is True
     assert creator_private["can_vote"] is False
+    assert creator_private["needs_access_password"] is True
+    assert creator_private["passcode_entry_path"] == f"/s/{private_code}/access"
     assert creator_private["results_access_reason"] == "creator"
     assert ACCESS_PASSWORD not in creator_response.text
     assert "$argon2" not in creator_response.text
@@ -92,6 +94,8 @@ def test_four_access_combinations(auth_app: FastAPI, auth_client: TestClient) ->
         named_open = envelope(guest_browser.get(f"/api/v1/polls/{named_public}"), 200)
         assert named_open["can_vote"] is True
         assert named_open["has_voted"] is False
+        assert named_open["needs_access_password"] is False
+        assert named_open["passcode_entry_path"] is None
         assert named_open["results_access_reason"] == "unavailable"
 
         guest_csrf = ensure_guest(guest_browser)
@@ -101,12 +105,16 @@ def test_four_access_combinations(auth_app: FastAPI, auth_client: TestClient) ->
         named_ready = envelope(guest_browser.get(f"/api/v1/polls/{named_private}"), 200)
         assert named_ready["can_vote"] is True
         assert named_ready["can_manage"] is False
+        assert named_ready["needs_access_password"] is False
+        assert named_ready["passcode_entry_path"] is None
 
     with TestClient(auth_app) as anonymous:
         guest_csrf = ensure_guest(anonymous)
         public_detail = envelope(anonymous.get(f"/api/v1/polls/{anon_public}"), 200)
         assert public_detail["can_vote"] is True
         assert public_detail["identity_mode"] == "ANONYMOUS"
+        assert public_detail["needs_access_password"] is False
+        assert public_detail["passcode_entry_path"] is None
         error_body(anonymous.get(f"/api/v1/polls/{anon_private}"), 404, int(ApiCode.POLL_NOT_FOUND))
         unlock(anonymous, guest_csrf, anon_private, anon_private_code)
         private_detail = envelope(anonymous.get(f"/api/v1/polls/{anon_private}"), 200)

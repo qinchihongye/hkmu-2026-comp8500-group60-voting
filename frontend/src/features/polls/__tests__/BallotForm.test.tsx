@@ -27,7 +27,7 @@ describe("BallotForm", () => {
     const onCast = vi.fn().mockRejectedValue(new ApiClientError({ kind: "network", message: "网络连接中断，提交结果还不能确定" }));
     const onRecover = vi.fn().mockResolvedValue(samplePoll({ has_voted: false, receipt: null }));
     renderWithProviders(<BallotForm poll={samplePoll()} guestReady onCast={onCast} onRecover={onRecover} />);
-    await userEvent.click(screen.getByLabelText("面"));
+    await userEvent.click(screen.getByRole("radio", { name: "面" }));
     await userEvent.click(screen.getByTestId("vote-submit"));
     await userEvent.click(await screen.findByTestId("vote-confirm"));
     expect(await screen.findByTestId("unknown-status")).toHaveTextContent("No record found yet.");
@@ -41,7 +41,7 @@ describe("BallotForm", () => {
     );
     const onRecover = vi.fn().mockResolvedValue(samplePoll({ has_voted: true, receipt }));
     renderWithProviders(<BallotForm poll={samplePoll()} guestReady onCast={onCast} onRecover={onRecover} />);
-    await userEvent.click(screen.getByLabelText("饭"));
+    await userEvent.click(screen.getByRole("radio", { name: "饭" }));
     await userEvent.click(screen.getByTestId("vote-submit"));
     await userEvent.click(await screen.findByTestId("vote-confirm"));
     expect(await screen.findByTestId("receipt")).toHaveTextContent(receipt.receipt_id);
@@ -124,5 +124,55 @@ describe("BallotForm", () => {
     expect(option).not.toBeChecked();
     expect(screen.getByTestId("vote-submit")).toBeDisabled();
     expect(onCast).toHaveBeenCalledTimes(1);
+  });
+
+  it("多选点击文字、卡片、复选框和空格都只切换一次", async () => {
+    const user = userEvent.setup();
+    const onCast = vi.fn().mockResolvedValue(receipt);
+    renderWithProviders(
+      <BallotForm
+        poll={samplePoll({
+          id: 9,
+          selection_mode: "MULTIPLE",
+          options: [
+            { id: 1, label: "甲", position: 0 },
+            { id: 2, label: "乙", position: 1 },
+            { id: 3, label: "丙", position: 2 },
+          ],
+        })}
+        guestReady
+        onCast={onCast}
+        onRecover={vi.fn()}
+      />,
+    );
+    const first = screen.getByRole("checkbox", { name: "甲" });
+    const second = screen.getByRole("checkbox", { name: "乙" });
+    const third = screen.getByRole("checkbox", { name: "丙" });
+
+    await user.click(screen.getByText("甲"));
+    expect(first).toBeChecked();
+    await user.click(screen.getByText("甲"));
+    expect(first).not.toBeChecked();
+
+    const letter = screen.getByText("甲").closest(".ballot-option-tile")?.querySelector(".ballot-option-letter");
+    await user.click(letter as HTMLElement);
+    expect(first).toBeChecked();
+
+    await user.click(second);
+    expect(second).toBeChecked();
+    await user.click(second);
+    expect(second).not.toBeChecked();
+
+    third.focus();
+    await user.keyboard(" ");
+    expect(third).toBeChecked();
+    await user.keyboard(" ");
+    expect(third).not.toBeChecked();
+
+    await user.click(screen.getByText("丙"));
+    await user.click(screen.getByTestId("vote-submit"));
+    await user.click(await screen.findByTestId("vote-confirm"));
+    expect(onCast).toHaveBeenCalledTimes(1);
+    expect(onCast).toHaveBeenCalledWith([1, 3]);
   });
 });

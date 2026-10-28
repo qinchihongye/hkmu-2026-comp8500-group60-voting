@@ -80,6 +80,8 @@ class PollDetail(PollSummary):
         can_manage: 当前账户是否为创建者。
         can_view_results: 当前身份能否看汇总。
         results_access_reason: creator、admin、closed 或 unavailable。
+        needs_access_password: 私密场次是否还没有这个浏览器的有效授权。
+        passcode_entry_path: 密码页路径。不含访问密码；不需要时为空。
     """
 
     description: str | None
@@ -91,6 +93,8 @@ class PollDetail(PollSummary):
     can_manage: bool
     can_view_results: bool
     results_access_reason: str
+    needs_access_password: bool
+    passcode_entry_path: str | None = None
 
 
 class ManagePollDetail(PollSummary):

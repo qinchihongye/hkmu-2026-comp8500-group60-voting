@@ -267,4 +267,127 @@ describe("ParticipationPanel", () => {
     expect(posts).toBe(1);
     expect(guests).toBe(guestsBeforeSubmit);
   });
+
+  it("加载失败后可以重试，不再停在加载中", async () => {
+    installFetch((url) => {
+      if (url.includes("/auth/me")) {
+        return fail(ApiCode.UNAUTHENTICATED, "需要登录", 401);
+      }
+      if (url.includes("/guest/context")) {
+        return guestOk();
+      }
+      return fail(ApiCode.NOT_FOUND, "资源不存在", 404);
+    });
+    const access = accessFor(samplePoll());
+    access.phase = "access_failed";
+    access.detail = null;
+    access.error = "This poll could not be loaded.";
+    access.reload = vi.fn();
+    render(panel(access));
+    expect(screen.getByRole("alert")).toHaveTextContent("This poll could not be loaded.");
+    expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(access.reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("未授权的私密场次给出密码入口，不能投的公开场次不给", async () => {
+    installFetch((url) => {
+      if (url.includes("/auth/me")) {
+        return fail(ApiCode.UNAUTHENTICATED, "需要登录", 401);
+      }
+      if (url.includes("/guest/context")) {
+        return guestOk();
+      }
+      return fail(ApiCode.NOT_FOUND, "资源不存在", 404);
+    });
+    const locked = samplePoll({
+      visibility: "PRIVATE",
+      can_vote: false,
+      needs_access_password: true,
+      passcode_entry_path: "/s/share-code/access",
+    });
+    const view = render(panel(accessFor(locked)));
+    expect(await screen.findByRole("link", { name: "Enter passcode" })).toHaveAttribute(
+      "href",
+      "/s/share-code/access",
+    );
+    view.rerender(
+      panel(accessFor(samplePoll({ can_vote: false, needs_access_password: false, passcode_entry_path: null }))),
+    );
+    expect(screen.queryByRole("link", { name: "Enter passcode" })).not.toBeInTheDocument();
+  });
+
+  it("访客初始化失败后可以在页内重试", async () => {
+    let guests = 0;
+    installFetch((url) => {
+      if (url.includes("/auth/me")) {
+        return meAnonymous();
+      }
+      if (url.includes("/guest/context")) {
+        guests += 1;
+        if (guests === 1) {
+          return fail(ApiCode.SERVICE_UNAVAILABLE, "暂不可用", 503);
+        }
+        return guestOk();
+      }
+      return fail(ApiCode.NOT_FOUND, "资源不存在", 404);
+    });
+    render(panel(accessFor(samplePoll())));
+    expect(await screen.findByText("This browser could not prepare a voting credential.")).toBeInTheDocument();
+    expect(screen.getByTestId("vote-submit")).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+    await waitFor(() => expect(guests).toBe(2));
+    await waitFor(() =>
+      expect(screen.queryByText("This browser could not prepare a voting credential.")).not.toBeInTheDocument(),
+    );
+    await userEvent.click(screen.getByRole("radio", { name: "面" }));
+    expect(screen.getByTestId("vote-submit")).toBeEnabled();
+  });
+
+  it("凭据到期后可以重试，上一笔结果未知时不更换凭据", async () => {
+    let guests = 0;
+    installFetch((url) => {
+      if (url.includes("/auth/me")) {
+        return meAnonymous();
+      }
+      if (url.includes("/guest/context")) {
+        guests += 1;
+        return envelope({ csrf_token: "guest-csrf", expires_at: "2020-01-01T00:00:00Z" });
+      }
+      return fail(ApiCode.NOT_FOUND, "资源不存在", 404);
+    });
+    const unknown = accessFor(samplePoll());
+    unknown.phase = "submission_unknown";
+    const view = render(panel(unknown));
+    expect(await screen.findByText("This browser credential has expired.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
+    expect(guests).toBe(1);
+
+    view.rerender(panel(accessFor(samplePoll())));
+    await userEvent.click(await screen.findByRole("button", { name: "Try again" }));
+    await waitFor(() => expect(guests).toBeGreaterThan(1));
+  });
+
+  it("开始时间已到时重新读取详情", async () => {
+    installFetch((url) => {
+      if (url.includes("/auth/me")) {
+        return meAnonymous();
+      }
+      if (url.includes("/guest/context")) {
+        return guestOk();
+      }
+      return fail(ApiCode.NOT_FOUND, "资源不存在", 404);
+    });
+    const access = accessFor(
+      samplePoll({
+        effective_status: "SCHEDULED",
+        can_vote: false,
+        starts_at: "2026-10-24T01:00:00Z",
+        server_time: "2026-10-24T01:00:00Z",
+      }),
+    );
+    access.reload = vi.fn();
+    render(panel(access));
+    await waitFor(() => expect(access.reload).toHaveBeenCalled());
+  });
 });

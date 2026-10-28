@@ -153,6 +153,17 @@
 /* =========================================================
    2x2 POLLING CARDS GRID (The Red Box Scroll Frame)
    ========================================================= */
+.dashboard-board {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-span {
+  grid-column: 1 / -1;
+}
+
 .dashboard-grid {
   flex: 1;
   min-height: 0;
@@ -522,7 +533,8 @@
   }
 
   /* Prevent card compression - ensure full natural height & complete visibility */
-  .poll-card {
+  .poll-card,
+  .dashboard-grid .plaza-card {
     flex-shrink: 0;
     min-height: max-content;
     width: 100%;
@@ -561,7 +573,8 @@
     gap: 6px;
   }
 
-  .poll-card {
+  .poll-card,
+  .dashboard-grid .plaza-card {
     flex-shrink: 0;
     min-height: max-content;
     padding: 18px 16px;

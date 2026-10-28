@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type KeyboardEvent } from "react";
+import { useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import { Link } from "react-router-dom";
 
 import { explain } from "../../i18n/errors";
@@ -150,6 +150,9 @@ export function PollForm({
   const [singleNotice, setSingleNotice] = useState(opened.selectionMode !== initial.selectionMode);
   const [errorKey, setErrorKey] = useState<MessageKey | null>(null);
   const [failure, setFailure] = useState<unknown>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const locked = busy || submitting;
   const clock = now ?? new Date();
   const shownError = errorKey ? t(errorKey) : failure ? explain(failure, "error.saveFailed", t) : serverError;
   const current = hongKongParts(clock);
@@ -254,14 +257,22 @@ export function PollForm({
       setErrorKey(nextError);
       return;
     }
+    if (busy || submittingRef.current) {
+      return;
+    }
     setValue(next);
     setErrorKey(null);
     setFailure(null);
+    submittingRef.current = true;
+    setSubmitting(true);
     try {
       await onSubmit(toPollBody(next));
     } catch (caught) {
       setErrorKey(null);
       setFailure(caught);
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   }
 
@@ -628,10 +639,10 @@ export function PollForm({
           <button
             type="submit"
             data-testid="save-poll"
-            disabled={busy}
+            disabled={locked}
             className="poll-submit-btn"
           >
-            {busy ? t("common.saving") : mode === "create" ? t("form.saveDraft") : t("form.updateDraft")}
+            {locked ? t("common.saving") : mode === "create" ? t("form.saveDraft") : t("form.updateDraft")}
           </button>
         </div>
       </form>

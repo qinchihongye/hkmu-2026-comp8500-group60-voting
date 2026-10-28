@@ -28,4 +28,9 @@ describe("deriveAccessState", () => {
     expect(deriveAccessState({ ...base, hasDetail: true, hasVoted: true })).toBe("voted");
     expect(deriveAccessState({ ...base, submissionUnknown: true })).toBe("submission_unknown");
   });
+
+  it("请求结束后没有详情时是失败，不是继续加载", () => {
+    expect(deriveAccessState(base)).toBe("access_failed");
+    expect(deriveAccessState({ ...base, loading: true })).toBe("access_loading");
+  });
 });
