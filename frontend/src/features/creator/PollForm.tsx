@@ -1,12 +1,13 @@
-import { useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import { Link } from "react-router-dom";
 
 import { explain } from "../../i18n/errors";
 import { useI18n } from "../../i18n/LocaleProvider";
 import type { MessageKey } from "../../i18n/messages";
-import { defaultPollWindow, hongKongParts, hongKongToIso, isBeforeCurrentHongKongMinute } from "../../lib/time";
-import type { PollWriteBody } from "../../lib/api-types";
+import { defaultPollWindow, hongKongParts, hongKongToIso, isBeforeCurrentHongKongMinute, isoToHongKongParts } from "../../lib/time";
+import type { PollTextFields, PollWriteBody } from "../../lib/api-types";
 import type { PollFormValue } from "./types";
+import { PollTextImport } from "./PollTextImport";
 import "./PollForm.css";
 
 const MAX_VOTE_LIMIT = 100_000;
@@ -149,6 +150,20 @@ export function PollForm({
   const [value, setValue] = useState(opened);
   const [limitText, setLimitText] = useState(opened.voteLimit === null ? "" : String(opened.voteLimit));
   const [singleNotice, setSingleNotice] = useState(opened.selectionMode !== initial.selectionMode);
+  const [justReachedThree, setJustReachedThree] = useState(false);
+  const prevOptionCountRef = useRef(opened.options.length);
+
+  useEffect(() => {
+    if (prevOptionCountRef.current < 3 && value.options.length >= 3) {
+      setJustReachedThree(true);
+      const timer = setTimeout(() => {
+        setJustReachedThree(false);
+      }, 1000);
+      prevOptionCountRef.current = value.options.length;
+      return () => clearTimeout(timer);
+    }
+    prevOptionCountRef.current = value.options.length;
+  }, [value.options.length]);
   const [errorKey, setErrorKey] = useState<MessageKey | null>(null);
   const [failure, setFailure] = useState<unknown>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -275,6 +290,41 @@ export function PollForm({
     }
   }
 
+  function handleApplyParsedFields(fields: PollTextFields) {
+    const next: Partial<PollFormValue> = {};
+    if (fields.title) {
+      next.title = fields.title;
+    }
+    if (fields.description !== undefined && fields.description !== null) {
+      next.description = fields.description;
+    }
+    if (fields.options && fields.options.length > 0) {
+      next.options = fields.options.map((opt) => opt.label);
+    }
+    if (fields.starts_at) {
+      const parts = isoToHongKongParts(fields.starts_at);
+      next.startsDate = parts.date;
+      next.startsTime = parts.time;
+    }
+    if (fields.ends_at) {
+      const parts = isoToHongKongParts(fields.ends_at);
+      next.endsDate = parts.date;
+      next.endsTime = parts.time;
+    }
+    const resolvedOptions = next.options ?? value.options;
+    if (fields.selection_mode) {
+      if (fields.selection_mode === "MULTIPLE" && canChooseMultiple(resolvedOptions)) {
+        next.selectionMode = "MULTIPLE";
+      } else {
+        next.selectionMode = "SINGLE";
+      }
+    } else if (value.selectionMode === "MULTIPLE" && !canChooseMultiple(resolvedOptions)) {
+      next.selectionMode = "SINGLE";
+      setSingleNotice(true);
+    }
+    patch(next);
+  }
+
   return (
     <div className="poll-form-wrapper">
       {/* Page Header */}
@@ -292,6 +342,10 @@ export function PollForm({
           void submit();
         }}
       >
+        {mode === "create" ? (
+          <PollTextImport onApply={handleApplyParsedFields} />
+        ) : null}
+
         {/* ================= SECTION 1: GENERAL INFO ================= */}
         <section className="poll-form-section">
           <h2 className="poll-section-title">
@@ -570,7 +624,11 @@ export function PollForm({
               <span>🗳️</span>
               <span>{t("form.options")}</span>
             </h2>
-            <div className="poll-segment" role="radiogroup" aria-label={t("form.selectionMode")}>
+            <div
+              className={`poll-segment poll-segment-compact ${value.options.length < 3 ? "is-hidden" : "is-visible"} ${justReachedThree ? "is-flashing" : ""}`}
+              role="radiogroup"
+              aria-label={t("form.selectionMode")}
+            >
               <label className="poll-segment-option">
                 <input
                   className="poll-segment-input"
@@ -630,10 +688,7 @@ export function PollForm({
                   disabled={value.options.length <= 2}
                   onClick={() => commitOptions(value.options.filter((_, item) => item !== index))}
                 >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6" />
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                  </svg>
+                  <span aria-hidden="true" style={{ fontSize: "1.15rem", lineHeight: 1 }}>🗑️</span>
                 </button>
               </div>
             ))}

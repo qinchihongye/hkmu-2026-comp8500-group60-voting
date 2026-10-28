@@ -70,11 +70,120 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  position: relative;
 }
 
-.poll-options-heading .poll-segment {
-  flex: 0 1 320px;
+.poll-options-heading .poll-segment-compact {
+  display: flex;
+  align-items: center;
+  width: auto;
+  min-width: 190px;
+  max-width: 240px;
+  height: 34px;
+  padding: 3px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   margin-left: auto;
+  box-sizing: border-box;
+  transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.poll-options-heading .poll-segment-compact.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  width: 0;
+  min-width: 0;
+  max-width: 0;
+  height: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  overflow: hidden;
+  position: absolute;
+  right: 0;
+}
+
+.poll-options-heading .poll-segment-compact.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+@keyframes poll-segment-flash {
+  0% {
+    transform: scale(0.96);
+    box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7);
+    border-color: #0284c7;
+    background: #e0f2fe;
+  }
+  35% {
+    transform: scale(1.04);
+    box-shadow: 0 0 0 6px rgba(2, 132, 199, 0.35);
+    border-color: #0284c7;
+    background: #bae6fd;
+  }
+  70% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);
+    border-color: #0284c7;
+    background: #e0f2fe;
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: none;
+    border-color: #e2e8f0;
+    background: #f1f5f9;
+  }
+}
+
+.poll-options-heading .poll-segment-compact.is-flashing {
+  animation: poll-segment-flash 1s ease-in-out forwards;
+}
+
+.poll-options-heading .poll-segment-compact .poll-segment-option {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.poll-options-heading .poll-segment-compact .poll-segment-copy {
+  min-height: 0 !important;
+  height: 100% !important;
+  width: 100%;
+  padding: 0 12px !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0.84rem !important;
+  font-weight: 700 !important;
+  border-radius: 6px !important;
+  box-sizing: border-box !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.poll-options-heading .poll-segment-compact .poll-segment-input:checked + .poll-segment-copy {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+}
+
+.poll-options-heading .poll-segment-compact .poll-segment-input:not(:checked) + .poll-segment-copy {
+  background: transparent !important;
+  color: #64748b !important;
+  box-shadow: none !important;
+}
+
+.poll-options-heading .poll-segment-compact .poll-segment-option.is-disabled .poll-segment-copy {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .poll-setting-hint {
@@ -753,30 +862,31 @@
 }
 
 .poll-option-remove-btn {
-  width: 44px;
+  width: 36px;
   height: 48px;
-  border-radius: 10px;
-  border: 1px solid #fee2e2;
-  background: #ffffff;
-  color: #ef4444;
-  display: grid;
-  place-items: center;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  padding: 0;
+  font-size: 1.15rem;
 }
 
 .poll-option-remove-btn:hover:not(:disabled) {
-  background: #fee2e2;
-  border-color: #fca5a5;
-  transform: scale(1.04);
+  background: transparent;
+  color: #ef4444;
+  transform: scale(1.15);
 }
 
 .poll-option-remove-btn:disabled {
-  opacity: 0.35;
+  opacity: 0.3;
   cursor: not-allowed;
-  border-color: #e2e8f0;
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 .poll-add-option-btn {
@@ -828,7 +938,7 @@
 .poll-actions-bar {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 14px;
   padding-top: 8px;
 }

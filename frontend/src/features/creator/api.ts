@@ -4,6 +4,8 @@ import type {
   ManagePollSummary,
   Page,
   PageQuery,
+  PollImportCapabilities,
+  PollTextParseResult,
   PollUpdateBody,
   PollWriteBody,
   ShareLink,
@@ -45,4 +47,18 @@ export function getOwnedPoll(pollId: number): Promise<ManagePollDetail> {
 
 export function getShareInfo(pollId: number): Promise<ShareLink> {
   return apiClient({ path: `/api/v1/me/polls/${pollId}/share` });
+}
+
+export function getPollTextImportCapabilities(): Promise<PollImportCapabilities> {
+  return apiClient({ path: "/api/v1/poll-import/capabilities" });
+}
+
+export function parsePollText(text: string, signal?: AbortSignal): Promise<PollTextParseResult> {
+  return apiClient({
+    method: "POST",
+    path: "/api/v1/poll-import/parse",
+    data: { text },
+    csrfSource: "auth",
+    signal,
+  });
 }

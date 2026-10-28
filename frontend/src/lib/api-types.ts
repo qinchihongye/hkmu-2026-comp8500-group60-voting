@@ -184,6 +184,48 @@ export type PollUpdateBody = PollWriteBody & {
   expected_version: number;
 };
 
+export type PollImportCapabilities = {
+  enabled: boolean;
+  max_text_length: number;
+  timezone: string;
+};
+
+export type PollParseIssueCode =
+  | "FIELD_TOO_LONG"
+  | "OPTION_COUNT_INVALID"
+  | "DUPLICATE_OPTIONS"
+  | "MULTIPLE_REQUIRES_THREE_OPTIONS"
+  | "TIME_AMBIGUOUS"
+  | "TIME_IN_PAST"
+  | "TIME_RANGE_CONFLICT"
+  | "MULTIPLE_POLLS"
+  | "NO_POLL_CONTENT";
+
+export type PollParseIssue = {
+  field: "title" | "description" | "options" | "starts_at" | "ends_at" | "selection_mode" | "text";
+  code: PollParseIssueCode;
+};
+
+export type ParsedOption = {
+  label: string;
+};
+
+export type PollTextFields = {
+  title: string | null;
+  options: ParsedOption[];
+  description?: string | null;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  selection_mode?: SelectionMode | null;
+};
+
+export type PollTextParseResult = {
+  fields: PollTextFields;
+  issues: PollParseIssue[];
+  reference_time: string;
+  timezone: string;
+};
+
 export type PageQuery = {
   page?: number;
   page_size?: number;
