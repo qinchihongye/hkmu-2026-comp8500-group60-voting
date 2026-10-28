@@ -1,4 +1,4 @@
-"""汇总八张表，供迁移和元数据使用。"""
+"""汇总九张表，供迁移和元数据使用。"""
 
 from src.main.python.database.models.access_grant import PollAccessGrant
 from src.main.python.database.models.audit import AuditEvent
@@ -8,6 +8,7 @@ from src.main.python.database.models.poll import Poll, PollOption
 from src.main.python.database.models.session import AuthSession
 from src.main.python.database.models.user import User
 from src.main.python.database.models.vote import Vote
+from src.main.python.database.models.vote_selection import VoteSelection
 
 __all__ = [
     "AuditEvent",
@@ -19,4 +20,5 @@ __all__ = [
     "PollOption",
     "User",
     "Vote",
+    "VoteSelection",
 ]

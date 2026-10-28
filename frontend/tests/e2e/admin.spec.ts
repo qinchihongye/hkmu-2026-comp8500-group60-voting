@@ -43,6 +43,8 @@ test("管理员能看他人私密和进行中汇总，但不能写", async ({ br
         identity_mode: "ANONYMOUS",
         visibility: "PRIVATE",
         access_password: null,
+        vote_limit: null,
+        selection_mode: "SINGLE",
         options: [{ label: "甲" }, { label: "乙" }],
         expected_version: 2,
       },

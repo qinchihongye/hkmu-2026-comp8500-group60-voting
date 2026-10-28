@@ -1,4 +1,4 @@
-import type { IdentityMode, Visibility } from "../../lib/api-types";
+import type { IdentityMode, SelectionMode, Visibility } from "../../lib/api-types";
 
 export type PollFormValue = {
   title: string;
@@ -6,6 +6,8 @@ export type PollFormValue = {
   identityMode: IdentityMode;
   visibility: Visibility;
   accessPassword: string;
+  voteLimit: number | null;
+  selectionMode: SelectionMode;
   options: string[];
   startsDate: string;
   startsTime: string;

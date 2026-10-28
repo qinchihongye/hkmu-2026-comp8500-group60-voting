@@ -31,6 +31,8 @@ class PollSummary(BaseModel):
         title: 标题。
         identity_mode: NAMED 或 ANONYMOUS。
         visibility: PUBLIC 或 PRIVATE。
+        vote_limit: 整场选票份数上限。为空表示不限。
+        selection_mode: SINGLE 或 MULTIPLE。
         starts_at: 开始时间，UTC。
         ends_at: 结束时间，UTC。
         effective_status: 按当前时间计算出的状态。
@@ -43,6 +45,8 @@ class PollSummary(BaseModel):
     title: str
     identity_mode: str
     visibility: str
+    vote_limit: int | None
+    selection_mode: str
     starts_at: datetime
     ends_at: datetime
     effective_status: str

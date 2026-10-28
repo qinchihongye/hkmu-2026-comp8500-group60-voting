@@ -154,7 +154,7 @@ def test_vote_rejects_option_from_another_poll(db_session: Session) -> None:
         voter_id=creator.id,
         anonymous_voter_hash=None,
     )
-    _expect_rejected(db_session, "fk_votes_poll_option")
+    _expect_rejected(db_session, "fk_vote_selections_option")
 
 
 def test_private_poll_requires_password_hash(db_session: Session) -> None:
@@ -190,12 +190,131 @@ def test_poll_end_must_be_after_start(db_session: Session) -> None:
     db_session.rollback()
 
 
+def test_same_ballot_rejects_duplicate_option(db_session: Session) -> None:
+    """同一张选票不能两次选择同一个选项。"""
+    creator = add_user(db_session)
+    poll = add_poll(db_session, creator.id, identity_mode="NAMED")
+    option = add_option(db_session, poll.id)
+    vote = add_vote(
+        db_session,
+        poll_id=poll.id,
+        option_id=option.id,
+        identity_mode="NAMED",
+        voter_id=creator.id,
+        anonymous_voter_hash=None,
+    )
+    db_session.flush()
+    with pytest.raises(IntegrityError) as caught:
+        db_session.execute(
+            text(
+                """
+                INSERT INTO vote_selections (vote_id, poll_id, option_id)
+                VALUES (:vote_id, :poll_id, :option_id)
+                """
+            ),
+            {"vote_id": vote.id, "poll_id": poll.id, "option_id": option.id},
+        )
+    assert _constraint_name(caught.value) == "vote_selections_pkey"
+    db_session.rollback()
+
+
+def test_selection_rejects_option_from_another_poll(db_session: Session) -> None:
+    """明细里的选项必须和父票属于同一场。"""
+    creator = add_user(db_session)
+    first = add_poll(db_session, creator.id, identity_mode="NAMED")
+    second = add_poll(db_session, creator.id, identity_mode="NAMED")
+    own_option = add_option(db_session, second.id, label="乙")
+    foreign_option = add_option(db_session, first.id)
+    vote = add_vote(
+        db_session,
+        poll_id=second.id,
+        option_id=own_option.id,
+        identity_mode="NAMED",
+        voter_id=creator.id,
+        anonymous_voter_hash=None,
+    )
+    db_session.flush()
+    with pytest.raises(IntegrityError) as caught:
+        db_session.execute(
+            text(
+                """
+                INSERT INTO vote_selections (vote_id, poll_id, option_id)
+                VALUES (:vote_id, :poll_id, :option_id)
+                """
+            ),
+            {"vote_id": vote.id, "poll_id": second.id, "option_id": foreign_option.id},
+        )
+    assert _constraint_name(caught.value) == "fk_vote_selections_option"
+    db_session.rollback()
+
+
+def test_selection_rejects_vote_from_another_poll(db_session: Session) -> None:
+    """明细不能把一场的父票挂到另一场。"""
+    creator = add_user(db_session)
+    first = add_poll(db_session, creator.id, identity_mode="NAMED")
+    second = add_poll(db_session, creator.id, identity_mode="NAMED")
+    first_option = add_option(db_session, first.id)
+    second_option = add_option(db_session, second.id, label="乙")
+    vote = add_vote(
+        db_session,
+        poll_id=first.id,
+        option_id=first_option.id,
+        identity_mode="NAMED",
+        voter_id=creator.id,
+        anonymous_voter_hash=None,
+    )
+    db_session.flush()
+    with pytest.raises(IntegrityError) as caught:
+        db_session.execute(
+            text(
+                """
+                INSERT INTO vote_selections (vote_id, poll_id, option_id)
+                VALUES (:vote_id, :poll_id, :option_id)
+                """
+            ),
+            {"vote_id": vote.id, "poll_id": second.id, "option_id": second_option.id},
+        )
+    assert _constraint_name(caught.value) == "fk_vote_selections_vote"
+    db_session.rollback()
+
+
+def test_same_option_allowed_on_different_ballots(db_session: Session) -> None:
+    """不同选票可以选择同一个选项。"""
+    creator = add_user(db_session)
+    other = add_user(db_session, "voter")
+    poll = add_poll(db_session, creator.id, identity_mode="NAMED")
+    option = add_option(db_session, poll.id)
+    add_vote(
+        db_session,
+        poll_id=poll.id,
+        option_id=option.id,
+        identity_mode="NAMED",
+        voter_id=creator.id,
+        anonymous_voter_hash=None,
+    )
+    db_session.flush()
+    add_vote(
+        db_session,
+        poll_id=poll.id,
+        option_id=option.id,
+        identity_mode="NAMED",
+        voter_id=other.id,
+        anonymous_voter_hash=None,
+    )
+    db_session.flush()
+    count = db_session.scalar(
+        text("SELECT count(*) FROM vote_selections WHERE option_id = :option_id"),
+        {"option_id": option.id},
+    )
+    assert count == 2
+
+
 def test_existing_vote_restricts_option_delete(db_session: Session) -> None:
     """已有选票时不能删除被选中的选项。"""
     _creator, _poll, option = _named_ballot(db_session)
     with pytest.raises(IntegrityError) as caught:
         db_session.execute(text("DELETE FROM poll_options WHERE id = :id"), {"id": option.id})
-    assert _constraint_name(caught.value) == "fk_votes_poll_option"
+    assert _constraint_name(caught.value) == "fk_vote_selections_option"
     db_session.rollback()
 
 

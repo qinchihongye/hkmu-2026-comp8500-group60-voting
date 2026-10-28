@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from src.main.python.database.models import AuditEvent, Poll, Vote
+from src.main.python.database.models import AuditEvent, Poll, Vote, VoteSelection
 from src.main.python.utils.security_util import GUEST_COOKIE, anonymous_voter_hash
 from tests.auth_support import (
     PASSWORD,
@@ -100,6 +100,8 @@ def poll_body(client: TestClient, **overrides: object) -> dict[str, object]:
         "ends_at": (now + timedelta(hours=2)).isoformat(),
         "identity_mode": "NAMED",
         "visibility": "PUBLIC",
+        "vote_limit": None,
+        "selection_mode": "SINGLE",
         "options": [{"label": "同意"}, {"label": "反对"}],
     }
     body.update(overrides)
@@ -189,23 +191,26 @@ def cast(
     client: TestClient,
     guest_csrf: str,
     poll_id: int,
-    option_id: int,
+    option_ids: int | list[int],
 ) -> object:
     """提交一票，返回原始响应，方便断言成功和失败。
+
+    单个选项会包成数组。一次提交里的多项只占一份选票。
 
     Args:
         client: 持有访客 Cookie 的客户端。
         guest_csrf: 访客 CSRF。
         poll_id: 投票主键。
-        option_id: 选项主键。
+        option_ids: 一个选项，或按提交顺序排列的多个选项。
 
     Returns:
         HTTP 响应。
     """
+    selected = [option_ids] if isinstance(option_ids, int) else list(option_ids)
     return post_json(
         client,
         f"/api/v1/polls/{poll_id}/votes",
-        {"option_id": option_id},
+        {"option_ids": selected},
         csrf=guest_csrf,
     )
 
@@ -321,8 +326,8 @@ def insert_anonymous_vote(client: TestClient, poll_id: int, option_id: int) -> N
                 identity_mode=poll.identity_mode,
                 voter_id=None,
                 anonymous_voter_hash=digest,
-                option_id=option_id,
                 submitted_at=clock_of(client).now(),
+                selections=[VoteSelection(poll_id=poll_id, option_id=option_id)],
             )
         )
         session.commit()

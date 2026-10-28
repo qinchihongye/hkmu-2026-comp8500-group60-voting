@@ -1,8 +1,10 @@
-import { screen } from "@testing-library/react";
+import { cleanup, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 
 import { ApiCode } from "../../../lib/api-codes";
 import { ApiClientError } from "../../../lib/api-error";
+import type { PollDetail } from "../../../lib/api-types";
 import { renderWithProviders, samplePoll } from "../../../test/fixtures";
 import { BallotForm } from "../BallotForm";
 
@@ -43,6 +45,84 @@ describe("BallotForm", () => {
     await userEvent.click(screen.getByTestId("vote-submit"));
     await userEvent.click(await screen.findByTestId("vote-confirm"));
     expect(await screen.findByTestId("receipt")).toHaveTextContent(receipt.receipt_id);
+    expect(onCast).toHaveBeenCalledTimes(1);
+    expect(onCast).toHaveBeenCalledWith([2]);
+  });
+
+  it("单选互斥，换一场后清空，多选可取消并按选项顺序只提交一次", async () => {
+    const multiple = samplePoll({
+      id: 8,
+      selection_mode: "MULTIPLE",
+      options: [
+        { id: 1, label: "甲", position: 0 },
+        { id: 2, label: "乙", position: 1 },
+        { id: 3, label: "丙", position: 2 },
+      ],
+    });
+    const onCast = vi.fn().mockResolvedValue(receipt);
+    function Harness() {
+      const [poll, setPoll] = useState<PollDetail>(samplePoll());
+      return (
+        <>
+          <button type="button" onClick={() => setPoll(multiple)}>
+            switch poll
+          </button>
+          <BallotForm poll={poll} guestReady onCast={onCast} onRecover={vi.fn()} />
+        </>
+      );
+    }
+    renderWithProviders(<Harness />);
+    expect(screen.getByRole("radio", { name: "面" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("radio", { name: "面" }));
+    await userEvent.click(screen.getByRole("radio", { name: "饭" }));
+    expect(screen.getByRole("radio", { name: "面" })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: "饭" })).toBeChecked();
+
+    await userEvent.click(screen.getByRole("button", { name: "switch poll" }));
+    expect(screen.getByRole("checkbox", { name: "甲" })).not.toBeChecked();
+    expect(screen.getByTestId("vote-submit")).toBeDisabled();
+    await userEvent.click(screen.getByRole("checkbox", { name: "丙" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "甲" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "乙" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "乙" }));
+    await userEvent.click(screen.getByTestId("vote-submit"));
+    const items = await screen.findAllByRole("listitem");
+    expect(items.map((item) => item.textContent)).toEqual(["甲", "丙"]);
+    await userEvent.click(screen.getByTestId("vote-confirm"));
+    expect(onCast).toHaveBeenCalledTimes(1);
+    expect(onCast).toHaveBeenCalledWith([1, 3]);
+  });
+
+  it("忙碌或不能投票时不能提交", async () => {
+    let resolveCast: (value: typeof receipt) => void = () => undefined;
+    const onCast = vi.fn(
+      () =>
+        new Promise<typeof receipt>((resolve) => {
+          resolveCast = resolve;
+        }),
+    );
+    renderWithProviders(<BallotForm poll={samplePoll()} guestReady onCast={onCast} onRecover={vi.fn()} />);
+    await userEvent.click(screen.getByRole("radio", { name: "面" }));
+    await userEvent.click(screen.getByTestId("vote-submit"));
+    await userEvent.click(await screen.findByTestId("vote-confirm"));
+    expect(screen.getByTestId("vote-confirm")).toBeDisabled();
+    expect(screen.getByRole("radio", { name: "饭" })).toBeDisabled();
+    resolveCast(receipt);
+    expect(await screen.findByTestId("receipt")).toBeInTheDocument();
+    expect(onCast).toHaveBeenCalledTimes(1);
+    expect(onCast).toHaveBeenCalledWith([1]);
+
+    cleanup();
+    renderWithProviders(
+      <BallotForm poll={samplePoll({ can_vote: false })} guestReady onCast={onCast} onRecover={vi.fn()} />,
+    );
+    const option = screen.getByRole("radio", { name: "面" });
+    expect(option).toBeDisabled();
+    expect(option).not.toBeChecked();
+    expect(screen.getByTestId("vote-submit")).toBeDisabled();
+    await userEvent.click(option.closest(".ballot-option-tile") as HTMLElement);
+    expect(option).not.toBeChecked();
+    expect(screen.getByTestId("vote-submit")).toBeDisabled();
     expect(onCast).toHaveBeenCalledTimes(1);
   });
 });

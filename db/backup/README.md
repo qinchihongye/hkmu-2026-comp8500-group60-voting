@@ -13,3 +13,5 @@
   核对时比较两边的票数、记名和匿名是否各自带上正确的账户或散列、匿名票是否出现账户、场次数、用户数、授权数、Alembic 版本，以及 `uq_votes_named_poll_voter`、`uq_votes_anon_poll_browser`、`ck_polls_visibility_password`、`fk_votes_poll_mode`、`fk_votes_poll_option`。核对后删除 `voting_restore` 和临时转储文件。
 
 * **2026-10-25 的核对。** 当时从 `voting_test` 恢复到 `voting_restore`，两边都是：票 11，其中记名且只关联账户 5、匿名且不关联账户 6、匿名却带账户 0；场次 20；用户 32；授权 4；迁移 `cdc412846524`。上面的两个部分唯一索引和三个约束都在。随后删除了 `voting_restore` 和 `/tmp/voting_test.dump`。宿主机 5432 上的数据库容器没有启动。这次数字是转储当时的测试库，后来的测试会清空 `voting_test`，所以它不是一份需要长期保存的黄金数据。
+
+* **2026-10-28 的核对。** 迁移 head 已是 `6154e827a884`。旧约束 `fk_votes_poll_option` 已经删除，核对时改看 `ck_polls_vote_limit`、`ck_polls_selection_mode`、`uq_votes_poll_id_id`、`vote_selections_pkey`、`fk_vote_selections_vote`、`fk_vote_selections_option` 和 `ix_vote_selections_poll_option`。这次从 `voting_test` 恢复到 `voting_restore`，两边都是：用户 2、场次 4、选票 3、选择明细 4、记名 1、匿名 2、匿名却带账户 0、授权 1、审计 3，迁移 `6154e827a884`，`votes` 没有 `option_id`。随后删除了 `voting_restore`、`/tmp/voting_test.dump`，以及这次为演练插入的测试行。开发库 `127.0.0.1:5432` 没有参与。

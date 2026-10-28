@@ -42,29 +42,27 @@ class Page[T](BaseModel):
     total: int
 
 
-class ValidationIssue(BaseModel):
-    """单条参数错误。只保留位置和说明，不回显提交值。
+class FieldError(BaseModel):
+    """单条参数错误。只保留位置和固定说明，不回显提交值。
 
     Attributes:
-        field: 出错字段名。
-        loc: 从请求体根开始的位置。
-        msg: 错误说明。
+        field: 从 data 起的字段路径，例如 data.option_ids。
+        message: 不含原始输入的说明。
     """
 
     model_config = ConfigDict(extra="forbid")
 
     field: str
-    loc: list[str]
-    msg: str
+    message: str
 
 
 class ValidationErrorData(BaseModel):
     """参数校验失败时放进 data 的内容。
 
     Attributes:
-        issues: 字段错误列表。
+        errors: 字段错误列表。
     """
 
     model_config = ConfigDict(extra="forbid")
 
-    issues: list[ValidationIssue]
+    errors: list[FieldError]

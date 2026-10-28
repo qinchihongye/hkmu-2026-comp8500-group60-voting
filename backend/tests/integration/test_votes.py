@@ -107,7 +107,7 @@ def test_named_vote_requires_guest_then_account(auth_client: TestClient) -> None
     missing_guest = post_json(
         auth_client,
         f"/api/v1/polls/{poll_id}/votes",
-        {"option_id": option_id},
+        {"option_ids": [option_id]},
         csrf=csrf,
     )
     error_body(missing_guest, 403, int(ApiCode.FORBIDDEN))

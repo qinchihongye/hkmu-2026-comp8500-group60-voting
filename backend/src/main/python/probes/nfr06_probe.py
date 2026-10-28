@@ -31,6 +31,7 @@ from src.main.python.database.models.poll import Poll, PollOption
 from src.main.python.database.models.session import AuthSession
 from src.main.python.database.models.user import User
 from src.main.python.database.models.vote import Vote
+from src.main.python.database.models.vote_selection import VoteSelection
 from src.main.python.utils.security_util import AUTH_COOKIE, GUEST_COOKIE, hash_token
 
 logger = get_logger("nfr06")
@@ -204,12 +205,23 @@ def seed(factory: sessionmaker[Session]) -> Dataset:
                         "identity_mode": mode,
                         "voter_id": None,
                         "anonymous_voter_hash": token_hex(32),
-                        "option_id": option_ids[poll_id],
                         "submitted_at": now,
                     }
                 )
         for start in range(0, len(votes), 2000):
             session.execute(insert(Vote), votes[start : start + 2000])
+        session.flush()
+        closed_ids = [row[0] for row in closed_rows]
+        selections = [
+            {"vote_id": vote_id, "poll_id": poll_id, "option_id": option_ids[poll_id]}
+            for vote_id, poll_id in session.execute(
+                select(Vote.id, Vote.poll_id).where(Vote.poll_id.in_(closed_ids))
+            )
+        ]
+        if len(selections) != len(votes):
+            raise RuntimeError("历史票明细数量和父票不一致")
+        for start in range(0, len(selections), 2000):
+            session.execute(insert(VoteSelection), selections[start : start + 2000])
         users = [
             {
                 "username": f"nfru{index:04d}",
@@ -315,6 +327,7 @@ def cleanup(factory: sessionmaker[Session], guest_hashes: list[str]) -> None:
         if poll_ids:
             session.execute(delete(AuditEvent).where(AuditEvent.poll_id.in_(poll_ids)))
             session.execute(delete(PollAccessGrant).where(PollAccessGrant.poll_id.in_(poll_ids)))
+            session.execute(delete(VoteSelection).where(VoteSelection.poll_id.in_(poll_ids)))
             session.execute(delete(Vote).where(Vote.poll_id.in_(poll_ids)))
             session.execute(delete(PollOption).where(PollOption.poll_id.in_(poll_ids)))
             session.execute(delete(Poll).where(Poll.id.in_(poll_ids)))
@@ -421,7 +434,7 @@ def post_vote(item: Credential) -> int:
         cookies[AUTH_COOKIE] = item.session_token
     response = httpx.post(
         f"{BASE_URL}/api/v1/polls/{item.poll_id}/votes",
-        json={"data": {"option_id": item.option_id}},
+        json={"data": {"option_ids": [item.option_id]}},
         headers={"Origin": ORIGIN, "X-CSRF-Token": item.guest_csrf},
         cookies=cookies,
         timeout=10,

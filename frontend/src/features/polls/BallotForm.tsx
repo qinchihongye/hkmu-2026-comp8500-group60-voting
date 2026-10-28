@@ -21,6 +21,17 @@ function shouldRecover(error: unknown): boolean {
   );
 }
 
+function orderedOptions(poll: PollDetail) {
+  return poll.options.slice().sort((left, right) => left.position - right.position);
+}
+
+function orderedSelection(poll: PollDetail, selectedIds: number[]): number[] {
+  const chosen = new Set(selectedIds);
+  return orderedOptions(poll)
+    .filter((option) => chosen.has(option.id))
+    .map((option) => option.id);
+}
+
 export function BallotForm({
   poll,
   guestReady,
@@ -31,18 +42,35 @@ export function BallotForm({
   poll: PollDetail;
   guestReady: boolean;
   loginHref?: string;
-  onCast: (optionId: number) => Promise<VoteReceipt>;
+  onCast: (optionIds: number[]) => Promise<VoteReceipt>;
   onRecover: () => Promise<PollDetail | null>;
 }) {
-  const [optionId, setOptionId] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [pollKey, setPollKey] = useState(poll.id);
   const [phase, setPhase] = useState<BallotPhase>(poll.has_voted ? "success" : "idle");
   const [receipt, setReceipt] = useState<VoteReceipt | null>(poll.receipt);
   const [notice, setNotice] = useState<MessageKey | null>(null);
   const [failure, setFailure] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
+  let activeIds = selectedIds;
+  if (pollKey !== poll.id) {
+    activeIds = [];
+    setPollKey(poll.id);
+    setSelectedIds([]);
+    setPhase(poll.has_voted ? "success" : "idle");
+    setReceipt(poll.receipt);
+    setNotice(null);
+    setFailure(null);
+    setBusy(false);
+  }
   const { t } = useI18n();
-  const selected = poll.options.find((option) => option.id === optionId) ?? null;
+  const multiple = poll.selection_mode === "MULTIPLE";
+  const selectedOptionIds = orderedSelection(poll, activeIds);
+  const selectedLabels = orderedOptions(poll)
+    .filter((option) => selectedOptionIds.includes(option.id))
+    .map((option) => option.label);
   const message = notice ? t(notice) : failure ? explain(failure, "error.voteFailed", t) : null;
+  const locked = busy || phase === "confirming" || phase === "submitting" || !poll.can_vote || !guestReady || Boolean(loginHref);
 
   async function recover(fallback: MessageKey) {
     const detail = await onRecover();
@@ -58,14 +86,26 @@ export function BallotForm({
     setNotice(fallback);
   }
 
+  function toggle(optionId: number) {
+    if (locked) {
+      return;
+    }
+    setSelectedIds((current) => {
+      if (!multiple) {
+        return [optionId];
+      }
+      return current.includes(optionId) ? current.filter((item) => item !== optionId) : [...current, optionId];
+    });
+  }
+
   async function submit() {
-    if (optionId === null || busy) {
+    if (selectedOptionIds.length === 0 || busy || !poll.can_vote) {
       return;
     }
     setBusy(true);
     setPhase("submitting");
     try {
-      const next = await onCast(optionId);
+      const next = await onCast(selectedOptionIds);
       setReceipt(next);
       setPhase("success");
       setNotice(null);
@@ -150,20 +190,17 @@ export function BallotForm({
       ) : (
         <fieldset style={{ border: 0, margin: 0, padding: 0 }}>
           <legend className="view-subtitle" style={{ fontWeight: 700, color: "#334155", marginBottom: 14 }}>
-            {t("ballot.choose")}
+            {multiple ? t("ballot.chooseMultiple") : t("ballot.choose")}
           </legend>
           <div className="ballot-options-grid">
-            {poll.options
-              .slice()
-              .sort((left, right) => left.position - right.position)
-              .map((option, index) => {
-                const isSelected = optionId === option.id;
+            {orderedOptions(poll).map((option, index) => {
+                const isSelected = selectedOptionIds.includes(option.id);
                 const letter = String.fromCharCode(65 + (index % 26));
                 return (
                   <div
                     key={option.id}
-                    className={`ballot-option-tile ${isSelected ? "selected" : ""}`}
-                    onClick={() => setOptionId(option.id)}
+                    className={`ballot-option-tile ${isSelected ? "selected" : ""} ${multiple ? "is-multiple" : ""}`}
+                    onClick={() => toggle(option.id)}
                   >
                     <div className="ballot-option-left">
                       <span className="ballot-option-letter" aria-hidden="true">
@@ -172,7 +209,7 @@ export function BallotForm({
                       <label
                         htmlFor={`opt-${option.id}`}
                         style={{
-                          cursor: "pointer",
+                          cursor: locked ? "default" : "pointer",
                           margin: 0,
                           fontSize: "1.05rem",
                           fontWeight: isSelected ? 700 : 600,
@@ -181,11 +218,13 @@ export function BallotForm({
                       >
                         <input
                           id={`opt-${option.id}`}
-                          type="radio"
+                          type={multiple ? "checkbox" : "radio"}
                           name={`option-${poll.id}`}
                           value={option.id}
                           checked={isSelected}
-                          onChange={() => setOptionId(option.id)}
+                          disabled={locked}
+                          onClick={(event) => event.stopPropagation()}
+                          onChange={() => toggle(option.id)}
                           style={{
                             position: "absolute",
                             opacity: 0,
@@ -214,8 +253,13 @@ export function BallotForm({
             type="button"
             className="view-btn view-btn-primary"
             data-testid="vote-submit"
-            disabled={!guestReady || optionId === null || busy || Boolean(loginHref)}
-            onClick={() => setPhase("confirming")}
+            disabled={!guestReady || selectedOptionIds.length === 0 || busy || !poll.can_vote || Boolean(loginHref)}
+            onClick={() => {
+              if (selectedOptionIds.length === 0 || busy || !poll.can_vote) {
+                return;
+              }
+              setPhase("confirming");
+            }}
             style={{ width: "100%", padding: "14px 24px", fontSize: "1.05rem" }}
           >
             {busy ? t("ballot.submitting") : t("ballot.submit")}
@@ -258,8 +302,8 @@ export function BallotForm({
       ) : null}
 
       <ConfirmVoteModal
-        open={phase === "confirming"}
-        optionLabel={selected?.label ?? ""}
+        open={phase === "confirming" || phase === "submitting"}
+        optionLabels={selectedLabels}
         busy={busy}
         onCancel={() => setPhase("idle")}
         onConfirm={() => {

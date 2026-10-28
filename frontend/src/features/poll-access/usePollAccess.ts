@@ -38,17 +38,23 @@ export function usePollAccess(options: { pollId?: number; shareCode?: string }):
   const [submissionUnknown, setSubmissionUnknown] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const ticketRef = useRef(0);
-  const queryKey = `${options.pollId ?? ""}:${options.shareCode ?? ""}:${reloadKey}:${auth.status}:${guest.guestStatus}`;
+  const identityKey = `${options.pollId ?? ""}:${options.shareCode ?? ""}`;
+  const queryKey = `${identityKey}:${reloadKey}:${auth.status}:${guest.guestStatus}`;
+  const [seenIdentity, setSeenIdentity] = useState(identityKey);
   const [seenKey, setSeenKey] = useState(queryKey);
   if (seenKey !== queryKey) {
     setSeenKey(queryKey);
-    setLoading(true);
     setErrorCause(null);
-    setDetail(null);
-    setEntry(null);
-    setAccountExpired(false);
-    setNeedsLogin(false);
-    setGrantExpired(false);
+    if (seenIdentity !== identityKey) {
+      setSeenIdentity(identityKey);
+      setLoading(true);
+      setDetail(null);
+      setEntry(null);
+      setAccountExpired(false);
+      setNeedsLogin(false);
+      setGrantExpired(false);
+      setSubmissionUnknown(false);
+    }
   }
 
   const reload = useCallback(() => {
@@ -86,7 +92,7 @@ export function usePollAccess(options: { pollId?: number; shareCode?: string }):
           }
           setEntry(nextEntry);
           setDetail(nextDetail);
-          setSubmissionUnknown(false);
+          setSubmissionUnknown((current) => (nextDetail.has_voted ? false : current));
         } catch (error) {
           if (ticket !== ticketRef.current || controller.signal.aborted) {
             return;

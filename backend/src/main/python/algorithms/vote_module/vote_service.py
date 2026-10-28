@@ -15,11 +15,19 @@ from src.main.python.constants.enums import (
     IdentityMode,
     PollLifecycle,
     PollStatus,
+    SelectionMode,
     UserRole,
     Visibility,
 )
 from src.main.python.constants.error_codes import ApiCode
-from src.main.python.database.models import Poll, PollAccessGrant, PollOption, User, Vote
+from src.main.python.database.models import (
+    Poll,
+    PollAccessGrant,
+    PollOption,
+    User,
+    Vote,
+    VoteSelection,
+)
 from src.main.python.fileds.context import PollAccessContext
 from src.main.python.fileds.response.response import Page
 from src.main.python.fileds.response.vote_response import MyVote, VoteReceipt
@@ -63,22 +71,24 @@ class VoteService:
         self,
         context: PollAccessContext,
         poll_id: int,
-        option_id: int,
+        option_ids: list[int],
     ) -> VoteReceipt:
-        """锁定投票后按库存模式写入一票。
+        """锁定投票后写入一份选票及其全部选项。
 
-        匿名模式会丢掉账户关联。私密授权对创建者和管理员同样必填。
+        同一身份的重复提交在容量和结束判断之前返回，方便最后一份丢响应后恢复。
+        新份数刚好达到上限时，在同一事务里结束本场，不写关闭审计。
+        匿名模式会丢掉账户关联，也不写逐票审计。
 
         Args:
             context: 当前账户和浏览器凭据。
             poll_id: 路径中的投票。
-            option_id: 被选中的选项。
+            option_ids: 本次选中的选项，顺序保留到明细。
 
         Returns:
             不含身份和选项的回执。
 
         Raises:
-            AppError: 不能投票、重复投票、选项不属于这场，或提交结果未能确认。
+            AppError: 不能投票、重复投票、选项或数量不合法、名额已满，或提交结果未能确认。
         """
         with self._factory() as session:
             try:
@@ -87,53 +97,32 @@ class VoteService:
                     raise _missing()
                 now = self._clock.now()
                 _require_access(session, poll, context, now)
+                chosen = _require_selection(session, poll, option_ids)
+                if _existing_vote(session, poll, context, self._hmac_key) is not None:
+                    raise _already_voted()
+                ballots = _ballot_count(session, poll.id)
+                if poll.vote_limit is not None and ballots >= poll.vote_limit:
+                    raise _capacity()
                 if effective_status(poll, now) != PollStatus.OPEN:
                     raise _not_open()
-                option = session.scalar(
-                    select(PollOption).where(
-                        PollOption.id == option_id,
-                        PollOption.poll_id == poll.id,
-                    )
-                )
-                if option is None:
-                    raise _invalid_option()
                 receipt_id = uuid4()
-                if poll.identity_mode == IdentityMode.NAMED:
-                    voter_id = _lock_active_user(session, context)
-                    session.add(
-                        Vote(
-                            receipt_id=receipt_id,
-                            poll_id=poll.id,
-                            identity_mode=IdentityMode.NAMED,
-                            voter_id=voter_id,
-                            anonymous_voter_hash=None,
-                            option_id=option.id,
-                            submitted_at=now,
-                        )
-                    )
-                    session.flush()
+                vote = _insert_vote(session, poll, context, self._hmac_key, receipt_id, now)
+                _insert_selections(session, vote, chosen)
+                if vote.voter_id is not None:
                     self._audit.record(
                         session,
-                        voter_id,
+                        vote.voter_id,
                         AuditAction.VOTE_NAMED,
                         poll.id,
                         receipt_id,
                         _request_id(),
                         created_at=now,
                     )
-                else:
-                    session.add(
-                        Vote(
-                            receipt_id=receipt_id,
-                            poll_id=poll.id,
-                            identity_mode=IdentityMode.ANONYMOUS,
-                            voter_id=None,
-                            anonymous_voter_hash=_browser_hash(self._hmac_key, poll.id, context),
-                            option_id=option.id,
-                            submitted_at=now,
-                        )
-                    )
-                    session.flush()
+                if poll.vote_limit is not None and ballots + 1 == poll.vote_limit:
+                    poll.lifecycle = PollLifecycle.CLOSED
+                    poll.closed_at = now
+                    poll.updated_at = now
+                    poll.version += 1
                 _commit(session)
             except AppError:
                 session.rollback()
@@ -233,6 +222,146 @@ def _history_visible(context: PollAccessContext, now: object) -> ColumnElement[b
             )
         )
     return or_(*visible)
+
+
+def _require_selection(session: Session, poll: Poll, option_ids: list[int]) -> list[PollOption]:
+    """确认选项都属于本场，并且数量符合单选或多选。
+
+    任何一个非法选项都会让整份选票失败，不会只保存其余合法选项。
+
+    Args:
+        session: 已锁定投票的事务。
+        poll: 被锁定的投票。
+        option_ids: 请求中的选项编号。
+
+    Returns:
+        按请求顺序排列的选项。
+
+    Raises:
+        AppError: 选项不属于本场，或数量不符合配置。
+    """
+    if len(option_ids) < 1 or len(option_ids) != len(set(option_ids)):
+        raise _invalid_count()
+    rows = session.scalars(select(PollOption).where(PollOption.poll_id == poll.id)).all()
+    by_id = {row.id: row for row in rows}
+    if any(option_id not in by_id for option_id in option_ids):
+        raise _invalid_option()
+    chosen = len(option_ids)
+    if poll.selection_mode == SelectionMode.SINGLE:
+        allowed = chosen == 1
+    elif poll.selection_mode == SelectionMode.MULTIPLE:
+        allowed = 1 <= chosen <= len(rows)
+    else:
+        allowed = False
+    if not allowed:
+        raise _invalid_count()
+    return [by_id[option_id] for option_id in option_ids]
+
+
+def _existing_vote(
+    session: Session,
+    poll: Poll,
+    context: PollAccessContext,
+    hmac_key: str,
+) -> Vote | None:
+    """按记名账户或匿名散列查找本场已有选票。
+
+    Args:
+        session: 已锁定投票的事务。
+        poll: 被锁定的投票。
+        context: 当前身份。
+        hmac_key: 匿名防重复密钥。
+
+    Returns:
+        已有选票。当前身份还没投时为空。
+    """
+    if poll.identity_mode == IdentityMode.NAMED:
+        principal = context.principal
+        if principal is None:
+            raise AppError(401, ApiCode.UNAUTHENTICATED, ApiCode.UNAUTHENTICATED.default_message)
+        return session.scalar(
+            select(Vote).where(Vote.poll_id == poll.id, Vote.voter_id == principal.user_id)
+        )
+    return session.scalar(
+        select(Vote).where(
+            Vote.poll_id == poll.id,
+            Vote.anonymous_voter_hash == _browser_hash(hmac_key, poll.id, context),
+        )
+    )
+
+
+def _ballot_count(session: Session, poll_id: int) -> int:
+    """统计本场选票份数，不连接明细表。
+
+    Args:
+        session: 已锁定投票的事务。
+        poll_id: 投票主键。
+
+    Returns:
+        votes 行数。
+    """
+    total = session.scalar(select(func.count()).select_from(Vote).where(Vote.poll_id == poll_id))
+    return int(total or 0)
+
+
+def _insert_vote(
+    session: Session,
+    poll: Poll,
+    context: PollAccessContext,
+    hmac_key: str,
+    receipt_id: object,
+    now: object,
+) -> Vote:
+    """写入父票并取得主键。明细留到下一次 flush。
+
+    Args:
+        session: 已锁定投票的事务。
+        poll: 被锁定的投票。
+        context: 当前身份。
+        hmac_key: 匿名防重复密钥。
+        receipt_id: 对外回执。
+        now: 取得锁之后的当前时间。
+
+    Returns:
+        已取得主键的父票。
+
+    Raises:
+        AppError: 记名账户不存在或已停用。
+    """
+    if poll.identity_mode == IdentityMode.NAMED:
+        vote = Vote(
+            receipt_id=receipt_id,
+            poll_id=poll.id,
+            identity_mode=IdentityMode.NAMED,
+            voter_id=_lock_active_user(session, context),
+            anonymous_voter_hash=None,
+            submitted_at=now,
+        )
+    else:
+        vote = Vote(
+            receipt_id=receipt_id,
+            poll_id=poll.id,
+            identity_mode=IdentityMode.ANONYMOUS,
+            voter_id=None,
+            anonymous_voter_hash=_browser_hash(hmac_key, poll.id, context),
+            submitted_at=now,
+        )
+    session.add(vote)
+    session.flush()
+    return vote
+
+
+def _insert_selections(session: Session, vote: Vote, options: list[PollOption]) -> None:
+    """写入这份选票的全部选项明细。
+
+    Args:
+        session: 已写入父票的事务。
+        vote: 已取得主键的父票。
+        options: 按请求顺序排列的选项。
+    """
+    for option in options:
+        session.add(VoteSelection(vote_id=vote.id, poll_id=vote.poll_id, option_id=option.id))
+    session.flush()
 
 
 def _require_access(session: Session, poll: Poll, context: PollAccessContext, now: object) -> None:
@@ -367,8 +496,8 @@ def _integrity(exc: IntegrityError) -> AppError:
     """
     name = _constraint_name(exc)
     if name in _ALREADY_VOTED:
-        return AppError(409, ApiCode.ALREADY_VOTED, ApiCode.ALREADY_VOTED.default_message)
-    if name == "fk_votes_poll_option":
+        return _already_voted()
+    if name == "fk_vote_selections_option":
         return _invalid_option()
     logger.error("选票被数据库拒绝")
     return AppError(422, ApiCode.VALIDATION_ERROR, ApiCode.VALIDATION_ERROR.default_message)
@@ -417,6 +546,41 @@ def _not_open() -> AppError:
         HTTP 409 的业务异常。
     """
     return AppError(409, ApiCode.POLL_NOT_OPEN, ApiCode.POLL_NOT_OPEN.default_message)
+
+
+def _already_voted() -> AppError:
+    """构造重复投票的错误。
+
+    Returns:
+        HTTP 409 的业务异常。
+    """
+    return AppError(409, ApiCode.ALREADY_VOTED, ApiCode.ALREADY_VOTED.default_message)
+
+
+def _capacity() -> AppError:
+    """构造名额已满的错误。
+
+    Returns:
+        HTTP 409 的业务异常。
+    """
+    return AppError(
+        409,
+        ApiCode.POLL_CAPACITY_REACHED,
+        ApiCode.POLL_CAPACITY_REACHED.default_message,
+    )
+
+
+def _invalid_count() -> AppError:
+    """构造选择数量不符合本场规则的错误。
+
+    Returns:
+        HTTP 422 的业务异常。data 为空。
+    """
+    return AppError(
+        422,
+        ApiCode.INVALID_SELECTION_COUNT,
+        ApiCode.INVALID_SELECTION_COUNT.default_message,
+    )
 
 
 def _invalid_option() -> AppError:

@@ -19,6 +19,9 @@ function results(overrides: Partial<PollResults> = {}): PollResults {
   return {
     poll_id: 1,
     total_votes: 1,
+    total_selections: 1,
+    selection_mode: "SINGLE",
+    vote_limit: null,
     is_final: false,
     server_time: "2026-10-26T06:00:00Z",
     winner_option_ids: [1],
@@ -50,6 +53,7 @@ describe("ResultsPanel", () => {
       <ResultsPanel
         results={results({
           total_votes: 2,
+          total_selections: 2,
           winner_option_ids: [1, 2],
           options: [
             { option_id: 1, label: "甲", count: 1, percentage: 50 },
@@ -66,6 +70,7 @@ describe("ResultsPanel", () => {
           <ResultsPanel
             results={results({
               total_votes: 0,
+              total_selections: 0,
               winner_option_ids: [],
               options: [
                 { option_id: 1, label: "甲", count: 0, percentage: 0 },
@@ -95,5 +100,34 @@ describe("ResultsPanel", () => {
 
     await user.click(button);
     expect(note).not.toHaveClass("open");
+  });
+
+  it("同时展示选票份数和选择次数，饼图分母与选择次数一致", () => {
+    renderPanel(
+      <ResultsPanel
+        results={results({
+          total_votes: 2,
+          total_selections: 3,
+          selection_mode: "MULTIPLE",
+          vote_limit: 10,
+          winner_option_ids: [1],
+          options: [
+            { option_id: 1, label: "甲", count: 2, percentage: 66.67 },
+            { option_id: 2, label: "乙", count: 1, percentage: 33.33 },
+            { option_id: 3, label: "丙", count: 0, percentage: 0 },
+          ],
+        })}
+      />,
+    );
+
+    expect(screen.getByText("Ballots 2")).toBeInTheDocument();
+    expect(screen.getByText("Selections 3")).toBeInTheDocument();
+    expect(screen.getByText("Share of selections")).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: /丙/ })).toBeInTheDocument();
+    expect(screen.getByText("0.00%")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "甲 66.67%, 乙 33.33%, 丙 0.00%" })).toBeInTheDocument();
+    expect(screen.queryByText("100.00%")).not.toBeInTheDocument();
+    expect(screen.queryByText("50.00%")).not.toBeInTheDocument();
+    expect(screen.queryByText("NaN")).not.toBeInTheDocument();
   });
 });

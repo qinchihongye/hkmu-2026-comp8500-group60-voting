@@ -91,7 +91,7 @@
 
   `GET /polls/{poll_id}` 先取共享锁，再按服务端时间判断状态和已投记录。草稿返回 HTTP 404。私密投票没有创建者、管理员或未过期授权时也返回 HTTP 404，避免确认场次存在。公开记名投票在确认可见后，未登录返回 HTTP 401，`code` 为 `40101`。详情带 `Cache-Control: no-store`；私密详情同时带 `Referrer-Policy: no-referrer`。
 
-  `can_vote` 同时要求有效状态为 `OPEN`、记名已登录或匿名已有访客、尚未投票。私密场次还要有未过期授权，创建者和管理员不能跳过这一步。`can_view_results` 对创建者和管理员为真；其他已经能看这场的人只在有效状态为 `CLOSED` 时为真。`results_access_reason` 依次是 `creator`、`admin`、`closed`、`unavailable`。
+  `can_vote` 同时要求有效状态为 `OPEN`、记名已登录或匿名已有访客、尚未投票，并且未达选票份数上限。私密场次还要有未过期授权，创建者和管理员不能跳过这一步。`can_view_results` 对创建者和管理员为真；其他已经能看这场的人只在有效状态为 `CLOSED` 时为真。`results_access_reason` 依次是 `creator`、`admin`、`closed`、`unavailable`。详情和列表带 `vote_limit`、`selection_mode`。公开列表不返回当前票数或剩余名额。
 
   匿名已投状态用 `voting-anon-v1`、场次编号和原访客令牌计算 HMAC。没有访客 Cookie 时不计算，`has_voted` 为假。密钥缺失却要计算时返回 HTTP 503，`code` 为 `50301`，不把状态说成未投。
 
@@ -103,25 +103,25 @@
 
   | 模型 | 字段 |
   | --- | --- |
-  | `PollSummary` | `id`、`title`、`identity_mode`、`visibility`、`starts_at`、`ends_at`、`effective_status`、`created_at` |
+  | `PollSummary` | `id`、`title`、`identity_mode`、`visibility`、`vote_limit`、`selection_mode`、`starts_at`、`ends_at`、`effective_status`、`created_at`。`vote_limit` 为空表示不限，`selection_mode` 默认 `SINGLE` |
   | `ManagePollSummary` | `PollSummary` 再加 `lifecycle`、`version`、`creator_id` |
   | `ManagePollDetail` | `ManagePollSummary` 的列表字段，再加 `description`、`options`、`closed_at`、`has_access_password`、`server_time`、`can_manage`、`can_view_results` |
   | `PollDetail` | `PollSummary` 再加 `description`、`options`、`has_voted`、`receipt`、`server_time`、`can_vote`、`can_manage`、`can_view_results`、`results_access_reason` |
   | `OptionPublic` | `id`、`label`、`position` |
   | `ShareEntry` | `poll_id`、`identity_mode`、`visibility`、`password_required`、`login_required` |
-  | `ShareLink` | `share_url`、`requires_password`、`requires_login` |
+  | `ShareLink` | `share_url`、`requires_password`、`requires_login`、`access_password`。链接本身不含密码；只剩旧散列时 `access_password` 为空 |
   | `AccessGrantPublic` | `poll_id`、`expires_at` |
   | `VoteReceipt` | `receipt_id`、`poll_id`、`submitted_at`。成功提交时由 `POST /polls/{poll_id}/votes` 返回，也会出现在已投详情里 |
-  | `PollResults` | `poll_id`、`total_votes`、`options`、`winner_option_ids`、`is_final`、`server_time` |
-  | `OptionResult` | `option_id`、`label`、`count`、`percentage`。百分比保留两位小数，零票为 0 |
+  | `PollResults` | `poll_id`、`total_votes`、`total_selections`、`selection_mode`、`vote_limit`、`options`、`winner_option_ids`、`is_final`、`server_time`。`total_votes` 是选票份数，`total_selections` 是选择次数 |
+  | `OptionResult` | `option_id`、`label`、`count`、`percentage`。`count` 是该选项被选中的次数。百分比是 `count / total_selections`，四舍五入到两位小数；没有选择时为 0 |
   | `MyVote` | `receipt_id`、`poll_id`、`poll_title`、`submitted_at`。不含选项 |
   | `AuditEventPublic` | `id`、`actor_id`、`action`、`poll_id`、`receipt_id`、`created_at`、`request_id`。不含选项 |
 
-* **选票提交。** `POST /polls/{poll_id}/votes` 的 `data` 只有 `option_id`。成功时 HTTP 201，`data` 为 `VoteReceipt`，响应带 `Cache-Control: no-store`。服务先锁定投票行，再读时钟、权限、有效状态和选项。记名票写入 `voter_id` 和一条 `VOTE_NAMED` 审计；匿名票只写本场 HMAC，忽略同时存在的账户，不写逐票审计。只有 `uq_votes_named_poll_voter` 和 `uq_votes_anon_poll_browser` 映射为 HTTP 409，`code` 为 `40901`。提交前的数据库失败回滚并返回 HTTP 503，`code` 为 `50301`。COMMIT 确认丢失返回 HTTP 503，`code` 为 `50302`，不能据此断定没有入库。匿名访问日志不记录请求标识、账户、Cookie 或回执。
+* **选票提交。** `POST /polls/{poll_id}/votes` 的 `data` 只有 `option_ids`，是 1 到 10 个不重复的正整数。不再接受 `option_id`。单选必须恰好一项；多选可以是一项到本场全部有效选项。成功时 HTTP 201，`data` 为 `VoteReceipt`，一次提交只有一个回执，响应带 `Cache-Control: no-store`。服务先锁定投票行，再检查访问、选项、选择数量、是否已投、容量和有效状态。已投返回 HTTP 409，`code` 为 `40901`，并且先于容量和结束判断。达到上限返回 HTTP 409，`code` 为 `40906`。选项不属于本场返回 HTTP 422，`code` 为 `42202`；选项合法但数量不符合当前模式返回 HTTP 422，`code` 为 `42203`。记名票写入 `voter_id` 和一条 `VOTE_NAMED` 审计；匿名票只写本场 HMAC，忽略同时存在的账户，不写逐票审计。父票和全部明细在同一事务提交。刚好达到上限时，同一事务把生命周期写成 `CLOSED`，不另写 `CLOSE` 审计。只有 `uq_votes_named_poll_voter` 和 `uq_votes_anon_poll_browser` 映射为 HTTP 409，`code` 为 `40901`。提交前的数据库失败回滚并返回 HTTP 503，`code` 为 `50301`。COMMIT 确认丢失返回 HTTP 503，`code` 为 `50302`，不能据此断定没有入库。匿名访问日志不记录请求标识、账户、Cookie 或回执。
 
-  私密场次没有未过期授权时，创建者和管理员投票返回 HTTP 403，`code` 为 `40305`；其他人返回 HTTP 404，`code` 为 `40401`。草稿返回 HTTP 404。有效状态不是 `OPEN` 返回 HTTP 409，`code` 为 `40902`。其他场次的选项返回 HTTP 422，`code` 为 `42202`。
+  私密场次没有未过期授权时，创建者和管理员投票返回 HTTP 403，`code` 为 `40305`；其他人返回 HTTP 404，`code` 为 `40401`。草稿返回 HTTP 404。未达上限但有效状态不是 `OPEN` 返回 HTTP 409，`code` 为 `40902`。创建和草稿更新可以保存 `vote_limit` 与 `selection_mode`；发布后这两项只读。少于三个有效选项不能保存或发布多选，返回 HTTP 422，`code` 为 `42201`。
 
-* **结果、记名历史和审计。** `GET /polls/{poll_id}/results` 在同一事务里先取共享锁，再读时钟和权限，然后按选项聚合。零票选项保留。总票数为 0 时没有领先项。并列时 `winner_option_ids` 包含每一个最高项。`is_final` 只在有效状态为 `CLOSED` 时为真；进行中的最高项不是最终胜出者。读取不改生命周期。创建者和管理员在开放期返回 HTTP 200。其他已经能看这场的人，未结束时返回 HTTP 403，`code` 为 `40303`。私密场次没有授权时返回 HTTP 404，创建者和管理员读汇总不必先解锁。响应带 `Cache-Control: no-store` 和 `Referrer-Policy: no-referrer`。
+* **结果、记名历史和审计。** `GET /polls/{poll_id}/results` 在同一事务里先取共享锁，再读时钟和权限。选票份数按父票计数，不连接明细；选择次数按 `vote_selections` 聚合。零选择选项保留。没有选择时没有领先项。并列时 `winner_option_ids` 包含每一个最高项。`is_final` 在有效状态为 `CLOSED` 时为真，包括达额关闭、创建者关闭和自然结束后的读取。进行中的最高项不是最终胜出者。读取不改生命周期。创建者和管理员在开放期返回 HTTP 200。其他已经能看这场的人，未结束时返回 HTTP 403，`code` 为 `40303`。私密场次没有授权时返回 HTTP 404，创建者和管理员读汇总不必先解锁。响应带 `Cache-Control: no-store` 和 `Referrer-Policy: no-referrer`。单选时份数和选择次数相等。
 
   `GET /me/votes` 只返回当前账户的记名记录，分页字段在 `data` 内。匿名票不出现。私密记录还要有未过期授权、创建者身份或管理员身份，否则不进入 `items`，也不计入 `total`。响应带 `Cache-Control: no-store`。
 
@@ -149,21 +149,23 @@
   | `POLL_IMMUTABLE` | `40903` | 409 |
   | `STALE_POLL_VERSION` | `40904` | 409 |
   | `USERNAME_TAKEN` | `40905` | 409 |
+  | `POLL_CAPACITY_REACHED` | `40906` | 409 |
   | `UNSUPPORTED_MEDIA_TYPE` | `41500` | 415 |
   | `VALIDATION_ERROR` | `42201` | 422 |
   | `INVALID_OPTION` | `42202` | 422 |
+  | `INVALID_SELECTION_COUNT` | `42203` | 422 |
   | `TOO_MANY_ATTEMPTS` | `42901` | 429 |
   | `INTERNAL_ERROR` | `50000` | 500 |
   | `SERVICE_UNAVAILABLE` | `50301` | 503 |
   | `SUBMISSION_STATUS_UNKNOWN` | `50302` | 503 |
 
-* **前端页面。** 2026-10-25 的页面在 `frontend/src`。浏览器只访问 `http://localhost:5173`，Vite 把 `/api` 代理到 `http://127.0.0.1:8000`。账户 CSRF 和访客 CSRF 只留在内存，不写入 `localStorage`。POST 和 PATCH 的正文是一层 `data`，空写请求是 `{"data": {}}`。注销允许 `data` 为 `null`。安全读取遇到网络错误或 `50301` 最多再试两次。投票、注册、发布和关闭不自动重试。
+* **前端页面。** 页面在 `frontend/src`。Docker 入口是 `http://localhost:8188`。本机 Vite 是 `http://localhost:5173`，并把 `/api` 代理到 `http://127.0.0.1:8000`。账户 CSRF 和访客 CSRF 只留在内存，不写入 `localStorage`。POST 和 PATCH 的正文是一层 `data`，空写请求是 `{"data": {}}`。选票正文是 `{"data":{"option_ids":[...]}}`。注销允许 `data` 为 `null`。安全读取遇到网络错误或 `50301` 最多再试两次。投票、注册、发布和关闭不自动重试。写请求读到响应头后正文断开，按网络未知处理，不自动再投。单选用单选按钮，多选用复选框；确认框按界面顺序列出所选项。
 
   | 路径 | 页面 |
   | --- | --- |
-  | `/` | 概览。进行中公开场次和本人记名参与数使用接口里的 `total` |
+  | `/`、`/overview` | `/` 转到登录。总览在 `/overview`，进行中公开场次和本人记名参与数使用接口里的 `total` |
   | `/login`、`/register` | 账户。登录后的 `next` 只能是本站相对路径 |
-  | `/polls`、`/polls/:id`、`/polls/:id/results` | 广场、详情和结果 |
+  | `/public-polls`、`/polls/:id`、`/polls/:id/results` | 公开列表、详情和结果。`/polls` 没有列表页 |
   | `/s/:shareCode`、`/s/:shareCode/access`、`/s/:shareCode/results` | 分享入口、密码页和结果。密码不进入地址 |
   | `/my-polls`、`/my-polls/new`、`/my-polls/:id`、`/my-polls/:id/edit` | 创建者工作区，需要登录 |
   | `/my-votes` | 记名历史，需要登录。匿名票不在这里 |

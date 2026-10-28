@@ -244,9 +244,11 @@ export function ResultsPanel({ results }: { results: PollResults }) {
       ) : null}
 
       <div className="results-summary-strip">
-        <span style={{ fontSize: "1.25rem" }}>📊</span>
         <strong style={{ fontSize: "1.05rem", color: "#0f172a" }}>
-          {t("results.valid", { count: results.total_votes })}
+          {t("results.ballots", { count: results.total_votes })}
+        </strong>
+        <strong style={{ fontSize: "1.05rem", color: "#0f172a" }}>
+          {t("results.selections", { count: results.total_selections })}
         </strong>
       </div>
 

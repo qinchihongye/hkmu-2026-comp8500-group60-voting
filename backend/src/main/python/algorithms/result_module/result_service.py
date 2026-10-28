@@ -17,7 +17,7 @@ from src.main.python.constants.enums import (
     Visibility,
 )
 from src.main.python.constants.error_codes import ApiCode
-from src.main.python.database.models import Poll, PollAccessGrant, PollOption, Vote
+from src.main.python.database.models import Poll, PollAccessGrant, PollOption, Vote, VoteSelection
 from src.main.python.fileds.context import PollAccessContext
 from src.main.python.fileds.response.vote_response import OptionResult, PollResults
 from src.main.python.utils.clock_util import Clock
@@ -73,8 +73,9 @@ class ResultService:
                     .where(PollOption.poll_id == poll.id)
                     .order_by(PollOption.position, PollOption.id)
                 ).all()
-                counts = _counts(session, poll.id)
-                return _results(poll.id, list(options), counts, status, now)
+                ballots = _ballot_total(session, poll.id)
+                counts = _selection_counts(session, poll.id)
+                return _results(poll, list(options), ballots, counts, status, now)
             except AppError:
                 raise
             except SQLAlchemyError:
@@ -150,58 +151,79 @@ def _grant_ok(
     return grant is not None and grant.expires_at > now
 
 
-def _counts(session: Session, poll_id: int) -> dict[int, int]:
-    """按选项统计这场投票的有效票。
+def _ballot_total(session: Session, poll_id: int) -> int:
+    """统计本场选票份数，不连接明细表。
 
     Args:
-        session: 当前事务。
+        session: 已共享锁定投票的事务。
         poll_id: 投票主键。
 
     Returns:
-        选项主键到票数的映射。没有票的选项不在映射里。
+        votes 行数。
+    """
+    total = session.scalar(select(func.count()).select_from(Vote).where(Vote.poll_id == poll_id))
+    return int(total or 0)
+
+
+def _selection_counts(session: Session, poll_id: int) -> dict[int, int]:
+    """按选项统计选择次数。
+
+    Args:
+        session: 已共享锁定投票的事务。
+        poll_id: 投票主键。
+
+    Returns:
+        选项主键到选择次数的映射。没有被选中的选项不在映射里。
     """
     rows = session.execute(
-        select(Vote.option_id, func.count())
-        .where(Vote.poll_id == poll_id)
-        .group_by(Vote.option_id)
+        select(VoteSelection.option_id, func.count())
+        .where(VoteSelection.poll_id == poll_id)
+        .group_by(VoteSelection.option_id)
     ).all()
     return {int(option_id): int(total) for option_id, total in rows}
 
 
 def _results(
-    poll_id: int,
+    poll: Poll,
     options: list[PollOption],
+    ballots: int,
     counts: dict[int, int],
     status: PollStatus,
     now: datetime,
 ) -> PollResults:
-    """把同一次聚合收成响应。
+    """把同一次读取的份数和选择次数收成响应。
+
+    百分比的分母是选择次数。单选时两种总数相等。
 
     Args:
-        poll_id: 投票主键。
+        poll: 已锁定的投票。
         options: 按位置排列的选项。
-        counts: 选项票数。
+        ballots: 父票行数。
+        counts: 选项选择次数。
         status: 有效状态。
         now: 服务端时间。
 
     Returns:
-        汇总。零票没有领先项。
+        汇总。没有选择时没有领先项。
     """
-    total = sum(counts.values())
+    total_selections = sum(counts.values())
     items = [
         OptionResult(
             option_id=option.id,
             label=option.label,
             count=counts.get(option.id, 0),
-            percentage=_percentage(counts.get(option.id, 0), total),
+            percentage=_percentage(counts.get(option.id, 0), total_selections),
         )
         for option in options
     ]
     highest = max((item.count for item in items), default=0)
     leaders = [item.option_id for item in items if highest > 0 and item.count == highest]
     return PollResults(
-        poll_id=poll_id,
-        total_votes=total,
+        poll_id=poll.id,
+        total_votes=ballots,
+        total_selections=total_selections,
+        selection_mode=poll.selection_mode,
+        vote_limit=poll.vote_limit,
         options=items,
         winner_option_ids=leaders,
         is_final=status == PollStatus.CLOSED,
@@ -210,14 +232,14 @@ def _results(
 
 
 def _percentage(count: int, total: int) -> float:
-    """计算保留两位小数的百分比。
+    """计算保留两位小数的选择次数占比。
 
     Args:
-        count: 该选项的票数。
-        total: 总票数。
+        count: 该选项被选中的次数。
+        total: 全部选择次数。
 
     Returns:
-        0 到 100 的百分比。总票数为 0 时返回 0。
+        0 到 100 的百分比。没有选择时返回 0。
     """
     if total == 0:
         return 0.0

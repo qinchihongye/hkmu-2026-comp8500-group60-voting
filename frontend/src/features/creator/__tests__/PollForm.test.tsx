@@ -16,8 +16,8 @@ describe("PollForm", () => {
     const options = screen.getAllByLabelText(/^Option /);
     await userEvent.type(options[0]!, "赞成");
     await userEvent.type(options[1]!, "反对");
-    await userEvent.click(screen.getByLabelText("Anonymous"));
-    await userEvent.click(screen.getByLabelText("Private"));
+    await userEvent.click(screen.getByRole("switch", { name: "Anonymous voting" }));
+    await userEvent.click(screen.getByRole("switch", { name: "Private poll" }));
     expect(screen.getByTestId("access-password")).toBeInTheDocument();
     await userEvent.click(screen.getByTestId("save-poll"));
     expect(await screen.findByRole("alert")).toHaveTextContent("A private poll needs a passcode");
@@ -42,7 +42,7 @@ describe("PollForm", () => {
     initial.visibility = "PRIVATE";
     initial.accessPassword = "access-pass1";
     renderWithProviders(<PollForm initial={initial} mode="create" now={fixedNow} onSubmit={onSubmit} />);
-    await userEvent.click(screen.getByLabelText("Public"));
+    await userEvent.click(screen.getByRole("switch", { name: "Private poll" }));
     expect(screen.queryByTestId("access-password")).not.toBeInTheDocument();
     await userEvent.click(screen.getByTestId("save-poll"));
     expect(onSubmit.mock.calls[0]?.[0].access_password).toBeNull();
@@ -104,4 +104,121 @@ describe("PollForm", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit.mock.calls[0]?.[0].starts_at).toBe("2026-10-24T16:00:00+08:00");
   });
+
+  it("默认不限票数且单选，开启上限后提交整数", async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    renderWithProviders(
+      <PollForm initial={emptyPollForm(fixedNow)} mode="create" now={fixedNow} onSubmit={onSubmit} />,
+    );
+    expect(screen.getByRole("switch", { name: "Limit ballots" })).not.toBeChecked();
+    expect(screen.queryByLabelText("Ballot limit")).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Single choice" })).toBeChecked();
+    expect(screen.queryByText(/This browser is the credential/)).not.toBeInTheDocument();
+
+    await fillRequired();
+    await userEvent.click(screen.getByTestId("save-poll"));
+    expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({ vote_limit: null, selection_mode: "SINGLE" });
+
+    await userEvent.click(screen.getByRole("switch", { name: "Limit ballots" }));
+    const limit = screen.getByLabelText("Ballot limit");
+    expect(limit).toHaveValue("100");
+    await userEvent.clear(limit);
+    await userEvent.type(limit, "250");
+    await userEvent.click(screen.getByTestId("save-poll"));
+    expect(onSubmit.mock.calls[1]?.[0].vote_limit).toBe(250);
+  });
+
+  it("步进停在 1 和上限，键盘可以增减，非法数字不会进入请求", async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    renderWithProviders(
+      <PollForm initial={emptyPollForm(fixedNow)} mode="create" now={fixedNow} onSubmit={onSubmit} />,
+    );
+    await userEvent.click(screen.getByRole("switch", { name: "Limit ballots" }));
+    const limit = screen.getByLabelText("Ballot limit");
+    await userEvent.click(screen.getByRole("button", { name: "Decrease ballot limit" }));
+    expect(limit).toHaveValue("99");
+
+    fireEvent.change(limit, { target: { value: "1" } });
+    expect(screen.getByRole("button", { name: "Decrease ballot limit" })).toBeDisabled();
+    fireEvent.change(limit, { target: { value: "2147483647" } });
+    expect(screen.getByRole("button", { name: "Increase ballot limit" })).toBeDisabled();
+
+    fireEvent.change(limit, { target: { value: "40" } });
+    limit.focus();
+    await userEvent.keyboard("{ArrowUp}");
+    expect(limit).toHaveValue("41");
+
+    fireEvent.change(limit, { target: { value: "1.5" } });
+    await fillRequired();
+    await userEvent.click(screen.getByTestId("save-poll"));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Enter a whole number from 1 to 2,147,483,647.");
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.queryByDisplayValue("NaN")).not.toBeInTheDocument();
+  });
+
+  it("英文和中文都使用各自的设置标签", () => {
+    const { unmount } = renderWithProviders(
+      <PollForm initial={emptyPollForm(fixedNow)} mode="create" now={fixedNow} onSubmit={vi.fn()} />,
+    );
+    expect(screen.getByText("Vote limit")).toBeInTheDocument();
+    expect(screen.getByText("Unlimited")).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Anonymous voting" })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Private poll" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Multiple choices" })).toBeDisabled();
+    unmount();
+
+    localStorage.setItem("voting_locale", "zh");
+    renderWithProviders(
+      <PollForm initial={emptyPollForm(fixedNow)} mode="create" now={fixedNow} onSubmit={vi.fn()} />,
+    );
+    expect(screen.getByText("最高投票数")).toBeInTheDocument();
+    expect(screen.getByText("不限")).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "不记名投票" })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "私密投票" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "单选" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "多选" })).toBeDisabled();
+    expect(screen.queryByText("Vote limit")).not.toBeInTheDocument();
+    expect(screen.queryByText("Anonymous voting")).not.toBeInTheDocument();
+  });
+
+  it("少于三个有效选项不能多选，降回两项时只提示一次并改回单选", async () => {
+    const onSubmit = vi.fn();
+    const initial = emptyPollForm(fixedNow);
+    initial.title = "班会";
+    initial.options = ["赞成", "反对", ""];
+    initial.selectionMode = "MULTIPLE";
+    renderWithProviders(<PollForm initial={initial} mode="create" now={fixedNow} onSubmit={onSubmit} />);
+    expect(screen.getByRole("radio", { name: "Multiple choices" })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: "Single choice" })).toBeChecked();
+    expect(screen.getByRole("status")).toHaveTextContent("Switched to single choice");
+
+    await userEvent.type(screen.getByLabelText("Option 3"), "弃权");
+    expect(screen.getByRole("radio", { name: "Multiple choices" })).toBeEnabled();
+    await userEvent.click(screen.getByRole("radio", { name: "Multiple choices" }));
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+
+    await userEvent.clear(screen.getByLabelText("Option 3"));
+    expect(screen.getByRole("radio", { name: "Single choice" })).toBeChecked();
+    expect(screen.getAllByText("Switched to single choice")).toHaveLength(1);
+    expect(screen.getByRole("radio", { name: "Multiple choices" })).toBeDisabled();
+
+    await userEvent.type(screen.getByLabelText("Option 3"), "弃权");
+    await userEvent.click(screen.getByRole("radio", { name: "Multiple choices" }));
+    await userEvent.click(screen.getByRole("button", { name: "Remove option 3" }));
+    expect(screen.getByRole("radio", { name: "Single choice" })).toBeChecked();
+    expect(screen.getAllByText("Switched to single choice")).toHaveLength(1);
+
+    await userEvent.clear(screen.getByLabelText("Option 2"));
+    await userEvent.type(screen.getByLabelText("Option 2"), "赞成");
+    await userEvent.click(screen.getByTestId("save-poll"));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Options must be different.");
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  async function fillRequired() {
+    await userEvent.type(screen.getByLabelText("Title"), "班会");
+    const options = screen.getAllByLabelText(/^Option /);
+    await userEvent.type(options[0]!, "赞成");
+    await userEvent.type(options[1]!, "反对");
+  }
 });

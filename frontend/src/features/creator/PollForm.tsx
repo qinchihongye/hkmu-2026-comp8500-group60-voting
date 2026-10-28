@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from "react";
+import { useState, type ChangeEvent, type KeyboardEvent } from "react";
 import { Link } from "react-router-dom";
 
 import { explain } from "../../i18n/errors";
@@ -8,6 +8,37 @@ import { defaultPollWindow, hongKongParts, hongKongToIso, isBeforeCurrentHongKon
 import type { PollWriteBody } from "../../lib/api-types";
 import type { PollFormValue } from "./types";
 import "./PollForm.css";
+
+const MAX_VOTE_LIMIT = 2_147_483_647;
+
+function limitFromText(text: string): number | null {
+  const trimmed = text.trim();
+  if (!/^[1-9]\d*$/.test(trimmed)) {
+    return null;
+  }
+  const parsed = Number(trimmed);
+  if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > MAX_VOTE_LIMIT) {
+    return null;
+  }
+  return parsed;
+}
+
+function canChooseMultiple(options: string[]): boolean {
+  const labels = options.map((item) => item.trim()).filter((item) => item.length > 0);
+  return (
+    labels.length >= 3 &&
+    labels.length <= 10 &&
+    new Set(labels).size === labels.length &&
+    labels.every((item) => item.length <= 200)
+  );
+}
+
+function withSingleChoice(value: PollFormValue): PollFormValue {
+  if (value.selectionMode === "MULTIPLE" && !canChooseMultiple(value.options)) {
+    return { ...value, selectionMode: "SINGLE" };
+  }
+  return value;
+}
 
 function updateTime(event: ChangeEvent<HTMLInputElement>, previous: string, apply: (time: string) => void) {
   const field = event.currentTarget;
@@ -38,6 +69,9 @@ function validate(value: PollFormValue, mode: "create" | "edit", now = new Date(
   }
   if (labels.some((item) => item.length > 200)) {
     return "form.error.optionLength";
+  }
+  if (value.voteLimit !== null && limitFromText(String(value.voteLimit)) !== value.voteLimit) {
+    return "form.error.voteLimit";
   }
   if (value.visibility === "PRIVATE") {
     const password = value.accessPassword;
@@ -73,6 +107,8 @@ export function toPollBody(value: PollFormValue): PollWriteBody {
     identity_mode: value.identityMode,
     visibility: value.visibility,
     access_password: value.visibility === "PRIVATE" && value.accessPassword.length > 0 ? value.accessPassword : null,
+    vote_limit: value.voteLimit,
+    selection_mode: value.selectionMode,
     options: value.options.map((label) => label.trim()).filter((label) => label.length > 0).map((label) => ({ label })),
   };
 }
@@ -93,28 +129,114 @@ export function PollForm({
   onSubmit: (body: PollWriteBody) => Promise<void>;
 }) {
   const { t } = useI18n();
-  const [value, setValue] = useState(initial);
+  const opened = withSingleChoice(initial);
+  const [value, setValue] = useState(opened);
+  const [limitOn, setLimitOn] = useState(opened.voteLimit !== null);
+  const [limitText, setLimitText] = useState(opened.voteLimit === null ? "" : String(opened.voteLimit));
+  const [singleNotice, setSingleNotice] = useState(opened.selectionMode !== initial.selectionMode);
   const [errorKey, setErrorKey] = useState<MessageKey | null>(null);
   const [failure, setFailure] = useState<unknown>(null);
   const clock = now ?? new Date();
   const shownError = errorKey ? t(errorKey) : failure ? explain(failure, "error.saveFailed", t) : serverError;
   const current = hongKongParts(clock);
+  const multipleReady = canChooseMultiple(value.options);
+  const numericLimit = limitFromText(limitText);
 
   function patch(partial: Partial<PollFormValue>) {
     setValue((current) => ({ ...current, ...partial }));
   }
 
+  function clearLimitError() {
+    setErrorKey((current) => (current === "form.error.voteLimit" ? null : current));
+  }
+
+  function commitOptions(options: string[]) {
+    if (value.selectionMode === "MULTIPLE" && !canChooseMultiple(options)) {
+      setSingleNotice(true);
+      patch({ options, selectionMode: "SINGLE" });
+      return;
+    }
+    patch({ options });
+  }
+
+  function toggleLimit(on: boolean) {
+    setLimitOn(on);
+    if (!on) {
+      setLimitText("");
+      patch({ voteLimit: null });
+      clearLimitError();
+      return;
+    }
+    setLimitText("100");
+    patch({ voteLimit: 100 });
+    clearLimitError();
+  }
+
+  function changeLimit(text: string) {
+    setLimitText(text);
+    const parsed = limitFromText(text);
+    if (parsed !== null) {
+      patch({ voteLimit: parsed });
+      clearLimitError();
+    }
+  }
+
+  function stepLimit(delta: number) {
+    const base = numericLimit ?? 0;
+    const next = Math.min(MAX_VOTE_LIMIT, Math.max(1, base + delta));
+    setLimitText(String(next));
+    patch({ voteLimit: next });
+    clearLimitError();
+  }
+
+  function blurLimit() {
+    if (!limitOn) {
+      return;
+    }
+    const parsed = limitFromText(limitText);
+    if (parsed === null) {
+      setFailure(null);
+      setErrorKey("form.error.voteLimit");
+      return;
+    }
+    setLimitText(String(parsed));
+    patch({ voteLimit: parsed });
+    clearLimitError();
+  }
+
+  function onLimitKey(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      stepLimit(1);
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      stepLimit(-1);
+    }
+  }
+
   async function submit() {
-    const nextError = validate(value, mode, now ?? new Date());
+    let voteLimit: number | null = null;
+    if (limitOn) {
+      const parsed = limitFromText(limitText);
+      if (parsed === null) {
+        setFailure(null);
+        setErrorKey("form.error.voteLimit");
+        return;
+      }
+      voteLimit = parsed;
+    }
+    const next = { ...value, voteLimit };
+    const nextError = validate(next, mode, now ?? new Date());
     if (nextError) {
       setFailure(null);
       setErrorKey(nextError);
       return;
     }
+    setValue(next);
     setErrorKey(null);
     setFailure(null);
     try {
-      await onSubmit(toPollBody(value));
+      await onSubmit(toPollBody(next));
     } catch (caught) {
       setErrorKey(null);
       setFailure(caught);
@@ -181,163 +303,155 @@ export function PollForm({
           </div>
         </section>
 
-        {/* ================= SECTION 2: IDENTITY & VISIBILITY CONFIG ================= */}
         <section className="poll-form-section">
           <h2 className="poll-section-title">
             <span>⚙️</span>
             <span>{t("form.settings")}</span>
           </h2>
-
-          {/* Identity Mode Selection */}
-          <div className="poll-form-field">
-            <span className="poll-form-label">{t("form.identity")}</span>
-            <div className="poll-config-grid">
-              {/* Named Ballot */}
-              <label
-                htmlFor="id-named"
-                className={`poll-config-card ${value.identityMode === "NAMED" ? "selected" : ""}`}
-              >
+          <div className="poll-settings-grid">
+            <div className="poll-setting-card">
+              <span className="poll-setting-name">{t("form.identity")}</span>
+              <div className="poll-switch-row">
+                <span className={value.identityMode === "NAMED" ? "poll-switch-side is-active" : "poll-switch-side"}>
+                  {t("identity.named")}
+                </span>
                 <input
-                  type="radio"
-                  id="id-named"
-                  name="identity"
-                  aria-label={t("identity.named")}
-                  className="poll-native-radio"
-                  checked={value.identityMode === "NAMED"}
-                  onChange={() => patch({ identityMode: "NAMED" })}
-                />
-                <span className="sr-only">{t("identity.named")}</span>
-                <div className="poll-config-card-header">
-                  <div className="poll-config-icon-title">
-                    <span className="poll-config-icon">👤</span>
-                    <span className="poll-config-title">{t("identity.named")}</span>
-                  </div>
-                  <div className="poll-config-radio-dot">
-                    <div className="poll-config-radio-inner" />
-                  </div>
-                </div>
-                <p className="poll-config-desc">
-                  {t("form.named")}
-                </p>
-              </label>
-
-              {/* Anonymous Ballot */}
-              <label
-                htmlFor="id-anon"
-                className={`poll-config-card ${value.identityMode === "ANONYMOUS" ? "selected" : ""}`}
-              >
-                <input
-                  type="radio"
-                  id="id-anon"
-                  name="identity"
-                  aria-label={t("identity.anonymous")}
-                  className="poll-native-radio"
+                  className="poll-switch"
+                  type="checkbox"
+                  role="switch"
+                  aria-label={t("form.anonymousVoting")}
                   checked={value.identityMode === "ANONYMOUS"}
-                  onChange={() => patch({ identityMode: "ANONYMOUS" })}
+                  onChange={(event) => patch({ identityMode: event.target.checked ? "ANONYMOUS" : "NAMED" })}
                 />
-                <span className="sr-only">{t("identity.anonymous")}</span>
-                <div className="poll-config-card-header">
-                  <div className="poll-config-icon-title">
-                    <span className="poll-config-icon">🛡️</span>
-                    <span className="poll-config-title">{t("identity.anonymous")}</span>
-                  </div>
-                  <div className="poll-config-radio-dot">
-                    <div className="poll-config-radio-inner" />
-                  </div>
-                </div>
-                <p className="poll-config-desc">
-                  {t("form.anonymous")}
-                </p>
-              </label>
+                <span className={value.identityMode === "ANONYMOUS" ? "poll-switch-side is-active" : "poll-switch-side"}>
+                  {t("identity.anonymous")}
+                </span>
+              </div>
             </div>
-          </div>
 
-          {/* Visibility Selection */}
-          <div className="poll-form-field">
-            <span className="poll-form-label">{t("form.visibility")}</span>
-            <div className="poll-config-grid">
-              {/* Public Poll */}
-              <label
-                htmlFor="vis-pub"
-                className={`poll-config-card ${value.visibility === "PUBLIC" ? "selected" : ""}`}
-              >
+            <div className="poll-setting-card">
+              <span className="poll-setting-name">{t("form.visibility")}</span>
+              <div className="poll-switch-row">
+                <span className={value.visibility === "PUBLIC" ? "poll-switch-side is-active" : "poll-switch-side"}>
+                  {t("visibility.public")}
+                </span>
                 <input
-                  type="radio"
-                  id="vis-pub"
-                  name="visibility"
-                  aria-label={t("visibility.public")}
-                  className="poll-native-radio"
-                  checked={value.visibility === "PUBLIC"}
-                  onChange={() => patch({ visibility: "PUBLIC", accessPassword: "" })}
-                />
-                <span className="sr-only">{t("visibility.public")}</span>
-                <div className="poll-config-card-header">
-                  <div className="poll-config-icon-title">
-                    <span className="poll-config-icon">🌐</span>
-                    <span className="poll-config-title">{t("visibility.public")}</span>
-                  </div>
-                  <div className="poll-config-radio-dot">
-                    <div className="poll-config-radio-inner" />
-                  </div>
-                </div>
-                <p className="poll-config-desc">
-                  {t("form.public")}
-                </p>
-              </label>
-
-              {/* Private Poll */}
-              <label
-                htmlFor="vis-priv"
-                className={`poll-config-card ${value.visibility === "PRIVATE" ? "selected" : ""}`}
-              >
-                <input
-                  type="radio"
-                  id="vis-priv"
-                  name="visibility"
-                  aria-label={t("visibility.private")}
-                  className="poll-native-radio"
+                  className="poll-switch"
+                  type="checkbox"
+                  role="switch"
+                  aria-label={t("form.privatePoll")}
                   checked={value.visibility === "PRIVATE"}
-                  onChange={() => patch({ visibility: "PRIVATE" })}
+                  onChange={(event) => {
+                    if (event.target.checked) {
+                      patch({ visibility: "PRIVATE" });
+                      return;
+                    }
+                    patch({ visibility: "PUBLIC", accessPassword: "" });
+                  }}
                 />
-                <span className="sr-only">{t("visibility.private")}</span>
-                <div className="poll-config-card-header">
-                  <div className="poll-config-icon-title">
-                    <span className="poll-config-icon">🔒</span>
-                    <span className="poll-config-title">{t("visibility.private")}</span>
-                  </div>
-                  <div className="poll-config-radio-dot">
-                    <div className="poll-config-radio-inner" />
-                  </div>
+                <span className={value.visibility === "PRIVATE" ? "poll-switch-side is-active" : "poll-switch-side"}>
+                  {t("visibility.private")}
+                </span>
+              </div>
+              {value.visibility === "PRIVATE" ? (
+                <div className="poll-passcode-box">
+                  <label htmlFor="poll-passcode" className="poll-passcode-label">
+                    <span>{t("form.passcode")}</span>
+                  </label>
+                  <input
+                    id="poll-passcode"
+                    data-testid="access-password"
+                    type="password"
+                    autoComplete="new-password"
+                    className="poll-form-input"
+                    value={value.accessPassword}
+                    onChange={(event) => patch({ accessPassword: event.target.value })}
+                    placeholder={mode === "edit" ? t("form.passcodeEdit") : t("form.passcodeCreate")}
+                  />
                 </div>
-                <p className="poll-config-desc">
-                  {t("form.private")}
-                </p>
-              </label>
+              ) : null}
             </div>
 
-            {/* Passcode Field for Private Poll */}
-            {value.visibility === "PRIVATE" ? (
-              <div className="poll-passcode-box">
-                <label htmlFor="poll-passcode" className="poll-passcode-label">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                  <span>{t("form.passcode")}</span>
-                </label>
+            <div className="poll-setting-card">
+              <span className="poll-setting-name">{t("form.voteLimit")}</span>
+              <div className="poll-switch-row">
+                <span className={!limitOn ? "poll-switch-side is-active" : "poll-switch-side"}>{t("form.unlimited")}</span>
                 <input
-                  id="poll-passcode"
-                  data-testid="access-password"
-                  type="password"
-                  autoComplete="new-password"
-                  className="poll-form-input"
-                  style={{ background: "#ffffff" }}
-                  value={value.accessPassword}
-                  onChange={(event) => patch({ accessPassword: event.target.value })}
-                  placeholder={mode === "edit" ? t("form.passcodeEdit") : t("form.passcodeCreate")}
+                  className="poll-switch"
+                  type="checkbox"
+                  role="switch"
+                  aria-label={t("form.limitBallots")}
+                  checked={limitOn}
+                  onChange={(event) => toggleLimit(event.target.checked)}
                 />
               </div>
-            ) : null}
+              {limitOn ? (
+                <div className="poll-limit-row">
+                  <button
+                    type="button"
+                    className="poll-step-btn"
+                    aria-label={t("form.decreaseLimit")}
+                    disabled={numericLimit === null || numericLimit <= 1}
+                    onClick={() => stepLimit(-1)}
+                  >
+                    −
+                  </button>
+                  <input
+                    className="poll-form-input poll-limit-input"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    aria-label={t("form.ballotLimit")}
+                    value={limitText}
+                    onChange={(event) => changeLimit(event.target.value)}
+                    onBlur={blurLimit}
+                    onKeyDown={onLimitKey}
+                  />
+                  <button
+                    type="button"
+                    className="poll-step-btn"
+                    aria-label={t("form.increaseLimit")}
+                    disabled={numericLimit === MAX_VOTE_LIMIT}
+                    onClick={() => stepLimit(1)}
+                  >
+                    +
+                  </button>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="poll-setting-card">
+              <span className="poll-setting-name" id="poll-selection-label">{t("form.selectionMode")}</span>
+              <div className="poll-segment" role="radiogroup" aria-labelledby="poll-selection-label">
+                <label className="poll-segment-option">
+                  <input
+                    className="poll-segment-input"
+                    type="radio"
+                    name="selection-mode"
+                    checked={value.selectionMode === "SINGLE"}
+                    onChange={() => patch({ selectionMode: "SINGLE" })}
+                  />
+                  <span>{t("form.single")}</span>
+                </label>
+                <label className={multipleReady ? "poll-segment-option" : "poll-segment-option is-disabled"}>
+                  <input
+                    className="poll-segment-input"
+                    type="radio"
+                    name="selection-mode"
+                    disabled={!multipleReady}
+                    checked={value.selectionMode === "MULTIPLE"}
+                    onChange={() => {
+                      setSingleNotice(false);
+                      patch({ selectionMode: "MULTIPLE" });
+                    }}
+                  />
+                  <span>{t("form.multiple")}</span>
+                </label>
+              </div>
+              {singleNotice ? (
+                <p className="poll-inline-status" role="status">{t("form.switchedSingle")}</p>
+              ) : null}
+            </div>
           </div>
         </section>
 
@@ -412,7 +526,7 @@ export function PollForm({
                     onChange={(event) => {
                       const options = value.options.slice();
                       options[index] = event.target.value;
-                      patch({ options });
+                      commitOptions(options);
                     }}
                   />
                 </div>
@@ -422,7 +536,7 @@ export function PollForm({
                   title={t("common.removeOption", { n: index + 1 })}
                   aria-label={t("common.removeOption", { n: index + 1 })}
                   disabled={value.options.length <= 2}
-                  onClick={() => patch({ options: value.options.filter((_, item) => item !== index) })}
+                  onClick={() => commitOptions(value.options.filter((_, item) => item !== index))}
                 >
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="3 6 5 6 21 6" />
@@ -483,6 +597,8 @@ export function emptyPollForm(now = new Date()): PollFormValue {
     identityMode: "NAMED",
     visibility: "PUBLIC",
     accessPassword: "",
+    voteLimit: null,
+    selectionMode: "SINGLE",
     options: ["", ""],
     startsDate: window.startsDate,
     startsTime: window.startsTime,

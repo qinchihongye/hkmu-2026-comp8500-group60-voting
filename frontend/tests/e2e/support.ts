@@ -62,17 +62,39 @@ export async function logout(page: Page): Promise<void> {
 
 export async function createDraft(
   page: Page,
-  options: { title: string; anonymous?: boolean; visibility?: "PUBLIC" | "PRIVATE"; password?: string },
+  options: {
+    title: string;
+    anonymous?: boolean;
+    visibility?: "PUBLIC" | "PRIVATE";
+    password?: string;
+    options?: string[];
+    multiple?: boolean;
+    voteLimit?: number;
+  },
 ): Promise<void> {
   await page.goto("/my-polls/new");
   await page.getByLabel("Title").fill(options.title);
-  await page.getByRole("textbox", { name: "Option 1", exact: true }).fill("甲");
-  await page.getByRole("textbox", { name: "Option 2", exact: true }).fill("乙");
+  const labels = options.options ?? ["甲", "乙"];
+  await page.getByRole("textbox", { name: "Option 1", exact: true }).fill(labels[0] ?? "甲");
+  await page.getByRole("textbox", { name: "Option 2", exact: true }).fill(labels[1] ?? "乙");
+  for (let index = 2; index < labels.length; index += 1) {
+    await page.getByRole("button", { name: /Add option/ }).click();
+    await page.getByRole("textbox", { name: `Option ${index + 1}`, exact: true }).fill(labels[index] ?? "");
+  }
+  if (options.multiple) {
+    await page.getByRole("radio", { name: "Multiple choices" }).check();
+  }
+  if (options.voteLimit !== undefined) {
+    await page.getByRole("switch", { name: "Limit ballots" }).check();
+    const limit = page.getByRole("textbox", { name: "Ballot limit", exact: true });
+    await limit.fill(String(options.voteLimit));
+    await limit.blur();
+  }
   if (options.anonymous) {
-    await page.locator("label[for='id-anon']").click();
+    await page.getByRole("switch", { name: "Anonymous voting" }).check();
   }
   if (options.visibility === "PRIVATE") {
-    await page.locator("label[for='vis-priv']").click();
+    await page.getByRole("switch", { name: "Private poll" }).check();
     await page.getByTestId("access-password").fill(options.password ?? accessPassword);
   }
   await page.getByTestId("save-poll").click();
@@ -86,11 +108,17 @@ export async function publishCurrent(page: Page): Promise<string> {
   return share.inputValue();
 }
 
-export async function voteFor(page: Page, label: string): Promise<void> {
-  await page.getByLabel(label).check();
+export async function voteFor(page: Page, label: string | string[]): Promise<void> {
+  const labels = Array.isArray(label) ? label : [label];
+  const multiple = await page.getByText("Choose one or more options").isVisible();
+  const role = multiple ? "checkbox" : "radio";
+  for (const item of labels) {
+    await page.getByRole(role, { name: item, exact: true }).check();
+  }
   const submit = page.getByTestId("vote-submit");
   await expect(submit).toBeEnabled();
   await submit.click();
+  await expect(page.getByRole("dialog").getByRole("listitem")).toHaveText(labels);
   await page.getByTestId("vote-confirm").click();
   await expect(page.getByTestId("receipt")).toBeVisible();
 }

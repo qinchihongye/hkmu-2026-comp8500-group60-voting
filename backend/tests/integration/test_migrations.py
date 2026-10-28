@@ -75,7 +75,7 @@ def test_empty_database_upgrades_downgrades_and_returns_to_head(
 
 
 def _assert_schema(engine: Engine) -> None:
-    """核对八张表、外键删除规则、部分唯一索引和票表字段。
+    """核对九张表、外键删除规则、部分唯一索引和票表字段。
 
     Args:
         engine: 已迁移的测试库引擎。
@@ -88,19 +88,22 @@ def _assert_schema(engine: Engine) -> None:
         "anonymous_voter_hash",
         "id",
         "identity_mode",
-        "option_id",
         "poll_id",
         "receipt_id",
         "submitted_at",
         "voter_id",
     }
+    assert columns["vote_selections"] == {"option_id", "poll_id", "vote_id"}
+    assert "vote_limit" in columns["polls"]
+    assert "selection_mode" in columns["polls"]
     assert "user_id" not in columns["guest_sessions"]
     assert _nullable(engine, "audit_events", "receipt_id") == "YES"
     assert _nullable(engine, "votes", "receipt_id") == "NO"
     assert _audit_foreign_tables(engine) == {"polls", "users"}
 
     delete_actions = _foreign_key_actions(engine)
-    assert delete_actions["fk_votes_poll_option"] == "r"
+    assert delete_actions["fk_vote_selections_option"] == "r"
+    assert delete_actions["fk_vote_selections_vote"] == "r"
     assert delete_actions["fk_votes_poll_mode"] == "r"
     assert set(delete_actions.values()) == {"r"}
 
@@ -113,14 +116,20 @@ def _assert_schema(engine: Engine) -> None:
         "ck_audit_events_action",
         "ck_polls_time_window",
         "ck_polls_visibility_password",
+        "ck_polls_selection_mode",
+        "ck_polls_vote_limit",
         "ck_votes_identity",
+        "fk_vote_selections_option",
+        "fk_vote_selections_vote",
         "fk_votes_poll_mode",
-        "fk_votes_poll_option",
         "uq_poll_options_poll_id_id",
         "uq_poll_options_poll_id_label",
         "uq_poll_options_poll_id_position",
         "uq_polls_id_identity_mode",
+        "uq_votes_poll_id_id",
     }
+    assert "ix_votes_option_id" not in indexes
+    assert "fk_votes_poll_option" not in delete_actions
 
 
 def _table_names(engine: Engine) -> set[str]:

@@ -10,7 +10,7 @@ from sqlalchemy import select, text
 
 from src.main.python.constants.enums import UserRole
 from src.main.python.constants.error_codes import ApiCode
-from src.main.python.database.models import User, Vote
+from src.main.python.database.models import User, Vote, VoteSelection
 from tests.auth_support import envelope, error_body, post_json
 from tests.integration.test_vote_concurrency import (
     _engine,
@@ -82,8 +82,8 @@ def _insert_votes(client: TestClient, poll_id: int, option_id: int, count: int) 
                     identity_mode="ANONYMOUS",
                     voter_id=None,
                     anonymous_voter_hash=f"{poll_id:08x}{option_id:08x}{index:048x}",
-                    option_id=option_id,
                     submitted_at=clock_of(client).now(),
+                    selections=[VoteSelection(poll_id=poll_id, option_id=option_id)],
                 )
             )
         session.commit()
@@ -141,19 +141,26 @@ def test_counts_keep_zeros_ties_and_percentages(auth_client: TestClient) -> None
 
     mixed_result = envelope(auth_client.get(f"/api/v1/polls/{mixed_id}/results"), 200)
     assert mixed_result["total_votes"] == 3
+    assert mixed_result["total_selections"] == 3
+    assert mixed_result["selection_mode"] == "SINGLE"
+    assert mixed_result["vote_limit"] is None
     assert [item["count"] for item in mixed_result["options"]] == [2, 1, 0]
     assert [item["percentage"] for item in mixed_result["options"]] == [66.67, 33.33, 0.0]
     assert mixed_result["winner_option_ids"] == [mixed_options[0]]
     assert mixed_result["is_final"] is False
 
     tie_result = envelope(auth_client.get(f"/api/v1/polls/{tie_id}/results"), 200)
+    assert tie_result["total_votes"] == 4
+    assert tie_result["total_selections"] == 4
     assert tie_result["winner_option_ids"] == tie_options
     assert [item["percentage"] for item in tie_result["options"]] == [50.0, 50.0]
 
     empty_result = envelope(auth_client.get(f"/api/v1/polls/{empty_id}/results"), 200)
     assert empty_result["total_votes"] == 0
+    assert empty_result["total_selections"] == 0
     assert empty_result["winner_option_ids"] == []
     assert [item["count"] for item in empty_result["options"]] == [0, 0]
+    assert [item["percentage"] for item in empty_result["options"]] == [0.0, 0.0]
     assert auth_client.get(f"/api/v1/polls/{mixed_id}/results").headers["cache-control"] == (
         "no-store"
     )
@@ -280,19 +287,26 @@ def test_results_wait_for_inflight_valid_vote(auth_client: TestClient) -> None:
     connection, transaction = _lock_poll(engine, poll_id)
     worker: threading.Thread | None = None
     try:
-        connection.execute(
+        vote_id = connection.execute(
             text(
                 "INSERT INTO votes "
                 "(receipt_id, poll_id, identity_mode, voter_id, anonymous_voter_hash, "
-                "option_id, submitted_at) "
-                "VALUES (:receipt_id, :poll_id, 'ANONYMOUS', NULL, :digest, :option_id, NOW())"
+                "submitted_at) "
+                "VALUES (:receipt_id, :poll_id, 'ANONYMOUS', NULL, :digest, NOW()) "
+                "RETURNING id"
             ),
             {
                 "receipt_id": uuid4(),
                 "poll_id": poll_id,
                 "digest": "ef" * 32,
-                "option_id": option_id,
             },
+        ).scalar_one()
+        connection.execute(
+            text(
+                "INSERT INTO vote_selections (vote_id, poll_id, option_id) "
+                "VALUES (:vote_id, :poll_id, :option_id)"
+            ),
+            {"vote_id": vote_id, "poll_id": poll_id, "option_id": option_id},
         )
         worker, box = _run_waiting(lambda: auth_client.get(f"/api/v1/polls/{poll_id}/results"))
         _wait_for_poll_waiter(engine)
@@ -301,6 +315,7 @@ def test_results_wait_for_inflight_valid_vote(auth_client: TestClient) -> None:
         response = _join(worker, box)
         result = envelope(response, 200)
         assert result["total_votes"] == 1
+        assert result["total_selections"] == 1
         assert result["is_final"] is True
         assert result["options"][0]["count"] == 1
         lifecycle, closed_at, _password = poll_row(auth_client, poll_id)
@@ -308,3 +323,118 @@ def test_results_wait_for_inflight_valid_vote(auth_client: TestClient) -> None:
         assert closed_at is None
     finally:
         _finish(connection, transaction, worker)
+
+
+def _insert_ballot(client: TestClient, poll_id: int, option_ids: list[int], marker: int) -> str:
+    """写入一份包含若干选项的匿名票。
+
+    Args:
+        client: 测试客户端。
+        poll_id: 投票主键。
+        option_ids: 这份选票选中的选项。
+        marker: 用来区分匿名散列的序号。
+
+    Returns:
+        写入的匿名散列。测试用它确认响应没有泄露身份。
+    """
+    digest = f"{poll_id:08x}{marker:056x}"
+    with open_session(client) as session:
+        session.add(
+            Vote(
+                receipt_id=uuid4(),
+                poll_id=poll_id,
+                identity_mode="ANONYMOUS",
+                voter_id=None,
+                anonymous_voter_hash=digest,
+                submitted_at=clock_of(client).now(),
+                selections=[
+                    VoteSelection(poll_id=poll_id, option_id=option_id) for option_id in option_ids
+                ],
+            )
+        )
+        session.commit()
+    return digest
+
+
+def test_multiple_results_share_selections_and_closing_is_final(auth_client: TestClient) -> None:
+    """多选按选择次数计算百分比；达额关闭和提前关闭都是最终结果。"""
+    csrf = register_and_login(auth_client, "ada")
+    options = [{"label": "A"}, {"label": "B"}, {"label": "C"}]
+    poll_id, detail = _published_detail(
+        auth_client,
+        csrf,
+        title="多选汇总",
+        identity_mode="ANONYMOUS",
+        selection_mode="MULTIPLE",
+        vote_limit=2,
+        options=options,
+    )
+    option_ids = _options(detail)
+    hidden_hash = _insert_ballot(auth_client, poll_id, option_ids[:2], 1)
+    _insert_ballot(auth_client, poll_id, [option_ids[0]], 2)
+    result = envelope(auth_client.get(f"/api/v1/polls/{poll_id}/results"), 200)
+    assert result["total_votes"] == 2
+    assert result["total_selections"] == 3
+    assert result["selection_mode"] == "MULTIPLE"
+    assert result["vote_limit"] == 2
+    assert result["is_final"] is False
+    by_label = {item["label"]: item for item in result["options"]}
+    assert [item["label"] for item in result["options"]] == ["A", "B", "C"]
+    assert by_label["A"]["count"] == 2
+    assert by_label["B"]["count"] == 1
+    assert by_label["C"]["count"] == 0
+    assert by_label["A"]["percentage"] == 66.67
+    assert by_label["B"]["percentage"] == 33.33
+    assert by_label["C"]["percentage"] == 0.0
+    raw = auth_client.get(f"/api/v1/polls/{poll_id}/results").text
+    assert hidden_hash not in raw
+    assert "voter_id" not in raw
+    assert "receipt_id" not in raw
+
+    all_id, all_detail = _published_detail(
+        auth_client,
+        csrf,
+        title="全选",
+        identity_mode="ANONYMOUS",
+        selection_mode="MULTIPLE",
+        options=options,
+    )
+    all_options = _options(all_detail)
+    _insert_ballot(auth_client, all_id, all_options, 3)
+    selected = envelope(auth_client.get(f"/api/v1/polls/{all_id}/results"), 200)
+    assert selected["total_votes"] == 1
+    assert selected["total_selections"] == 3
+    assert [item["count"] for item in selected["options"]] == [1, 1, 1]
+    assert [item["percentage"] for item in selected["options"]] == [33.33, 33.33, 33.33]
+    assert selected["winner_option_ids"] == all_options
+
+    guest_csrf = ensure_guest(auth_client)
+    full_id, full_detail = _published_detail(
+        auth_client,
+        csrf,
+        title="达额",
+        identity_mode="ANONYMOUS",
+        selection_mode="MULTIPLE",
+        vote_limit=1,
+        options=options,
+    )
+    full_options = _options(full_detail)
+    receipt = envelope(cast(auth_client, guest_csrf, full_id, full_options), 201)
+    full = envelope(auth_client.get(f"/api/v1/polls/{full_id}/results"), 200)
+    assert full["is_final"] is True
+    assert full["total_votes"] == 1
+    assert full["total_selections"] == 3
+    full_raw = auth_client.get(f"/api/v1/polls/{full_id}/results").text
+    assert str(receipt["receipt_id"]) not in full_raw
+
+    closed = post_json(
+        auth_client,
+        f"/api/v1/polls/{poll_id}/close",
+        {"expected_version": 2},
+        csrf=csrf,
+    )
+    envelope(closed, 200)
+    early = envelope(auth_client.get(f"/api/v1/polls/{poll_id}/results"), 200)
+    assert early["is_final"] is True
+    assert early["total_votes"] == 2
+    assert early["total_selections"] == 3

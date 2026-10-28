@@ -5,7 +5,7 @@ import secrets
 from datetime import timedelta
 
 from pwdlib import PasswordHash
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -394,6 +394,12 @@ def _detail(
     can_vote = status == PollStatus.OPEN and private_ready and (named_ready or anonymous_ready)
     if vote is not None:
         can_vote = False
+    elif (
+        can_vote
+        and poll.vote_limit is not None
+        and _ballot_count(session, poll.id) >= poll.vote_limit
+    ):
+        can_vote = False
     receipt = None
     if vote is not None:
         receipt = VoteReceipt(
@@ -406,6 +412,8 @@ def _detail(
         title=poll.title,
         identity_mode=poll.identity_mode,
         visibility=poll.visibility,
+        vote_limit=poll.vote_limit,
+        selection_mode=poll.selection_mode,
         starts_at=poll.starts_at,
         ends_at=poll.ends_at,
         effective_status=status,
@@ -420,6 +428,20 @@ def _detail(
         can_view_results=can_view,
         results_access_reason=reason,
     )
+
+
+def _ballot_count(session: Session, poll_id: int) -> int:
+    """统计本场选票份数，不连接明细表。
+
+    Args:
+        session: 当前事务。
+        poll_id: 投票主键。
+
+    Returns:
+        votes 行数。
+    """
+    total = session.scalar(select(func.count()).select_from(Vote).where(Vote.poll_id == poll_id))
+    return int(total or 0)
 
 
 def _options(session: Session, poll_id: int) -> list[OptionPublic]:

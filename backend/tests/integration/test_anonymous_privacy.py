@@ -10,10 +10,12 @@ from src.main.python.database.models import AuditEvent, Vote
 from src.main.python.utils.security_util import anonymous_voter_hash
 from tests.auth_support import envelope
 from tests.poll_support import (
+    audit_actions,
     cast,
     create_poll,
     ensure_guest,
     open_session,
+    poll_row,
     publish_poll,
     register_and_login,
 )
@@ -83,3 +85,35 @@ def test_logged_in_anonymous_vote_is_not_linked(
         )
         assert linked_receipt is None
         assert linked_request is None
+
+
+def test_anonymous_capacity_close_does_not_link_account(
+    auth_client: TestClient,
+) -> None:
+    """已登录用户投出匿名的最后一票时，不写账户，也不伪造关闭审计。"""
+    username = "ada_full"
+    csrf = register_and_login(auth_client, username, display_name="满额姓名")
+    created = create_poll(
+        auth_client,
+        csrf,
+        identity_mode="ANONYMOUS",
+        vote_limit=1,
+        title="满额匿名",
+    )
+    poll_id = int(created["id"])
+    publish_poll(auth_client, csrf, poll_id, 1)
+    guest_csrf = ensure_guest(auth_client)
+    detail = envelope(auth_client.get(f"/api/v1/polls/{poll_id}"), 200)
+    response = cast(auth_client, guest_csrf, poll_id, _option(detail))
+    envelope(response, 201)
+    lifecycle, closed_at, _password_hash = poll_row(auth_client, poll_id)
+    assert lifecycle == "CLOSED"
+    assert closed_at is not None
+    actions = audit_actions(auth_client, poll_id)
+    assert "CLOSE" not in actions
+    assert "VOTE_NAMED" not in actions
+    with open_session(auth_client) as session:
+        vote = session.scalar(select(Vote).where(Vote.poll_id == poll_id))
+        assert vote is not None
+        assert vote.voter_id is None
+        assert vote.identity_mode == "ANONYMOUS"

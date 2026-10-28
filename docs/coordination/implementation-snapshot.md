@@ -1,6 +1,12 @@
 # 实现交接
 
-* **版本。** 2026-10-25 的编程交接就是当前工作区。还没有 git commit，因此不能把某个提交号交给其他组。迁移只有 `db/migrations/versions/cdc412846524_add_named_anonymous_and_access_control_.py`。需求基线是计划中的 B0，需求状态记为 `PROVISIONAL`，因为正式 SRS 还没由需求组定稿。代码状态是 `IMPLEMENTED`。下面的 `VERIFIED` 只表示列出的命令已经跑过，不能反过来把需求说成已经冻结。
+* **2026-10-28 选票上限和多选。** 迁移 head 是 `6154e827a884`，上一跳是明文访问密码 `f3b8a1c04e27`。新建投票默认 `vote_limit` 为空、`selection_mode` 为 `SINGLE`。多选至少要三个有效选项。提交体只有 `option_ids`。一份多选占一个名额和一个回执。达到上限的那一份与 `CLOSED` 在同一事务提交，不写 `CLOSE` 审计。百分比分母是选择次数。这次证明不用 2026-10-25 的 84/24/7。
+
+  后端 `uv run ruff check .` 通过。`uv run python -m pytest tests/unit tests/api tests/integration -q` 为 120 passed、1 条 StarletteDeprecationWarning。2026-10-28 复核是 19.82 秒。前端 `npm run lint` 和 `npm run typecheck` 退出码为 0。`npm run test -- --run` 为 17 个文件、57 个测试通过。`npm run build` 由 Vite 8.3.5 完成。`npm exec playwright test` 为 9 passed。复核用时约 1.1 分钟，包含四种身份／公开性的单选和多选，以及上限 2 时第二份关闭、第三份拒绝、结果显示 Ballots 2 和 Selections 3。并发容量仍由 PostgreSQL 集成测试验证。
+
+  同一天在测试实例 `127.0.0.1:5433` 上，把当时的 `voting_test` 用 `pg_dump` 恢复到新建空库 `voting_restore`。两边都是迁移 `6154e827a884`：用户 2、场次 4、选票 3、选择明细 4，其中记名 1、匿名 2、匿名却带账户 0，授权 1、审计 3。`votes` 没有 `option_id`。`ck_polls_vote_limit`、`ck_polls_selection_mode`、`vote_selections` 的主键和外键都在，旧的 `fk_votes_poll_option` 不在。随后删除了 `voting_restore`、转储文件和这次演练插入的行。没有动 `127.0.0.1:5432`。空库安装和带历史票升级由 `tests/integration/test_multi_selection_migration.py` 覆盖，包含在上面的 120 passed 里。
+
+* **版本。** 2026-10-25 的记录保留在下面，只说明当时的交接，不作为本次功能的测试证明。当时迁移记录只写了 `cdc412846524`。需求基线是计划中的 B0，需求状态记为 `PROVISIONAL`，因为正式 SRS 还没由需求组定稿。代码状态是 `IMPLEMENTED`。下面的 `VERIFIED` 只表示当时列出的命令已经跑过，不能反过来把需求说成已经冻结。
 
 * **运行入口。** 按根目录 `README.md` 启动。后端工作目录是 `backend/`，工厂是 `src.main.python.main:create_app`。数据库迁移用 `uv run python -m alembic upgrade head`。演示账户和四场样例分别用 `seed-demo`、`new-demo-round`。页面在 `frontend/`，浏览器地址是 `http://localhost:5173`。启动 Uvicorn 时加上 `--no-access-log`。
 
@@ -34,4 +40,4 @@
   6. 匿名限制是同一枚浏览器凭据，不是一个自然人一票。密码错误限流按访客和场次，不按 IP，锁定 5 次失败后的 5 分钟。
   7. 没有公网部署。`deploy/nginx.conf` 只是本机示例。
 
-* **给其他组。** 2026-10-25 用 `create_app()` 导出的 OpenAPI 有 22 条路径，与 `docs/coordination/interface-snapshot.md` 一致。表以 `docs/coordination/schema-snapshot.md` 和迁移 `cdc412846524` 为准，当前规则以 `docs/coordination/working-baseline.md` 为准。编程侧不代写正式 SRS、设计报告、测试报告或演进文档。新的需求或缺陷进来时，先记下原行为、新行为和影响的页面、接口、表、测试，再排进下一个增量。没实现的行为继续留在待办里。
+* **给其他组。** 2026-10-25 用 `create_app()` 导出的 OpenAPI 有 22 条路径。当前表结构以 `docs/coordination/schema-snapshot.md` 和迁移 `6154e827a884` 为准，接口以 `docs/coordination/interface-snapshot.md` 为准。编程侧不代写正式 SRS、设计报告、测试报告或演进文档。新的需求或缺陷进来时，先记下原行为、新行为和影响的页面、接口、表、测试，再排进下一个增量。没实现的行为继续留在待办里。

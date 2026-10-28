@@ -23,13 +23,13 @@ class VoteReceipt(BaseModel):
 
 
 class OptionResult(BaseModel):
-    """一个选项的汇总。零票也保留。
+    """一个选项的汇总。没有被选中的选项也保留。
 
     Attributes:
         option_id: 选项主键。
         label: 选项文本。
-        count: 该选项的有效票数。
-        percentage: 占总票数的百分比，保留两位小数。零票时为 0。
+        count: 该选项被选中的次数。
+        percentage: 占全部选择次数的百分比，保留两位小数。没有选择时为 0。
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -45,9 +45,12 @@ class PollResults(BaseModel):
 
     Attributes:
         poll_id: 投票主键。
-        total_votes: 有效票总数。
-        options: 按位置排列的选项汇总，包含零票项。
-        winner_option_ids: 当前最高且票数大于 0 的选项。并列时全部列出。
+        total_votes: 选票份数，等于父票行数。
+        total_selections: 选择次数，等于明细行数。
+        selection_mode: SINGLE 或 MULTIPLE。
+        vote_limit: 整场最多接收的选票份数。为空表示不限。
+        options: 按位置排列的选项汇总，包含未被选中的选项。
+        winner_option_ids: 当前最高且选择次数大于 0 的选项。并列时全部列出。
         is_final: 有效状态已结束时为真。进行中为假，最高项不是最终胜出者。
         server_time: 取得共享锁之后的服务端时间，UTC。
     """
@@ -56,6 +59,9 @@ class PollResults(BaseModel):
 
     poll_id: int
     total_votes: int
+    total_selections: int
+    selection_mode: str
+    vote_limit: int | None
     options: list[OptionResult]
     winner_option_ids: list[int]
     is_final: bool

@@ -18,6 +18,8 @@ function fromDetail(poll: ManagePollDetail): PollFormValue {
     identityMode: poll.identity_mode as IdentityMode,
     visibility: poll.visibility as Visibility,
     accessPassword: "",
+    voteLimit: poll.vote_limit,
+    selectionMode: poll.selection_mode === "MULTIPLE" ? "MULTIPLE" : "SINGLE",
     options: poll.options.slice().sort((left, right) => left.position - right.position).map((option) => option.label),
     startsDate: starts.date,
     startsTime: starts.time,
@@ -98,9 +100,27 @@ export function PollEditPage() {
             🔒
           </div>
           <h1 className="view-title" style={{ fontSize: "1.5rem", marginBottom: 12 }}>{t("workspace.frozenTitle")}</h1>
-          <p className="view-subtitle" style={{ maxWidth: 440, margin: "0 auto 20px" }}>
+          <p className="view-subtitle" style={{ maxWidth: 440, margin: "0 auto 16px" }}>
             {t("workspace.frozenNote")}
           </p>
+          <dl className="poll-frozen-facts">
+            <div>
+              <dt>{t("form.identity")}</dt>
+              <dd>{initial.identityMode === "ANONYMOUS" ? t("identity.anonymous") : t("identity.named")}</dd>
+            </div>
+            <div>
+              <dt>{t("form.visibility")}</dt>
+              <dd>{initial.visibility === "PRIVATE" ? t("visibility.private") : t("visibility.public")}</dd>
+            </div>
+            <div>
+              <dt>{t("form.voteLimit")}</dt>
+              <dd>{initial.voteLimit === null ? t("form.unlimited") : initial.voteLimit}</dd>
+            </div>
+            <div>
+              <dt>{t("form.selectionMode")}</dt>
+              <dd>{initial.selectionMode === "MULTIPLE" ? t("form.multiple") : t("form.single")}</dd>
+            </div>
+          </dl>
           <button
             type="button"
             className="view-btn view-btn-primary"

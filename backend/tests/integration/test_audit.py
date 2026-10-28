@@ -149,7 +149,6 @@ def test_new_demo_round_rejects_missing_or_promoted_user(auth_client: TestClient
     try:
         create_demo_round(
             auth_client.app.state.session_factory,
-            auth_client.app.state.passwords,
             auth_client.app.state.clock,
             "http://localhost:5173",
             ACCESS_PASSWORD,
@@ -170,7 +169,6 @@ def test_new_demo_round_rejects_missing_or_promoted_user(auth_client: TestClient
     try:
         create_demo_round(
             auth_client.app.state.session_factory,
-            auth_client.app.state.passwords,
             auth_client.app.state.clock,
             "http://localhost:5173",
             ACCESS_PASSWORD,

@@ -55,6 +55,8 @@ export function samplePoll(overrides: Partial<PollDetail> = {}): PollDetail {
     title: "午饭吃什么",
     identity_mode: "ANONYMOUS",
     visibility: "PUBLIC",
+    vote_limit: null,
+    selection_mode: "SINGLE",
     starts_at: "2026-10-24T00:00:00Z",
     ends_at: "2026-10-24T12:00:00Z",
     effective_status: "OPEN",

@@ -27,6 +27,13 @@ class Visibility(StrEnum):
     PRIVATE = "PRIVATE"
 
 
+class SelectionMode(StrEnum):
+    """一份选票的选择方式。"""
+
+    SINGLE = "SINGLE"
+    MULTIPLE = "MULTIPLE"
+
+
 class PollLifecycle(StrEnum):
     """数据库中保存的投票生命周期。"""
 

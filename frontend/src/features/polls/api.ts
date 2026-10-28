@@ -9,11 +9,11 @@ export function getPoll(pollId: number, signal?: AbortSignal): Promise<PollDetai
   return apiClient({ path: `/api/v1/polls/${pollId}`, signal });
 }
 
-export function castVote(pollId: number, optionId: number): Promise<VoteReceipt> {
+export function castVote(pollId: number, optionIds: number[]): Promise<VoteReceipt> {
   return apiClient({
     method: "POST",
     path: `/api/v1/polls/${pollId}/votes`,
-    data: { option_id: optionId },
+    data: { option_ids: optionIds },
     csrfSource: "guest",
   });
 }

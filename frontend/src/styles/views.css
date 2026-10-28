@@ -127,6 +127,31 @@
   margin: 0;
 }
 
+.poll-frozen-facts {
+  display: grid;
+  gap: 8px;
+  max-width: 360px;
+  margin: 0 auto 20px;
+  text-align: left;
+}
+
+.poll-frozen-facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.poll-frozen-facts dt {
+  margin: 0;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.poll-frozen-facts dd {
+  margin: 0;
+  font-weight: 700;
+}
+
 /* =========================================================
    BALLOT VOTING FORM
    ========================================================= */
@@ -221,6 +246,11 @@
 .ballot-option-tile.selected .ballot-option-radio-inner {
   opacity: 1;
   transform: scale(1);
+}
+
+.ballot-option-tile.is-multiple .ballot-option-radio-dot,
+.ballot-option-tile.is-multiple .ballot-option-radio-inner {
+  border-radius: 4px;
 }
 
 /* Success Receipt Ticket */

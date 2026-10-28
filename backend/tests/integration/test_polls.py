@@ -2,10 +2,12 @@
 
 from datetime import timedelta
 
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
 from src.main.python.constants.error_codes import ApiCode
-from src.main.python.database.models import Poll
+from src.main.python.database.models import Poll, PollOption
 from tests.auth_support import PASSWORD, envelope, error_body, patch_json, post_json
 from tests.poll_support import (
     ACCESS_PASSWORD,
@@ -26,6 +28,8 @@ MANAGE_FIELDS = {
     "title",
     "identity_mode",
     "visibility",
+    "vote_limit",
+    "selection_mode",
     "starts_at",
     "ends_at",
     "effective_status",
@@ -201,6 +205,107 @@ def test_creator_share_returns_plaintext(
     link = envelope(auth_client.get(f"/api/v1/me/polls/{poll_id}/share"), 200)
     assert link["access_password"] == ACCESS_PASSWORD
     assert ACCESS_PASSWORD not in str(link["share_url"])
+
+
+def test_vote_limit_and_selection_mode_round_trip_only_while_draft(
+    auth_app: FastAPI,
+    auth_client: TestClient,
+) -> None:
+    """新建默认无限额单选；草稿可改；删到两项不能再多选；发布后和非创建者都不能改。"""
+    csrf = register_and_login(auth_client, "ada")
+    omitted = poll_body(auth_client)
+    omitted.pop("vote_limit")
+    omitted.pop("selection_mode")
+    created = envelope(post_json(auth_client, "/api/v1/polls", omitted, csrf=csrf), 201)
+    assert created["vote_limit"] is None
+    assert created["selection_mode"] == "SINGLE"
+    poll_id = int(created["id"])
+
+    updated = update_poll(
+        auth_client,
+        csrf,
+        poll_id,
+        vote_limit=25,
+        selection_mode="MULTIPLE",
+        options=[{"label": "甲"}, {"label": "乙"}, {"label": "丙"}],
+    )
+    assert updated["vote_limit"] == 25
+    assert updated["selection_mode"] == "MULTIPLE"
+    assert [item["label"] for item in updated["options"]] == ["甲", "乙", "丙"]
+
+    too_few = patch_json(
+        auth_client,
+        f"/api/v1/polls/{poll_id}",
+        poll_body(
+            auth_client,
+            vote_limit=25,
+            selection_mode="MULTIPLE",
+            options=[{"label": "甲"}, {"label": "乙"}],
+            expected_version=updated["version"],
+        ),
+        csrf=csrf,
+    )
+    error_body(too_few, 422, int(ApiCode.VALIDATION_ERROR))
+    kept = envelope(auth_client.get(f"/api/v1/me/polls/{poll_id}"), 200)
+    assert kept["selection_mode"] == "MULTIPLE"
+    assert kept["vote_limit"] == 25
+
+    with open_session(auth_client) as session:
+        options = session.scalars(
+            select(PollOption).where(PollOption.poll_id == poll_id).order_by(PollOption.position)
+        ).all()
+        session.delete(options[-1])
+        session.commit()
+    blocked = post_json(
+        auth_client,
+        f"/api/v1/polls/{poll_id}/publish",
+        {"expected_version": kept["version"]},
+        csrf=csrf,
+    )
+    error_body(blocked, 422, int(ApiCode.VALIDATION_ERROR))
+
+    restored = update_poll(
+        auth_client,
+        csrf,
+        poll_id,
+        vote_limit=25,
+        selection_mode="MULTIPLE",
+        options=[{"label": "甲"}, {"label": "乙"}, {"label": "丙"}],
+    )
+    published = publish_poll(auth_client, csrf, poll_id, int(restored["version"]))
+    assert published["vote_limit"] == 25
+    assert published["selection_mode"] == "MULTIPLE"
+    frozen = patch_json(
+        auth_client,
+        f"/api/v1/polls/{poll_id}",
+        poll_body(
+            auth_client,
+            vote_limit=1,
+            selection_mode="SINGLE",
+            options=[{"label": "甲"}, {"label": "乙"}, {"label": "丙"}],
+            expected_version=published["version"],
+        ),
+        csrf=csrf,
+    )
+    error_body(frozen, 409, int(ApiCode.POLL_IMMUTABLE))
+    after = envelope(auth_client.get(f"/api/v1/me/polls/{poll_id}"), 200)
+    assert after["vote_limit"] == 25
+    assert after["selection_mode"] == "MULTIPLE"
+
+    with TestClient(auth_app) as other:
+        other_csrf = register_and_login(other, "bob")
+        denied = patch_json(
+            other,
+            f"/api/v1/polls/{poll_id}",
+            poll_body(
+                other,
+                vote_limit=None,
+                selection_mode="SINGLE",
+                expected_version=published["version"],
+            ),
+            csrf=other_csrf,
+        )
+        error_body(denied, 403, int(ApiCode.FORBIDDEN))
 
 
 def _plain_password(client: TestClient, poll_id: int) -> str | None:

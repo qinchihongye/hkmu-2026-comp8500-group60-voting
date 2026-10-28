@@ -24,6 +24,8 @@ const API_ERROR_KEYS: Record<number, MessageKey> = {
   [ApiCode.UNSUPPORTED_MEDIA_TYPE]: "error.media",
   [ApiCode.VALIDATION_ERROR]: "error.validation",
   [ApiCode.INVALID_OPTION]: "error.invalidOption",
+  [ApiCode.INVALID_SELECTION_COUNT]: "error.invalidSelection",
+  [ApiCode.POLL_CAPACITY_REACHED]: "error.capacityReached",
   [ApiCode.TOO_MANY_ATTEMPTS]: "error.tooMany",
   [ApiCode.INTERNAL_ERROR]: "error.internal",
   [ApiCode.SERVICE_UNAVAILABLE]: "error.unavailable",

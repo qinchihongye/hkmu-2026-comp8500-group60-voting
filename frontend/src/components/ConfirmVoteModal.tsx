@@ -4,13 +4,13 @@ import { useI18n } from "../i18n/LocaleProvider";
 
 export function ConfirmVoteModal({
   open,
-  optionLabel,
+  optionLabels,
   busy,
   onCancel,
   onConfirm,
 }: {
   open: boolean;
-  optionLabel: string;
+  optionLabels: string[];
   busy: boolean;
   onCancel: () => void;
   onConfirm: () => void;
@@ -26,9 +26,15 @@ export function ConfirmVoteModal({
       onCancel={onCancel}
       onOk={onConfirm}
       okButtonProps={{ "data-testid": "vote-confirm", disabled: busy }}
+      cancelButtonProps={{ disabled: busy }}
       destroyOnHidden
     >
-      <p>{t("ballot.confirmBody", { option: optionLabel })}</p>
+      <p>{t("ballot.confirmBody")}</p>
+      <ul aria-label={t("ballot.selected")}>
+        {optionLabels.map((label, index) => (
+          <li key={`${index}-${label}`}>{label}</li>
+        ))}
+      </ul>
     </Modal>
   );
 }

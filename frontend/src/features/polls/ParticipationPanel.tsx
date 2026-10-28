@@ -4,7 +4,9 @@ import { Link, useLocation } from "react-router-dom";
 import { ModeTags, StatusTag } from "../../components/StatusTag";
 import { useFailure } from "../../i18n/errors";
 import { useI18n } from "../../i18n/LocaleProvider";
-import type { PollDetail, PollResults } from "../../lib/api-types";
+import { ApiCode } from "../../lib/api-codes";
+import { isApiClientError } from "../../lib/api-error";
+import type { PollDetail, PollResults, VoteReceipt } from "../../lib/api-types";
 import { formatHongKong } from "../../lib/time";
 import { useGuest } from "../poll-access/GuestProvider";
 import type { PollAccessView } from "../poll-access/usePollAccess";
@@ -23,6 +25,8 @@ export function ParticipationPanel({
   const guest = useGuest();
   const location = useLocation();
   const detail = access.detail;
+  const [kept, setKept] = useState<{ pollId: number; receipt: VoteReceipt } | null>(null);
+  const keptReceipt = detail && kept?.pollId === detail.id ? kept.receipt : null;
   const next = `${location.pathname}${location.search}`;
   if (access.phase === "access_loading") {
     return (
@@ -127,18 +131,44 @@ export function ParticipationPanel({
         ) : null}
       </div>
 
-      {access.phase === "submission_unknown" ? <p data-testid="unknown-status">{t("access.notFound")}</p> : null}
+      {access.phase === "submission_unknown" && detail.effective_status === "CLOSED" ? (
+        <div data-testid="unknown-status">
+          <p>{t("access.notFound")}</p>
+          <button type="button" className="view-btn view-btn-secondary" onClick={() => access.reload()}>
+            {t("ballot.checkAgain")}
+          </button>
+        </div>
+      ) : null}
       {detail.effective_status === "CLOSED" ? (
-        <ClosedPollBody detail={detail} />
+        <ClosedPollBody detail={detail} receipt={detail.receipt ?? keptReceipt} />
       ) : (
         <BallotForm
           poll={detail}
           guestReady={guest.guestStatus === "ready"}
           loginHref={loginHref}
-          onCast={(optionId) => castVote(detail.id, optionId)}
+          onCast={async (optionIds) => {
+            try {
+              const receipt = await castVote(detail.id, optionIds);
+              setKept({ pollId: detail.id, receipt });
+              access.clearUnknown();
+              access.reload();
+              return receipt;
+            } catch (error) {
+              if (isApiClientError(error) && error.code === ApiCode.POLL_CAPACITY_REACHED) {
+                access.reload();
+              }
+              throw error;
+            }
+          }}
           onRecover={async () => {
             try {
               const next = await getPoll(detail.id);
+              if (next.receipt) {
+                setKept({ pollId: detail.id, receipt: next.receipt });
+                access.clearUnknown();
+              } else {
+                access.markUnknown();
+              }
               access.reload();
               return next;
             } catch {
@@ -152,9 +182,8 @@ export function ParticipationPanel({
   );
 }
 
-function ClosedPollBody({ detail }: { detail: PollDetail }) {
+function ClosedPollBody({ detail, receipt }: { detail: PollDetail; receipt: VoteReceipt | null }) {
   const { t } = useI18n();
-  const receipt = detail.receipt;
   return (
     <>
       {receipt ? (

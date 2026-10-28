@@ -45,11 +45,11 @@ def cast_vote(
     response: Response,
     guest: GuestContext = Depends(require_guest_csrf),
 ) -> ResponseModel[VoteReceipt]:
-    """提交当前浏览器的一票。记名还要有有效账户。
+    """提交当前浏览器的一份选票。记名还要有有效账户。
 
     Args:
         poll_id: 投票主键。
-        payload: 只含选项编号的请求外壳。
+        payload: 含选项编号数组的请求外壳。
         request: 当前 HTTP 请求。
         response: 用于禁止缓存回执。
         guest: 已核对 CSRF 的访客凭据。
@@ -59,5 +59,5 @@ def cast_vote(
     """
     mark_private(response)
     context = PollAccessContext(principal=get_optional_principal(request), guest=guest)
-    receipt = _vote_service(request).cast_vote(context, poll_id, payload.data.option_id)
+    receipt = _vote_service(request).cast_vote(context, poll_id, payload.data.option_ids)
     return success_body(request, receipt)

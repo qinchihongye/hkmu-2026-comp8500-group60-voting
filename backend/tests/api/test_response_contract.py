@@ -141,7 +141,9 @@ def test_validation_and_extra_fields_use_422(contract_client: TestClient) -> Non
         assert response.status_code == 422
         assert body["code"] == int(ApiCode.VALIDATION_ERROR)
         assert isinstance(body["data"], dict)
-        assert body["data"]["issues"]
+        errors = body["data"]["errors"]
+        assert isinstance(errors, list) and errors
+        assert all(set(item) == {"field", "message"} for item in errors)
         assert _SECRET not in response.text
 
 
@@ -161,7 +163,10 @@ def test_status_errors_share_the_envelope(
         )
         crashed = contract_client.get("/api/v1/_contract/crash")
         unavailable = contract_client.get("/api/v1/health/ready")
-        anonymous = contract_client.post("/api/v1/polls/15/votes", json={"data": {"option_id": 1}})
+        anonymous = contract_client.post(
+            "/api/v1/polls/15/votes",
+            json={"data": {"option_ids": [1]}},
+        )
 
     expectations = [
         (unauthorized, 401, ApiCode.UNAUTHENTICATED),

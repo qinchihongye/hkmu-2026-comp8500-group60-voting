@@ -25,9 +25,11 @@ class ApiCode(IntEnum):
     POLL_IMMUTABLE = 40903
     STALE_POLL_VERSION = 40904
     USERNAME_TAKEN = 40905
+    POLL_CAPACITY_REACHED = 40906
     UNSUPPORTED_MEDIA_TYPE = 41500
     VALIDATION_ERROR = 42201
     INVALID_OPTION = 42202
+    INVALID_SELECTION_COUNT = 42203
     TOO_MANY_ATTEMPTS = 42901
     INTERNAL_ERROR = 50000
     SERVICE_UNAVAILABLE = 50301
@@ -60,9 +62,11 @@ _DEFAULT_MESSAGES: dict[ApiCode, str] = {
     ApiCode.POLL_IMMUTABLE: "已发布的投票不能修改",
     ApiCode.STALE_POLL_VERSION: "投票已被其他人更新，请刷新后重试",
     ApiCode.USERNAME_TAKEN: "用户名已被使用",
+    ApiCode.POLL_CAPACITY_REACHED: "This poll has reached its ballot limit.",
     ApiCode.UNSUPPORTED_MEDIA_TYPE: "不支持的内容类型",
     ApiCode.VALIDATION_ERROR: "请求参数不合法",
     ApiCode.INVALID_OPTION: "选项不属于这次投票",
+    ApiCode.INVALID_SELECTION_COUNT: "The number of selected options is not allowed.",
     ApiCode.TOO_MANY_ATTEMPTS: "尝试次数过多，请稍后再试",
     ApiCode.INTERNAL_ERROR: "服务内部错误",
     ApiCode.SERVICE_UNAVAILABLE: "服务暂时不可用",

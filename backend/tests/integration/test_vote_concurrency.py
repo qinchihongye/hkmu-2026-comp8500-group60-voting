@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.main.python.config.database_config import engine_for
 from src.main.python.constants.error_codes import ApiCode
-from src.main.python.database.models import Vote
+from src.main.python.database.models import Vote, VoteSelection
 from tests.auth_support import envelope, error_body
 from tests.poll_support import (
     cast,
@@ -374,19 +374,26 @@ def test_inflight_vote_commits_before_close(auth_client: TestClient) -> None:
     connection, transaction = _lock_poll(engine, poll_id)
     worker: threading.Thread | None = None
     try:
-        connection.execute(
+        vote_id = connection.execute(
             text(
                 "INSERT INTO votes "
                 "(receipt_id, poll_id, identity_mode, voter_id, anonymous_voter_hash, "
-                "option_id, submitted_at) "
-                "VALUES (:receipt_id, :poll_id, 'ANONYMOUS', NULL, :digest, :option_id, NOW())"
+                "submitted_at) "
+                "VALUES (:receipt_id, :poll_id, 'ANONYMOUS', NULL, :digest, NOW()) "
+                "RETURNING id"
             ),
             {
                 "receipt_id": uuid4(),
                 "poll_id": poll_id,
                 "digest": "ab" * 32,
-                "option_id": option_id,
             },
+        ).scalar_one()
+        connection.execute(
+            text(
+                "INSERT INTO vote_selections (vote_id, poll_id, option_id) "
+                "VALUES (:vote_id, :poll_id, :option_id)"
+            ),
+            {"vote_id": vote_id, "poll_id": poll_id, "option_id": option_id},
         )
         worker, box = _run_waiting(
             lambda: auth_client.post(
@@ -432,24 +439,24 @@ def test_foreign_option_and_mode_rejected_by_database(auth_client: TestClient) -
     second_id = int(second["id"])
     publish_poll(auth_client, csrf, first_id, 1)
     publish_poll(auth_client, csrf, second_id, 1)
-    first_detail = envelope(auth_client.get(f"/api/v1/polls/{first_id}"), 200)
     second_detail = envelope(auth_client.get(f"/api/v1/polls/{second_id}"), 200)
     foreign_option = _option(second_detail)
-    own_option = _option(first_detail)
 
     with open_session(auth_client) as session:
-        session.add(
-            Vote(
-                receipt_id=uuid4(),
-                poll_id=first_id,
-                identity_mode="ANONYMOUS",
-                voter_id=None,
-                anonymous_voter_hash="cd" * 32,
-                option_id=foreign_option,
-                submitted_at=clock_of(auth_client).now(),
-            )
+        vote = Vote(
+            receipt_id=uuid4(),
+            poll_id=first_id,
+            identity_mode="ANONYMOUS",
+            voter_id=None,
+            anonymous_voter_hash="cd" * 32,
+            submitted_at=clock_of(auth_client).now(),
         )
-        with _raises_constraint("fk_votes_poll_option"):
+        session.add(vote)
+        session.flush()
+        session.add(
+            VoteSelection(vote_id=vote.id, poll_id=first_id, option_id=foreign_option)
+        )
+        with _raises_constraint("fk_vote_selections_option"):
             session.flush()
         session.rollback()
         session.add(
@@ -459,7 +466,6 @@ def test_foreign_option_and_mode_rejected_by_database(auth_client: TestClient) -
                 identity_mode="NAMED",
                 voter_id=int(first["creator_id"]),
                 anonymous_voter_hash=None,
-                option_id=own_option,
                 submitted_at=clock_of(auth_client).now(),
             )
         )
@@ -467,6 +473,291 @@ def test_foreign_option_and_mode_rejected_by_database(auth_client: TestClient) -
             session.flush()
         session.rollback()
     assert _vote_count(auth_client, first_id) == 0
+
+
+def _race(actions: list[Callable[[], httpx.Response]]) -> list[httpx.Response]:
+    """同时发起多份请求，并等它们全部结束。
+
+    Args:
+        actions: 各自独立的请求函数。
+
+    Returns:
+        与 actions 顺序一致的响应。
+    """
+    started = [_run_waiting(action) for action in actions]
+    return [_join(worker, box) for worker, box in started]
+
+
+def _limited(
+    client: TestClient,
+    *,
+    identity_mode: str,
+    vote_limit: int,
+    title: str,
+) -> tuple[str, str, int, int]:
+    """创建并发布一场带上限的单选投票。
+
+    Args:
+        client: 已登录客户端。
+        identity_mode: NAMED 或 ANONYMOUS。
+        vote_limit: 整场最多接收的选票份数。
+        title: 标题。
+
+    Returns:
+        账户 CSRF、访客 CSRF、投票主键和第一个选项。
+    """
+    csrf = register_and_login(client, "ada")
+    created = create_poll(
+        client,
+        csrf,
+        title=title,
+        identity_mode=identity_mode,
+        vote_limit=vote_limit,
+        selection_mode="SINGLE",
+    )
+    poll_id = int(created["id"])
+    publish_poll(client, csrf, poll_id, 1)
+    guest_csrf = ensure_guest(client)
+    detail = envelope(client.get(f"/api/v1/polls/{poll_id}"), 200)
+    return csrf, guest_csrf, poll_id, _option(detail)
+
+
+def test_named_capacity_one_accepts_a_single_ballot(
+    auth_app: FastAPI,
+    auth_client: TestClient,
+) -> None:
+    """两个记名身份同时抢最后一份时，只成功一份并关闭。"""
+    _csrf, ada_guest, poll_id, option_id = _limited(
+        auth_client,
+        identity_mode="NAMED",
+        vote_limit=1,
+        title="记名最后一份",
+    )
+    bob = TestClient(auth_app)
+    bob.__enter__()
+    try:
+        register_and_login(bob, "bob")
+        bob_guest = ensure_guest(bob)
+        responses = _race(
+            [
+                lambda: cast(auth_client, ada_guest, poll_id, option_id),
+                lambda: cast(bob, bob_guest, poll_id, option_id),
+            ]
+        )
+    finally:
+        bob.__exit__(None, None, None)
+    _assert_capacity(auth_client, poll_id, responses, successes=1)
+
+
+def test_anonymous_capacity_one_accepts_a_single_ballot(
+    auth_app: FastAPI,
+    auth_client: TestClient,
+) -> None:
+    """两个匿名浏览器同时抢最后一份时，只成功一份并关闭。"""
+    _csrf, _guest, poll_id, option_id = _limited(
+        auth_client,
+        identity_mode="ANONYMOUS",
+        vote_limit=1,
+        title="匿名最后一份",
+    )
+    first = TestClient(auth_app)
+    second = TestClient(auth_app)
+    first.__enter__()
+    second.__enter__()
+    try:
+        responses = _race(
+            [
+                lambda: cast(first, ensure_guest(first), poll_id, option_id),
+                lambda: cast(second, ensure_guest(second), poll_id, option_id),
+            ]
+        )
+    finally:
+        second.__exit__(None, None, None)
+        first.__exit__(None, None, None)
+    _assert_capacity(auth_client, poll_id, responses, successes=1)
+
+
+def test_anonymous_capacity_keeps_exactly_n_ballots(
+    auth_app: FastAPI,
+    auth_client: TestClient,
+) -> None:
+    """超过上限的匿名浏览器同时提交时，最终份数恰好等于上限。"""
+    _csrf, _guest, poll_id, option_id = _limited(
+        auth_client,
+        identity_mode="ANONYMOUS",
+        vote_limit=3,
+        title="匿名三份",
+    )
+    browsers = [TestClient(auth_app) for _index in range(5)]
+    try:
+        for browser in browsers:
+            browser.__enter__()
+        responses = _race(
+            [
+                lambda browser=browser: cast(browser, ensure_guest(browser), poll_id, option_id)
+                for browser in browsers
+            ]
+        )
+    finally:
+        for browser in browsers:
+            browser.__exit__(None, None, None)
+    _assert_capacity(auth_client, poll_id, responses, successes=3)
+
+
+def test_named_capacity_keeps_exactly_n_ballots(
+    auth_app: FastAPI,
+    auth_client: TestClient,
+) -> None:
+    """超过上限的记名账户同时提交时，最终份数恰好等于上限。"""
+    _csrf, ada_guest, poll_id, option_id = _limited(
+        auth_client,
+        identity_mode="NAMED",
+        vote_limit=2,
+        title="记名两份",
+    )
+    bob = TestClient(auth_app)
+    cara = TestClient(auth_app)
+    bob.__enter__()
+    cara.__enter__()
+    try:
+        register_and_login(bob, "bob")
+        register_and_login(cara, "cara")
+        responses = _race(
+            [
+                lambda: cast(auth_client, ada_guest, poll_id, option_id),
+                lambda: cast(bob, ensure_guest(bob), poll_id, option_id),
+                lambda: cast(cara, ensure_guest(cara), poll_id, option_id),
+            ]
+        )
+    finally:
+        cara.__exit__(None, None, None)
+        bob.__exit__(None, None, None)
+    _assert_capacity(auth_client, poll_id, responses, successes=2)
+
+
+def test_manual_close_beats_a_waiting_limited_vote(auth_client: TestClient) -> None:
+    """上限尚未用完时，持锁关闭优先于等待中的投票。"""
+    _csrf, guest_csrf, poll_id, option_id = _limited(
+        auth_client,
+        identity_mode="ANONYMOUS",
+        vote_limit=5,
+        title="关闭竞争",
+    )
+    engine = _engine(auth_client)
+    connection, transaction = _lock_poll(engine, poll_id)
+    worker: threading.Thread | None = None
+    try:
+        worker, box = _run_waiting(lambda: cast(auth_client, guest_csrf, poll_id, option_id))
+        _wait_for_poll_waiter(engine)
+        connection.execute(
+            text(
+                "UPDATE polls SET lifecycle = 'CLOSED', closed_at = NOW(), "
+                "version = version + 1, updated_at = NOW() WHERE id = :poll_id"
+            ),
+            {"poll_id": poll_id},
+        )
+        transaction.commit()
+        response = _join(worker, box)
+        error_body(response, 409, int(ApiCode.POLL_NOT_OPEN))
+        assert response.json()["code"] != int(ApiCode.POLL_CAPACITY_REACHED)
+        assert _vote_count(auth_client, poll_id) == 0
+    finally:
+        _finish(connection, transaction, worker)
+
+
+def test_deadline_beats_a_waiting_limited_vote(auth_client: TestClient) -> None:
+    """上限尚未用完时，取得锁后的截止时间优先于容量。"""
+    _csrf, guest_csrf, poll_id, option_id = _limited(
+        auth_client,
+        identity_mode="ANONYMOUS",
+        vote_limit=5,
+        title="截止竞争",
+    )
+    engine = _engine(auth_client)
+    connection, transaction = _lock_poll(engine, poll_id)
+    worker: threading.Thread | None = None
+    try:
+        worker, box = _run_waiting(lambda: cast(auth_client, guest_csrf, poll_id, option_id))
+        _wait_for_poll_waiter(engine)
+        clock_of(auth_client).advance(timedelta(hours=3))
+        transaction.rollback()
+        response = _join(worker, box)
+        error_body(response, 409, int(ApiCode.POLL_NOT_OPEN))
+        assert response.json()["code"] != int(ApiCode.POLL_CAPACITY_REACHED)
+        assert _vote_count(auth_client, poll_id) == 0
+    finally:
+        _finish(connection, transaction, worker)
+
+
+def test_waiting_vote_sees_capacity_filled_under_the_lock(auth_client: TestClient) -> None:
+    """其他事务在锁内写满名额后，等待中的新身份收到容量错误。"""
+    _csrf, guest_csrf, poll_id, option_id = _limited(
+        auth_client,
+        identity_mode="ANONYMOUS",
+        vote_limit=1,
+        title="锁内容量",
+    )
+    engine = _engine(auth_client)
+    connection, transaction = _lock_poll(engine, poll_id)
+    worker: threading.Thread | None = None
+    try:
+        worker, box = _run_waiting(lambda: cast(auth_client, guest_csrf, poll_id, option_id))
+        _wait_for_poll_waiter(engine)
+        vote_id = connection.execute(
+            text(
+                "INSERT INTO votes "
+                "(receipt_id, poll_id, identity_mode, voter_id, anonymous_voter_hash, "
+                "submitted_at) "
+                "VALUES (:receipt_id, :poll_id, 'ANONYMOUS', NULL, :digest, NOW()) "
+                "RETURNING id"
+            ),
+            {
+                "receipt_id": uuid4(),
+                "poll_id": poll_id,
+                "digest": "ef" * 32,
+            },
+        ).scalar_one()
+        connection.execute(
+            text(
+                "INSERT INTO vote_selections (vote_id, poll_id, option_id) "
+                "VALUES (:vote_id, :poll_id, :option_id)"
+            ),
+            {"vote_id": vote_id, "poll_id": poll_id, "option_id": option_id},
+        )
+        transaction.commit()
+        response = _join(worker, box)
+        error_body(response, 409, int(ApiCode.POLL_CAPACITY_REACHED))
+        assert _vote_count(auth_client, poll_id) == 1
+        assert poll_row(auth_client, poll_id)[0] == "PUBLISHED"
+    finally:
+        _finish(connection, transaction, worker)
+
+
+def _assert_capacity(
+    client: TestClient,
+    poll_id: int,
+    responses: list[httpx.Response],
+    *,
+    successes: int,
+) -> None:
+    """确认成功份数、容量拒绝和关闭状态。
+
+    Args:
+        client: 测试客户端。
+        poll_id: 投票主键。
+        responses: 并发响应。
+        successes: 期望成功的份数。
+    """
+    accepted = [item for item in responses if item.status_code == 201]
+    rejected = [item for item in responses if item.status_code != 201]
+    assert len(accepted) == successes
+    assert len(rejected) == len(responses) - successes
+    for item in accepted:
+        envelope(item, 201)
+    for item in rejected:
+        error_body(item, 409, int(ApiCode.POLL_CAPACITY_REACHED))
+    assert _vote_count(client, poll_id) == successes
+    assert poll_row(client, poll_id)[0] == "CLOSED"
 
 
 class _raises_constraint:

@@ -18,11 +18,11 @@ from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import NullPool
 
-from src.main.python.database.models import Poll, PollOption, User, Vote
+from src.main.python.database.models import Poll, PollOption, User, Vote, VoteSelection
 
 DEFAULT_DEV_URL = "postgresql+psycopg://voting:change-me@127.0.0.1:5432/voting"
 DEFAULT_TEST_URL = "postgresql+psycopg://voting:change-me@127.0.0.1:5433/voting_test"
-REVISION = "f3b8a1c04e27"
+REVISION = "6154e827a884"
 
 APPLICATION_TABLES = frozenset(
     {
@@ -33,6 +33,7 @@ APPLICATION_TABLES = frozenset(
         "poll_options",
         "polls",
         "users",
+        "vote_selections",
         "votes",
     }
 )
@@ -140,7 +141,7 @@ def downgrade_base(test_url: str, dev_url: str) -> None:
 
 
 def truncate_application_tables(engine: Engine) -> None:
-    """清空八张业务表并重置自增序号。
+    """清空九张业务表并重置自增序号。
 
     Args:
         engine: 已经过守卫的测试库引擎。
@@ -317,10 +318,10 @@ def add_vote(
     vote = Vote(
         receipt_id=uuid4(),
         poll_id=poll_id,
-        option_id=option_id,
         identity_mode=identity_mode,
         voter_id=voter_id,
         anonymous_voter_hash=anonymous_voter_hash,
+        selections=[VoteSelection(poll_id=poll_id, option_id=option_id)],
     )
     session.add(vote)
     return vote

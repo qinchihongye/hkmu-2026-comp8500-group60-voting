@@ -2,9 +2,9 @@
 
 from datetime import datetime
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, StrictInt, field_validator, model_validator
 
-from src.main.python.constants.enums import IdentityMode, Visibility
+from src.main.python.constants.enums import IdentityMode, SelectionMode, Visibility
 from src.main.python.fileds.request.request import BaseRequestData
 from src.main.python.utils.security_util import check_access_password
 
@@ -49,6 +49,8 @@ class _PollFields(BaseRequestData):
         identity_mode: 记名方式。
         visibility: 公开性。
         access_password: 私密投票密码。公开投票不能携带。
+        vote_limit: 整场最多接收的选票份数。为空表示不限。
+        selection_mode: 一份选票是单选还是多选。
         options: 2 到 10 个选项。
     """
 
@@ -59,6 +61,8 @@ class _PollFields(BaseRequestData):
     identity_mode: IdentityMode
     visibility: Visibility
     access_password: str | None = None
+    vote_limit: StrictInt | None = Field(default=None, ge=1, le=2147483647)
+    selection_mode: SelectionMode = SelectionMode.SINGLE
     options: list[OptionInput] = Field(min_length=2, max_length=10)
 
     @field_validator("title")
@@ -153,6 +157,8 @@ class _PollFields(BaseRequestData):
             raise ValueError("选项文本不能重复")
         if self.visibility == Visibility.PUBLIC and self.access_password is not None:
             raise ValueError("公开投票不能设置访问密码")
+        if self.selection_mode == SelectionMode.MULTIPLE and len(self.options) < 3:
+            raise ValueError("Multiple choices need at least three options.")
         return self
 
 
@@ -175,12 +181,18 @@ class PollCreate(_PollFields):
 
 
 class PollUpdate(_PollFields):
-    """替换草稿内容。未提交新密码时，服务层保留已有散列。
+    """替换草稿内容。未提交新密码时，服务层保留已有明文。
+
+    上限和选择模式必须随这次完整替换一起提交。
 
     Attributes:
+        vote_limit: 整场选票份数上限。空表示不限。
+        selection_mode: 一份选票是单选还是多选。
         expected_version: 客户端看到的版本。
     """
 
+    vote_limit: StrictInt | None = Field(ge=1, le=2147483647)
+    selection_mode: SelectionMode
     expected_version: int = Field(ge=1)
 
 

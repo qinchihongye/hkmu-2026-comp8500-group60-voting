@@ -1,6 +1,6 @@
 import { ApiCode } from "./api-codes";
 import { ApiClientError } from "./api-error";
-import type { Envelope, ValidationIssue } from "./api-types";
+import type { Envelope, FieldError } from "./api-types";
 
 export type CsrfSource = "none" | "auth" | "guest";
 
@@ -87,20 +87,20 @@ function isEnvelope(value: unknown): value is Envelope<unknown> {
   );
 }
 
-function issuesFrom(data: unknown): ValidationIssue[] {
-  if (typeof data !== "object" || data === null || !("issues" in data)) {
+function fieldErrorsFrom(data: unknown): FieldError[] {
+  if (typeof data !== "object" || data === null || !("errors" in data)) {
     return [];
   }
-  const issues = (data as { issues?: unknown }).issues;
-  if (!Array.isArray(issues)) {
+  const errors = (data as { errors?: unknown }).errors;
+  if (!Array.isArray(errors)) {
     return [];
   }
-  return issues.filter((issue): issue is ValidationIssue => {
-    if (typeof issue !== "object" || issue === null) {
+  return errors.filter((item): item is FieldError => {
+    if (typeof item !== "object" || item === null) {
       return false;
     }
-    const record = issue as Record<string, unknown>;
-    return typeof record.field === "string" && Array.isArray(record.loc) && typeof record.msg === "string";
+    const record = item as Record<string, unknown>;
+    return typeof record.field === "string" && typeof record.message === "string";
   });
 }
 
@@ -145,7 +145,20 @@ async function once<T>(request: ApiRequest, method: "GET" | "POST" | "PATCH"): P
       message: "网络连接中断，提交结果还不能确定",
     });
   }
-  const text = await response.text();
+  let text: string;
+  try {
+    text = await response.text();
+  } catch (error) {
+    if (isAbort(error)) {
+      throw error;
+    }
+    // 响应头已经到达，但正文中断。写请求的结果仍不确定，不能当成确定失败后自动重投。
+    throw new ApiClientError({
+      kind: "network",
+      httpStatus: response.status,
+      message: "网络连接中断，提交结果还不能确定",
+    });
+  }
   let payload: unknown;
   try {
     payload = text === "" ? null : JSON.parse(text);
@@ -170,7 +183,7 @@ async function once<T>(request: ApiRequest, method: "GET" | "POST" | "PATCH"): P
       httpStatus: response.status,
       requestId: payload.request_id,
       message: payload.msg,
-      issues: issuesFrom(payload.data),
+      errors: fieldErrorsFrom(payload.data),
     });
   }
   if (payload.data === null) {

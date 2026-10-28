@@ -58,7 +58,7 @@ describe("apiClient", () => {
           {
             code: ApiCode.VALIDATION_ERROR,
             msg: "请求参数不合法",
-            data: { issues: [{ field: "title", loc: ["body", "data", "title"], msg: "标题太短" }] },
+            data: { errors: [{ field: "data.title", message: "标题太短" }] },
             request_id: "req-422",
           },
           422,
@@ -76,7 +76,7 @@ describe("apiClient", () => {
       throw new TypeError("offline");
     });
     vi.stubGlobal("fetch", writeMock);
-    await expect(apiClient({ method: "POST", path: "/api/v1/polls/1/votes", data: { option_id: 1 } })).rejects.toMatchObject({
+    await expect(apiClient({ method: "POST", path: "/api/v1/polls/1/votes", data: { option_ids: [1] } })).rejects.toMatchObject({
       kind: "network",
     });
     expect(writeMock).toHaveBeenCalledTimes(1);
@@ -113,8 +113,30 @@ describe("apiClient", () => {
       ok({ receipt_id: "r", poll_id: 1, submitted_at: "2026-10-24T00:00:00Z" }, 201),
     );
     vi.stubGlobal("fetch", fetchMock);
-    await apiClient({ method: "POST", path: "/api/v1/polls/1/votes", data: { option_id: 2 }, csrfSource: "guest" });
+    await apiClient({ method: "POST", path: "/api/v1/polls/1/votes", data: { option_ids: [2] }, csrfSource: "guest" });
     expect(new Headers((fetchMock.mock.calls[0]?.[1] as RequestInit).headers).get("X-CSRF-Token")).toBe("guest-token");
+    expect(JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body))).toEqual({ data: { option_ids: [2] } });
+  });
+
+  it("响应头到达后正文断开，写请求记为网络未知且不重试", async () => {
+    setCsrfToken("guest", "guest-token");
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => {
+      return {
+        status: 201,
+        text: async () => {
+          throw new TypeError("body disconnected");
+        },
+      } as unknown as Response;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(
+      apiClient({ method: "POST", path: "/api/v1/polls/1/votes", data: { option_ids: [1, 2] }, csrfSource: "guest" }),
+    ).rejects.toMatchObject({ kind: "network" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body))).toEqual({
+      data: { option_ids: [1, 2] },
+    });
+    expect(getCsrfToken("guest")).toBe("guest-token");
   });
 });
 

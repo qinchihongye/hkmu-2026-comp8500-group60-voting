@@ -15,7 +15,7 @@ from src.main.python.algorithms.poll_module.poll_service import PollService
 from src.main.python.config.database_config import create_session_factory, dispose_session_factory
 from src.main.python.config.logger_config import get_logger, setup_logging
 from src.main.python.config.server_config import get_settings
-from src.main.python.constants.enums import IdentityMode, UserRole, Visibility
+from src.main.python.constants.enums import IdentityMode, SelectionMode, UserRole, Visibility
 from src.main.python.database.models import User
 from src.main.python.fileds.context import Principal
 from src.main.python.fileds.request.poll_request import OptionInput, PollCreate
@@ -302,6 +302,8 @@ def _round_payload(
 ) -> PollCreate:
     """组装一场演示投票。
 
+    演示场次保持单选，并且不设置选票份数上限。两个选项不能启用多选。
+
     Args:
         clock: 服务端时钟。
         title: 带批次标识的标题。
@@ -328,6 +330,8 @@ def _round_payload(
         identity_mode=identity,
         visibility=visibility,
         access_password=access_password,
+        vote_limit=None,
+        selection_mode=SelectionMode.SINGLE,
         options=[OptionInput(label="同意"), OptionInput(label="反对")],
     )
 

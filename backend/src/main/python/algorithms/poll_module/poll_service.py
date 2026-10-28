@@ -14,6 +14,7 @@ from src.main.python.constants.enums import (
     IdentityMode,
     PollLifecycle,
     PollStatus,
+    SelectionMode,
     Visibility,
 )
 from src.main.python.constants.error_codes import ApiCode
@@ -124,6 +125,8 @@ class PollService:
                     visibility=payload.visibility.value,
                     private_password_hash=None,
                     private_password=_password_text(payload),
+                    vote_limit=payload.vote_limit,
+                    selection_mode=payload.selection_mode.value,
                     share_code=None,
                     lifecycle=PollLifecycle.DRAFT,
                     starts_at=payload.starts_at,
@@ -195,6 +198,8 @@ class PollService:
                     poll.private_password,
                     payload,
                 )
+                poll.vote_limit = payload.vote_limit
+                poll.selection_mode = payload.selection_mode.value
                 poll.starts_at = payload.starts_at
                 poll.ends_at = payload.ends_at
                 poll.version += 1
@@ -254,6 +259,7 @@ class PollService:
                 now = self._clock.now()
                 if poll.ends_at <= now:
                     raise _not_open()
+                _require_multiple_options(session, poll)
                 poll.lifecycle = PollLifecycle.PUBLISHED
                 poll.version += 1
                 poll.updated_at = now
@@ -775,6 +781,8 @@ def _summary(poll: Poll, now: datetime) -> PollSummary:
         title=poll.title,
         identity_mode=poll.identity_mode,
         visibility=poll.visibility,
+        vote_limit=poll.vote_limit,
+        selection_mode=poll.selection_mode,
         starts_at=poll.starts_at,
         ends_at=poll.ends_at,
         effective_status=effective_status(poll, now),
@@ -877,6 +885,29 @@ def _constraint_name(exc: IntegrityError) -> str | None:
     if diag is None:
         return None
     return diag.constraint_name
+
+
+def _require_multiple_options(session: Session, poll: Poll) -> None:
+    """发布前再次确认多选至少有三个选项。
+
+    Args:
+        session: 当前事务。
+        poll: 即将发布的草稿。
+
+    Raises:
+        AppError: 选择模式是多选，但当前选项不足三个。
+    """
+    if poll.selection_mode != SelectionMode.MULTIPLE.value:
+        return
+    count = session.scalar(
+        select(func.count()).select_from(PollOption).where(PollOption.poll_id == poll.id)
+    )
+    if count is None or int(count) < 3:
+        raise AppError(
+            422,
+            ApiCode.VALIDATION_ERROR,
+            "Multiple choices need at least three options.",
+        )
 
 
 def _missing() -> AppError:

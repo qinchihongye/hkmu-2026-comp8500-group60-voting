@@ -1,6 +1,7 @@
 export type UserRole = "USER" | "ADMIN";
 export type IdentityMode = "NAMED" | "ANONYMOUS";
 export type Visibility = "PUBLIC" | "PRIVATE";
+export type SelectionMode = "SINGLE" | "MULTIPLE";
 export type PollLifecycle = "DRAFT" | "PUBLISHED" | "CLOSED";
 export type EffectiveStatus = "DRAFT" | "SCHEDULED" | "OPEN" | "CLOSED";
 export type ResultsAccessReason = "creator" | "admin" | "closed" | "unavailable";
@@ -30,14 +31,13 @@ export type Page<T> = {
   total: number;
 };
 
-export type ValidationIssue = {
+export type FieldError = {
   field: string;
-  loc: string[];
-  msg: string;
+  message: string;
 };
 
 export type ValidationErrorData = {
-  issues: ValidationIssue[];
+  errors: FieldError[];
 };
 
 export type Envelope<T> = {
@@ -58,6 +58,8 @@ export type PollSummary = {
   title: string;
   identity_mode: IdentityMode | string;
   visibility: Visibility | string;
+  vote_limit: number | null;
+  selection_mode: SelectionMode | string;
   starts_at: string;
   ends_at: string;
   effective_status: EffectiveStatus | string;
@@ -131,6 +133,9 @@ export type OptionResult = {
 export type PollResults = {
   poll_id: number;
   total_votes: number;
+  total_selections: number;
+  selection_mode: SelectionMode;
+  vote_limit: number | null;
   options: OptionResult[];
   winner_option_ids: number[];
   is_final: boolean;
@@ -166,6 +171,8 @@ export type PollWriteBody = {
   identity_mode: IdentityMode;
   visibility: Visibility;
   access_password: string | null;
+  vote_limit: number | null;
+  selection_mode: SelectionMode;
   options: OptionInput[];
 };
 

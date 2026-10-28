@@ -14,11 +14,7 @@ from src.main.python.config.logger_config import (
     redact_secrets,
 )
 from src.main.python.constants.error_codes import ApiCode, api_code_for_status
-from src.main.python.fileds.response.response import (
-    ResponseModel,
-    ValidationErrorData,
-    ValidationIssue,
-)
+from src.main.python.fileds.response.response import FieldError, ResponseModel, ValidationErrorData
 from src.main.python.utils.response_util import error_body, json_from_model, request_id_of
 
 logger = get_logger("errors")
@@ -75,7 +71,7 @@ def error_response_declarations() -> dict[int, dict[str, Any]]:
         405: dict(plain),
         409: dict(plain),
         415: dict(plain),
-        422: {"model": ResponseModel[ValidationErrorData]},
+        422: {"model": ResponseModel[ValidationErrorData | None]},
         429: dict(plain),
         500: dict(plain),
         503: dict(plain),
@@ -91,21 +87,43 @@ def _validation_data(exc: RequestValidationError) -> ValidationErrorData:
     Returns:
         不含提交值、Cookie 或完整请求体的错误数据。
     """
-    issues: list[ValidationIssue] = []
+    errors: list[FieldError] = []
     for error in exc.errors():
         loc = [str(item) for item in error.get("loc", ())]
-        message = str(error.get("msg", ApiCode.VALIDATION_ERROR.default_message))
-        raw_input = error.get("input")
-        if isinstance(raw_input, str) and raw_input and raw_input in message:
-            message = message.replace(raw_input, "***")
-        issues.append(ValidationIssue(field=loc[-1] if loc else "body", loc=loc, msg=message))
-    if not issues:
-        issues.append(
-            ValidationIssue(
-                field="body", loc=["body"], msg=ApiCode.VALIDATION_ERROR.default_message
-            )
-        )
-    return ValidationErrorData(issues=issues)
+        errors.append(FieldError(field=_field_path(loc), message=_safe_validation_message(error)))
+    if not errors:
+        errors.append(FieldError(field="body", message=ApiCode.VALIDATION_ERROR.default_message))
+    return ValidationErrorData(errors=errors)
+
+
+def _field_path(loc: list[str]) -> str:
+    """把校验位置收成不含 body 外壳的字段路径。
+
+    Args:
+        loc: Pydantic 报告的位置。
+
+    Returns:
+        以点连接的路径。没有位置时为 body。
+    """
+    parts = [item for item in loc if item != "body"]
+    return ".".join(parts) if parts else "body"
+
+
+def _safe_validation_message(error: dict[str, Any]) -> str:
+    """去掉框架前缀，并避免把字符串原文带回响应。
+
+    Args:
+        error: Pydantic 的单条错误。
+
+    Returns:
+        可以展示的说明。
+    """
+    message = str(error.get("msg", ApiCode.VALIDATION_ERROR.default_message))
+    message = message.removeprefix("Value error, ")
+    raw_input = error.get("input")
+    if isinstance(raw_input, str) and raw_input and raw_input in message:
+        message = message.replace(raw_input, "***")
+    return message
 
 
 def log_unexpected_error(request: Request, exc: Exception) -> None:
