@@ -173,7 +173,7 @@
   | --- | --- |
   | `/`、`/overview` | `/` 转到登录。总览在 `/overview`，进行中公开场次和本人记名参与数使用接口里的 `total` |
   | `/login`、`/register` | 账户。登录后的 `next` 只能是本站相对路径 |
-  | `/public-polls`、`/polls/:id`、`/polls/:id/results` | 公开列表、详情和结果。`/polls` 没有列表页 |
+  | `/public-polls`、`/polls/:id`、`/polls/:id/results` | `/public-polls` 重定向至 `/overview` 广场；详情和结果。`/polls` 没有列表页 |
   | `/s/:shareCode`、`/s/:shareCode/access`、`/s/:shareCode/results` | 分享入口、密码页和结果。密码不进入地址 |
   | `/my-polls`、`/my-polls/new`、`/my-polls/:id`、`/my-polls/:id/edit` | 创建者工作区，需要登录 |
   | `/my-votes` | 记名历史，需要登录。匿名票不在这里 |

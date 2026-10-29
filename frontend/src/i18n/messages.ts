@@ -22,6 +22,8 @@ export const en = {
     notifications: "Notifications",
     collapse: "Collapse sidebar",
     expand: "Expand sidebar",
+    hotPollBadge: "Trending",
+    adPlaceholder: "Ad space available",
   },
   role: { admin: "Administrator" },
   common: {
@@ -461,6 +463,8 @@ export const zh: StringTree<typeof en> = {
     notifications: "通知",
     collapse: "收起边栏",
     expand: "展开边栏",
+    hotPollBadge: "热门投票",
+    adPlaceholder: "广告位招租",
   },
   role: { admin: "管理员" },
   common: {

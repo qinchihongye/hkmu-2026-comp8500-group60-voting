@@ -313,32 +313,128 @@
   box-sizing: border-box;
 }
 
-/* Desktop Left Group: Collapse Toggle + Navigation Tabs */
+/* Desktop Left Group: Global Announcement Ticker */
 .topbar-left-group {
   display: flex;
   align-items: center;
+  flex: 1;
+  min-width: 0;
+  margin-right: 20px;
 }
 
-.topbar-collapse-toggle-btn {
+/* Announcement Ticker */
+.topbar-ticker-container {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  color: #64748b;
-  cursor: pointer;
+  position: relative;
+  height: 38px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.03);
   transition: all 0.2s ease;
-  margin-right: 18px;
+  user-select: none;
+}
+
+.topbar-ticker-container:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
+}
+
+.topbar-ticker-slot {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 14px 0 8px;
+  animation: tickerSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tickerSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.topbar-ticker-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #0f172a;
+  cursor: pointer;
+  max-width: 460px;
+}
+
+.topbar-ticker-link:hover .topbar-ticker-title {
+  color: #1363df;
+}
+
+.topbar-ticker-link:hover .topbar-ticker-arrow {
+  transform: translateX(2px);
+  color: #1363df;
+}
+
+.topbar-ticker-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   flex-shrink: 0;
 }
 
-.topbar-collapse-toggle-btn:hover {
-  background: #f1f5f9;
-  color: #0f172a;
-  border-color: #cbd5e1;
+.topbar-ticker-badge.hot {
+  background: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #ffedd5;
+}
+
+.topbar-ticker-badge.ad {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+}
+
+.topbar-ticker-title {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 280px;
+  transition: color 0.15s ease;
+}
+
+.topbar-ticker-arrow {
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.topbar-ticker-ad {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.topbar-ticker-ad-sub {
+  color: #64748b;
+  font-size: 0.82rem;
+  white-space: nowrap;
 }
 
 /* Topbar Right Area */
