@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { accessPassword, createDraft, login, publishCurrent, register, uniqueName, voteFor } from "./support";
 
-const choices = ["甲", "乙", "丙"];
+const choices = ["Option A", "Option B", "Option C"];
 
 async function openShare(page: Page, shareUrl: string): Promise<void> {
   await page.goto(new URL(shareUrl).pathname);
@@ -24,9 +24,9 @@ test("四种身份和公开性的单选、多选都只产生一份回执", async
   const named = await namedContext.newPage();
   const anon = await anonContext.newPage();
 
-  await register(creator, creatorName, "组合创建者");
+  await register(creator, creatorName, "Combo Creator");
   await login(creator, creatorName);
-  await register(named, voterName, "组合参与者");
+  await register(named, voterName, "Combo Voter");
   await login(named, voterName);
 
   const cases = [
@@ -41,13 +41,13 @@ test("四种身份和公开性的单选、多选都只产生一份回执", async
   ];
 
   for (const [index, item] of cases.entries()) {
-    const title = `${item.anonymous ? "匿" : "名"}${item.visibility === "PRIVATE" ? "私" : "公"}${item.multiple ? "多" : "单"}${creatorName}${index}`;
+    const title = `${item.anonymous ? "Anon" : "Named"}_${item.visibility === "PRIVATE" ? "Priv" : "Pub"}_${item.multiple ? "Multi" : "Single"}_${creatorName}${index}`;
     await createDraft(creator, {
       title,
       anonymous: item.anonymous,
       visibility: item.visibility,
       password: item.visibility === "PRIVATE" ? accessPassword : undefined,
-      options: item.multiple ? choices : ["甲", "乙"],
+      options: item.multiple ? choices : ["Option A", "Option B"],
       multiple: item.multiple,
     });
     const shareUrl = await publishCurrent(creator);
@@ -57,7 +57,7 @@ test("四种身份和公开性的单选、多选都只产生一份回执", async
       await unlock(voter);
     }
     await expect(voter.getByRole("heading", { name: title })).toBeVisible();
-    await voteFor(voter, item.multiple ? ["甲", "丙"] : "甲");
+    await voteFor(voter, item.multiple ? ["Option A", "Option C"] : "Option A");
     await expect(voter.getByTestId("vote-submit")).toHaveCount(0);
   }
 
@@ -69,13 +69,13 @@ test("四种身份和公开性的单选、多选都只产生一份回执", async
 test("上限两份时第二份关闭，第三份被拒绝，份数和选择次数不同", async ({ browser }) => {
   test.setTimeout(120_000);
   const creatorName = uniqueName("cap");
-  const title = `上限${creatorName}`;
+  const title = `Cap_${creatorName}`;
   const creatorContext = await browser.newContext();
   const contexts = [await browser.newContext(), await browser.newContext(), await browser.newContext()];
   const creator = await creatorContext.newPage();
   const [first, second, third] = [await contexts[0].newPage(), await contexts[1].newPage(), await contexts[2].newPage()];
 
-  await register(creator, creatorName, "上限创建者");
+  await register(creator, creatorName, "Cap Creator");
   await login(creator, creatorName);
   await createDraft(creator, {
     title,
@@ -87,12 +87,12 @@ test("上限两份时第二份关闭，第三份被拒绝，份数和选择次�
   const shareUrl = await publishCurrent(creator);
   for (const page of [first, second, third]) {
     await openShare(page, shareUrl);
-    await expect(page.getByRole("checkbox", { name: "甲", exact: true })).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: "Option A", exact: true })).toBeVisible();
   }
 
-  await voteFor(first, ["甲", "丙"]);
-  await voteFor(second, "乙");
-  await third.getByRole("checkbox", { name: "甲", exact: true }).check();
+  await voteFor(first, ["Option A", "Option C"]);
+  await voteFor(second, "Option B");
+  await third.getByRole("checkbox", { name: "Option A", exact: true }).check();
   await third.getByTestId("vote-submit").click();
   await third.getByTestId("vote-confirm").click();
   await expect(third.getByText("This poll has ended. You cannot vote.")).toBeVisible();

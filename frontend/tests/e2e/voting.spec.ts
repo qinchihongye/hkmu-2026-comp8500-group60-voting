@@ -5,23 +5,23 @@ import { createDraft, login, publishCurrent, register, uniqueName, voteFor } fro
 test("记名公开投票每账户一票，进行中结果只给创建者", async ({ browser }) => {
   const creatorName = uniqueName("host");
   const voterName = uniqueName("voter");
-  const title = `记名${creatorName}`;
+  const title = `Named_${creatorName}`;
   const creatorContext = await browser.newContext();
   const voterContext = await browser.newContext();
   const creator = await creatorContext.newPage();
   const voter = await voterContext.newPage();
 
-  await register(creator, creatorName, "主持人");
+  await register(creator, creatorName, "Host User");
   await login(creator, creatorName);
   await createDraft(creator, { title });
   await publishCurrent(creator);
   await expect(creator.getByTestId("results")).toContainText("Current lead");
 
-  await register(voter, voterName, "参与者");
+  await register(voter, voterName, "Voter User");
   await login(voter, voterName);
   await voter.goto("/overview");
   await voter.getByRole("link", { name: title }).click();
-  await voteFor(voter, "甲");
+  await voteFor(voter, "Option A");
   await voter.reload();
   await expect(voter.getByTestId("receipt")).toBeVisible();
   await expect(voter.getByTestId("vote-submit")).toHaveCount(0);
@@ -33,7 +33,7 @@ test("记名公开投票每账户一票，进行中结果只给创建者", async
   await expect(voter.getByRole("heading", { name: "Results are not available yet" })).toBeVisible();
 
   await creator.reload();
-  await expect(creator.getByTestId("results")).toContainText("甲");
+  await expect(creator.getByTestId("results")).toContainText("Option A");
   await creatorContext.close();
   await voterContext.close();
 });

@@ -305,9 +305,11 @@ export function AppLayout() {
                 >
                   {/* Avatar */}
                   <span className="topbar-avatar">
-                    {auth.user.display_name.charAt(0).toUpperCase()}
+                    {(auth.user.username === "admin" ? "admin" : auth.user.display_name).charAt(0).toUpperCase()}
                   </span>
-                  <span className="topbar-user-name">{auth.user.display_name}</span>
+                  <span className="topbar-user-name">
+                    {auth.user.username === "admin" ? "admin" : auth.user.display_name}
+                  </span>
 
                   {/* Dropdown chevron */}
                   <svg
@@ -337,7 +339,7 @@ export function AppLayout() {
                   {/* User Info Header */}
                   <div className="topbar-dropdown-header">
                     <div className="topbar-dropdown-avatar">
-                      {auth.user.display_name.charAt(0).toUpperCase()}
+                      {(auth.user.username === "admin" ? "admin" : auth.user.display_name).charAt(0).toUpperCase()}
                     </div>
                     <div className="topbar-dropdown-meta">
                       <div className="topbar-dropdown-name">@{auth.user.username}</div>

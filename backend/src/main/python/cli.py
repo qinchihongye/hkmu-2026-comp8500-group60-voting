@@ -53,9 +53,9 @@ class DemoAccount:
 
 
 DEMO_ACCOUNTS: tuple[tuple[str, str, str, str], ...] = (
-    ("admin", "管理员", UserRole.ADMIN, "DEMO_ADMIN_PASSWORD"),
-    ("demo_user", "演示用户", UserRole.USER, "DEMO_USER_PASSWORD"),
-    ("demo_voter", "演示参与者", UserRole.USER, "DEMO_VOTER_PASSWORD"),
+    ("admin", "admin", UserRole.ADMIN, "DEMO_ADMIN_PASSWORD"),
+    ("demo_user", "demo_user", UserRole.USER, "DEMO_USER_PASSWORD"),
+    ("demo_voter", "demo_voter", UserRole.USER, "DEMO_VOTER_PASSWORD"),
 )
 
 

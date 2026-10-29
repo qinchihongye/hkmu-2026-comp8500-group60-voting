@@ -6,8 +6,8 @@ const widths = [375, 768, 1024, 1440];
 
 test("四个宽度都能完成导航、表单、分享和结果，页面不横向溢出", async ({ page }) => {
   const username = uniqueName("narrow");
-  const title = `窄屏${username}`;
-  await register(page, username, "窄屏用户");
+  const title = `Narrow_${username}`;
+  await register(page, username, "Narrow User");
   await login(page, username);
   await createDraft(page, { title });
   await publishCurrent(page);

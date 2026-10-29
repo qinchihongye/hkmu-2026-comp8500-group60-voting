@@ -74,9 +74,9 @@ export async function createDraft(
 ): Promise<void> {
   await page.goto("/my-polls/new");
   await page.getByLabel("Title").fill(options.title);
-  const labels = options.options ?? ["甲", "乙"];
-  await page.getByRole("textbox", { name: "Option 1", exact: true }).fill(labels[0] ?? "甲");
-  await page.getByRole("textbox", { name: "Option 2", exact: true }).fill(labels[1] ?? "乙");
+  const labels = options.options ?? ["Option A", "Option B"];
+  await page.getByRole("textbox", { name: "Option 1", exact: true }).fill(labels[0] ?? "Option A");
+  await page.getByRole("textbox", { name: "Option 2", exact: true }).fill(labels[1] ?? "Option B");
   for (let index = 2; index < labels.length; index += 1) {
     await page.getByRole("button", { name: /Add option/ }).click();
     await page.getByRole("textbox", { name: `Option ${index + 1}`, exact: true }).fill(labels[index] ?? "");

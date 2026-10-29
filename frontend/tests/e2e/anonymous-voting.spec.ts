@@ -4,7 +4,7 @@ import { createDraft, login, publishCurrent, register, uniqueName, voteFor } fro
 
 test("匿名同浏览器不能再投，另一个浏览器可以，丢响应后用原凭据找回", async ({ browser }) => {
   const creatorName = uniqueName("anonhost");
-  const title = `匿名${creatorName}`;
+  const title = `Anon_${creatorName}`;
   const creatorContext = await browser.newContext();
   const first = await browser.newContext();
   const second = await browser.newContext();
@@ -12,7 +12,7 @@ test("匿名同浏览器不能再投，另一个浏览器可以，丢响应后�
   const page = await first.newPage();
   const other = await second.newPage();
 
-  await register(creator, creatorName, "匿名主持");
+  await register(creator, creatorName, "Anon Host");
   await login(creator, creatorName);
   await createDraft(creator, { title, anonymous: true });
   const shareUrl = new URL(await publishCurrent(creator));
@@ -42,7 +42,7 @@ test("匿名同浏览器不能再投，另一个浏览器可以，丢响应后�
       body: await response.body(),
     });
   });
-  await page.getByLabel("甲").check();
+  await page.getByLabel("Option A").check();
   await expect(page.getByTestId("vote-submit")).toBeEnabled();
   await page.getByTestId("vote-submit").click();
   await page.getByTestId("vote-confirm").click();
@@ -52,7 +52,7 @@ test("匿名同浏览器不能再投，另一个浏览器可以，丢响应后�
   await page.reload();
   await expect(page.getByTestId("receipt")).toBeVisible();
   await other.goto(shareUrl.pathname);
-  await voteFor(other, "乙");
+  await voteFor(other, "Option B");
   await creatorContext.close();
   await first.close();
   await second.close();

@@ -4,13 +4,13 @@ import { accessPassword, adminPassword, apiPost, createDraft, login, origin, pub
 
 test("管理员能看他人私密和进行中汇总，但不能写", async ({ browser, playwright }) => {
   const creatorName = uniqueName("owner");
-  const title = `监督${creatorName}`;
+  const title = `Supervision_${creatorName}`;
   const creatorContext = await browser.newContext();
   const adminContext = await browser.newContext();
   const creator = await creatorContext.newPage();
   const admin = await adminContext.newPage();
 
-  await register(creator, creatorName, "被监督的人");
+  await register(creator, creatorName, "Supervised User");
   await login(creator, creatorName);
   await createDraft(creator, { title, anonymous: true, visibility: "PRIVATE", password: accessPassword });
   await publishCurrent(creator);
@@ -36,7 +36,7 @@ test("管理员能看他人私密和进行中汇总，但不能写", async ({ br
   const denied = await api.patch(`/api/v1/polls/${pollId}`, {
     data: {
       data: {
-        title: "越权修改",
+        title: "Unauthorized edit",
         description: null,
         starts_at: "2026-10-24T00:00:00+08:00",
         ends_at: "2026-10-24T04:00:00+08:00",
@@ -45,7 +45,7 @@ test("管理员能看他人私密和进行中汇总，但不能写", async ({ br
         access_password: null,
         vote_limit: null,
         selection_mode: "SINGLE",
-        options: [{ label: "甲" }, { label: "乙" }],
+        options: [{ label: "Option A" }, { label: "Option B" }],
         expected_version: 2,
       },
     },
