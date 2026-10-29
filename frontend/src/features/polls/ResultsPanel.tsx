@@ -208,14 +208,20 @@ function ResultsPie({ options }: { options: OptionResult[] }) {
         <RoundingNote />
       </div>
       {total <= 0 ? (
-        <svg className="results-pie" viewBox="0 0 200 200" role="img" aria-label={t("results.empty")}>
+        <svg
+          className="results-pie"
+          viewBox="0 0 200 200"
+          role="img"
+          aria-label={t("results.empty")}
+          style={{ margin: "auto", display: "block" }}
+        >
           <circle cx={PIE_CENTER} cy={PIE_CENTER} r={PIE_RADIUS} fill="#f8fafc" stroke="#e2e8f0" strokeWidth="2" />
         </svg>
       ) : (
         <div
           ref={containerRef}
           className="results-pie-wrap"
-          style={{ position: "relative", display: "inline-block", width: "min(100%, 220px)", margin: "0 auto" }}
+          style={{ position: "relative", display: "block", width: "min(100%, 220px)", margin: "auto" }}
           onMouseLeave={() => {
             setHoveredIndex(null);
             setTooltipPos(null);

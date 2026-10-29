@@ -317,12 +317,17 @@
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
   margin-bottom: 12px;
 }
 
 .results-table-card {
   margin-bottom: 0;
+  height: 100%;
+  min-height: 290px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
 .results-swatch {
@@ -337,14 +342,16 @@
 .results-pie-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 18px 16px 16px;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 0 20px 20px;
   border: 1px solid rgba(226, 232, 240, 0.85);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 10px 30px -4px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+  height: 100%;
+  min-height: 290px;
+  box-sizing: border-box;
 }
 
 .results-pie-heading {
@@ -353,31 +360,41 @@
   justify-content: space-between;
   gap: 8px;
   width: 100%;
+  height: 48px;
+  min-height: 48px;
+  box-sizing: border-box;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .results-pie-caption {
   margin: 0;
   color: #475569;
-  font-size: 0.92rem;
+  font-size: 0.82rem;
   font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
 }
 
 .results-note {
   position: relative;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .results-note-button {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: 1px solid #dbeafe;
   border-radius: 999px;
   background: #eff6ff;
   color: #1363df;
   cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .results-note-button:hover,
@@ -388,7 +405,7 @@
 
 .results-note-pop {
   position: absolute;
-  top: calc(100% - 4px);
+  top: calc(100% + 4px);
   right: 0;
   z-index: 5;
   width: min(260px, calc(100vw - 48px));
@@ -465,7 +482,10 @@
 }
 
 .saas-table th {
-  padding: 14px 20px;
+  height: 48px;
+  box-sizing: border-box;
+  padding: 0 20px;
+  line-height: 48px;
   background: #f8fafc;
   color: #475569;
   font-weight: 700;
@@ -473,6 +493,7 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
 }
 
 .saas-table td {

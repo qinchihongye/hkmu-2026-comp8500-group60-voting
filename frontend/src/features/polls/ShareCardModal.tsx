@@ -252,3 +252,4 @@ export function ShareCardModal({ results, pollDetail, onClose }: ShareCardModalP
     </div>
   );
 }
+
