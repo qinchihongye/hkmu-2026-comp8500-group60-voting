@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { PageState } from "../components/PageState";
-import { ModeTags, StatusTag } from "../components/StatusTag";
+import { MyPollCard } from "../features/creator/MyPollCard";
 import { getMyPolls } from "../features/creator/api";
 import { useFailure } from "../i18n/errors";
 import { useI18n } from "../i18n/LocaleProvider";
@@ -83,30 +83,32 @@ export function MyPollsPage() {
 
       {/* Filter & Search Bar */}
       <div className="polls-filter-card">
-        {/* Search Input */}
-        <div className="polls-search-wrap">
-          <svg
-            className="polls-search-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            type="text"
-            className="polls-search-input"
-            placeholder={t("polls.searchMine")}
-            value={q}
-            onChange={(event) => {
-              setPage(1);
-              setQ(event.target.value);
-            }}
-          />
+        <div className="polls-filter-main-row">
+          {/* Search Input */}
+          <div className="polls-search-wrap">
+            <svg
+              className="polls-search-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              className="polls-search-input"
+              placeholder={t("polls.searchMine")}
+              value={q}
+              onChange={(event) => {
+                setPage(1);
+                setQ(event.target.value);
+              }}
+            />
+          </div>
         </div>
 
         {/* Status Segmented Tabs */}
@@ -135,7 +137,7 @@ export function MyPollsPage() {
           error={failure.message}
           empty={
             !loading && items.length === 0 ? (
-              <div className="polls-empty-card">
+              <div className="polls-empty-card dashboard-span">
                 <span className="polls-empty-icon">📝</span>
                 <p className="polls-empty-text">{t("polls.emptyMine")}</p>
                 <Link to="/my-polls/new" className="polls-create-btn" style={{ marginTop: 8 }}>
@@ -145,62 +147,15 @@ export function MyPollsPage() {
             ) : null
           }
         >
-          <div className="my-polls-stack">
-            {items.map((poll) => {
-              const isDraft = poll.lifecycle === "DRAFT";
-              return (
-                <article key={poll.id} className="my-poll-row-card">
-                  {/* Left Info Column */}
-                  <div className="my-poll-info-left">
-                    <div className="my-poll-title-line">
-                      <span className="my-poll-id-badge">#{poll.id}</span>
-                      <h2 className="my-poll-title">
-                        <Link to={`/my-polls/${poll.id}`}>{poll.title}</Link>
-                      </h2>
-                    </div>
-
-                    <div className="my-poll-tags-line">
-                      <StatusTag status={poll.effective_status} />
-                      <ModeTags identity={poll.identity_mode} visibility={poll.visibility} />
-                      {!isDraft ? (
-                        <span
-                          style={{
-                            fontSize: "0.78rem",
-                            fontWeight: 600,
-                            padding: "2px 8px",
-                            borderRadius: 6,
-                            background: "#f1f5f9",
-                            color: "#475569",
-                          }}
-                        >
-                          {poll.vote_limit
-                            ? `${poll.ballot_count} / ${poll.vote_limit} ${t("polls.ballotsReceived")}`
-                            : `${poll.ballot_count} ${t("polls.ballotsReceived")}`}
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  {/* Right Action Buttons */}
-                  <div className="my-poll-actions-right">
-                    {isDraft ? (
-                      <Link to={`/my-polls/${poll.id}/edit`} className="my-poll-btn my-poll-btn-primary">
-                        {t("polls.editDraft")}
-                      </Link>
-                    ) : (
-                      <Link to={`/my-polls/${poll.id}`} className="my-poll-btn my-poll-btn-primary">
-                        {t("polls.openWorkspace")}
-                      </Link>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
+          <div className="polls-grid">
+            {items.map((poll) => (
+              <MyPollCard key={poll.id} poll={poll} />
+            ))}
           </div>
         </PageState>
 
         {/* Pagination Bar */}
-        {total > 0 ? (
+        {total > pageSize ? (
           <div className="polls-pagination-bar">
             <span>
               {t("common.pageOf", { page, pages, total })}

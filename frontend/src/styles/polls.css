@@ -423,6 +423,12 @@
   border: 1px solid #e2e8f0;
 }
 
+.plaza-status-draft {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
 .plaza-status-dot {
   width: 6px;
   height: 6px;
