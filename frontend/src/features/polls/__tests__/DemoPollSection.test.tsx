@@ -52,9 +52,10 @@ describe("DemoPollSection", () => {
     renderWithProviders(<DemoPollSection />);
     expect(await screen.findByRole("link", { name: "Technical sharing topics · A01" })).toHaveAttribute("href", "/polls/11");
     expect(screen.getByText("Multiple choice")).toBeInTheDocument();
-    expect(screen.getByText("Up to 20 ballots")).toBeInTheDocument();
-    expect(screen.getByText("Results after it ends")).toBeInTheDocument();
-    expect(screen.getByText("Private · Named")).toBeInTheDocument();
+    expect(screen.getByText("Ballots received")).toBeInTheDocument();
+    expect(screen.getByText("Private access")).toBeInTheDocument();
+    expect(screen.getByText("Named")).toBeInTheDocument();
+    expect(screen.getByText("Private")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "View poll" })).toHaveAttribute("href", "/polls/11");
     await user.click(screen.getByRole("button", { name: "Next" }));
     await waitFor(() => expect(urls.some((url) => url.includes("/demo-polls") && url.includes("page=2"))).toBe(true));
@@ -85,10 +86,9 @@ describe("DemoPollSection", () => {
       });
     });
     renderWithProviders(<DemoPollSection />);
-    expect(await screen.findByText("Final results")).toBeInTheDocument();
-    expect(screen.queryByText("Results after it ends")).not.toBeInTheDocument();
+    expect(await screen.findByText("CLOSED")).toBeInTheDocument();
     expect(screen.getByText("Single choice")).toBeInTheDocument();
-    expect(screen.getByText("No ballot cap")).toBeInTheDocument();
+    expect(screen.getByText("Private")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "View results" })).toHaveAttribute("href", "/polls/8");
   });
 
@@ -100,7 +100,7 @@ describe("DemoPollSection", () => {
       }
       if (url.includes("page_size=8")) {
         return envelope({
-          items: [demoPoll({ visibility: "PUBLIC", identity_mode: "ANONYMOUS", allow_live_results: true, vote_limit: null, selection_mode: "SINGLE" })],
+          items: [demoPoll({ visibility: "PUBLIC", identity_mode: "ANONYMOUS", allow_live_results: true, vote_limit: null, selection_mode: "SINGLE", description: null })],
           page: 1,
           page_size: 8,
           total: 1,
@@ -110,10 +110,10 @@ describe("DemoPollSection", () => {
     });
     const view = renderWithProviders(<DemoPollSection />);
     expect(await screen.findByText("单选")).toBeInTheDocument();
-    expect(screen.getByText("不限票数")).toBeInTheDocument();
-    expect(screen.getByText("实时结果")).toBeInTheDocument();
+    expect(screen.getByText("时间进度")).toBeInTheDocument();
+    expect(screen.getByText("公开")).toBeInTheDocument();
     expect(screen.queryByText("Single choice")).not.toBeInTheDocument();
-    expect(screen.getByTestId("demo-polls").querySelector(".plaza-card-tags")).toBeTruthy();
+    expect(screen.getByTestId("demo-polls").querySelector(".plaza-card")).toBeTruthy();
     view.unmount();
     installFetch(() => emptyPage(0));
     renderWithProviders(<DemoPollSection />);

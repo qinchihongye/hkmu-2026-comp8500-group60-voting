@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from src.main.python.algorithms.poll_module.poll_service import effective_status
 from src.main.python.constants.error_codes import ApiCode
-from src.main.python.database.models import DemoPollFixture, Poll
+from src.main.python.database.models import DemoPollFixture, Poll, Vote
 from src.main.python.fileds.response.demo_response import DemoPollSummary
 from src.main.python.fileds.response.response import Page
 from src.main.python.utils.clock_util import Clock
@@ -69,8 +69,17 @@ class DemoCatalogService:
         with self._factory() as session:
             total = session.scalar(_count(clauses)) or 0
             rows = session.execute(_page(clauses, filters)).all()
+            poll_ids = [poll.id for _fixture, poll in rows]
+            counts: dict[int, int] = {}
+            if poll_ids:
+                count_rows = session.execute(
+                    select(Vote.poll_id, func.count(Vote.id))
+                    .where(Vote.poll_id.in_(poll_ids))
+                    .group_by(Vote.poll_id)
+                ).all()
+                counts = {pid: int(cnt) for pid, cnt in count_rows}
             now = self._clock.now()
-            items = [_summary(fixture, poll, now) for fixture, poll in rows]
+            items = [_summary(fixture, poll, now, counts.get(poll.id, 0)) for fixture, poll in rows]
         return Page(items=items, page=filters.page, page_size=filters.page_size, total=int(total))
 
 
@@ -141,17 +150,30 @@ def _page(clauses: list[object], filters: DemoListFilters) -> object:
     return statement.offset(offset).limit(filters.page_size)
 
 
-def _summary(fixture: DemoPollFixture, poll: Poll, now: datetime) -> DemoPollSummary:
+def _calc_close_reason(poll: Poll, status: str, ballot_count: int) -> str | None:
+    """计算已结束投票的关闭原因。"""
+    if status != "CLOSED":
+        return None
+    if poll.vote_limit is not None and ballot_count >= poll.vote_limit:
+        return "BALLOT_CAP_REACHED"
+    if poll.closed_at is not None and poll.ends_at is not None and poll.closed_at < poll.ends_at:
+        return "CLOSED_EARLY"
+    return "ENDED"
+
+
+def _summary(fixture: DemoPollFixture, poll: Poll, now: datetime, ballot_count: int = 0) -> DemoPollSummary:
     """复制一条不含敏感字段的示例摘要。
 
     Args:
         fixture: 目录登记。
         poll: 关联的投票。
         now: 当前时间。
+        ballot_count: 已接收选票数。
 
     Returns:
         示例摘要。
     """
+    status = effective_status(poll, now)
     return DemoPollSummary(
         id=poll.id,
         title=poll.title,
@@ -162,8 +184,12 @@ def _summary(fixture: DemoPollFixture, poll: Poll, now: datetime) -> DemoPollSum
         allow_live_results=poll.allow_live_results,
         starts_at=poll.starts_at,
         ends_at=poll.ends_at,
-        effective_status=effective_status(poll, now),
+        effective_status=status,
         created_at=poll.created_at,
+        description=poll.description,
+        closed_at=poll.closed_at,
+        ballot_count=ballot_count,
+        close_reason=_calc_close_reason(poll, status, ballot_count),
         fixture_key=fixture.fixture_key,
         display_order=fixture.display_order,
     )

@@ -528,10 +528,19 @@ class PollService:
             try:
                 total = session.scalar(_count(clauses)) or 0
                 rows = session.scalars(_ordered(clauses, filters)).all()
+                poll_ids = [row.id for row in rows]
+                counts: dict[int, int] = {}
+                if poll_ids:
+                    count_rows = session.execute(
+                        select(Vote.poll_id, func.count(Vote.id))
+                        .where(Vote.poll_id.in_(poll_ids))
+                        .group_by(Vote.poll_id)
+                    ).all()
+                    counts = {pid: int(cnt) for pid, cnt in count_rows}
             except SQLAlchemyError:
                 raise _unavailable() from None
             now = self._clock.now()
-            items = [build(row, now) for row in rows]
+            items = [build(row, now, counts.get(row.id, 0)) for row in rows]
         return Page(items=items, page=filters.page, page_size=filters.page_size, total=total)
 
 
@@ -824,16 +833,38 @@ def _ordered(clauses: list[object], filters: PollListFilters) -> Select[tuple[Po
     return statement.offset(offset).limit(filters.page_size)
 
 
-def _summary(poll: Poll, now: datetime) -> PollSummary:
+def _calc_close_reason(poll: Poll, status: str, ballot_count: int) -> str | None:
+    """计算已结束投票的关闭原因。
+
+    Args:
+        poll: 投票行。
+        status: 有效业务状态。
+        ballot_count: 已接收选票数。
+
+    Returns:
+        BALLOT_CAP_REACHED、CLOSED_EARLY、ENDED 或空。
+    """
+    if status != "CLOSED":
+        return None
+    if poll.vote_limit is not None and ballot_count >= poll.vote_limit:
+        return "BALLOT_CAP_REACHED"
+    if poll.closed_at is not None and poll.ends_at is not None and poll.closed_at < poll.ends_at:
+        return "CLOSED_EARLY"
+    return "ENDED"
+
+
+def _summary(poll: Poll, now: datetime, ballot_count: int = 0) -> PollSummary:
     """复制广场摘要。
 
     Args:
         poll: 投票行。
         now: 当前时间。
+        ballot_count: 已接收选票数。
 
     Returns:
         不含管理字段的摘要。
     """
+    status = effective_status(poll, now)
     return PollSummary(
         id=poll.id,
         title=poll.title,
@@ -844,22 +875,27 @@ def _summary(poll: Poll, now: datetime) -> PollSummary:
         allow_live_results=poll.allow_live_results,
         starts_at=poll.starts_at,
         ends_at=poll.ends_at,
-        effective_status=effective_status(poll, now),
+        effective_status=status,
         created_at=poll.created_at,
+        description=poll.description,
+        closed_at=poll.closed_at,
+        ballot_count=ballot_count,
+        close_reason=_calc_close_reason(poll, status, ballot_count),
     )
 
 
-def _manage_summary(poll: Poll, now: datetime) -> ManagePollSummary:
+def _manage_summary(poll: Poll, now: datetime, ballot_count: int = 0) -> ManagePollSummary:
     """复制管理列表摘要。
 
     Args:
         poll: 投票行。
         now: 当前时间。
+        ballot_count: 已接收选票数。
 
     Returns:
         带生命周期和版本的摘要。
     """
-    base = _summary(poll, now)
+    base = _summary(poll, now, ballot_count)
     return ManagePollSummary(
         **base.model_dump(),
         lifecycle=poll.lifecycle,

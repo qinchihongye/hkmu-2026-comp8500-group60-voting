@@ -54,6 +54,8 @@ export type OptionPublic = {
   position: number;
 };
 
+export type CloseReason = "BALLOT_CAP_REACHED" | "CLOSED_EARLY" | "ENDED";
+
 export type PollSummary = {
   id: number;
   title: string;
@@ -66,6 +68,10 @@ export type PollSummary = {
   ends_at: string;
   effective_status: EffectiveStatus | string;
   created_at: string;
+  description?: string | null;
+  closed_at?: string | null;
+  ballot_count?: number;
+  close_reason?: CloseReason | string | null;
 };
 
 export type DemoPollSummary = PollSummary & {

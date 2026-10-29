@@ -53,6 +53,10 @@ class PollSummary(BaseModel):
     ends_at: datetime
     effective_status: str
     created_at: datetime
+    description: str | None = None
+    closed_at: datetime | None = None
+    ballot_count: int = 0
+    close_reason: str | None = None
 
 
 class ManagePollSummary(PollSummary):

@@ -7,6 +7,7 @@ type SchedulePoll = {
   effective_status: string;
   starts_at: string;
   ends_at: string;
+  close_reason?: string | null;
 };
 
 export function pollScheduleText(
@@ -16,6 +17,12 @@ export function pollScheduleText(
   now = new Date(),
 ): string {
   if (poll.effective_status === "CLOSED") {
+    if (poll.close_reason === "BALLOT_CAP_REACHED") {
+      return t("polls.ballotCapReached");
+    }
+    if (poll.close_reason === "CLOSED_EARLY") {
+      return t("polls.closedEarly");
+    }
     return t("polls.ended");
   }
   if (poll.effective_status === "SCHEDULED") {
