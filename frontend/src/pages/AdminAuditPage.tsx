@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
+import { PageState } from "../components/PageState";
 import { getAuditEvents } from "../features/admin/api";
 import { useFailure } from "../i18n/errors";
 import { useI18n } from "../i18n/LocaleProvider";
 import type { MessageKey } from "../i18n/messages";
-import { formatHongKong } from "../lib/time";
 import type { AuditEventPublic } from "../lib/api-types";
+import { formatHongKong } from "../lib/time";
+import "../styles/views.css";
+import "../styles/polls.css";
 
-const actions = ["", "CREATE", "UPDATE", "PUBLISH", "CLOSE", "VOTE_NAMED"];
+const actions = ["", "CREATE", "PUBLISH", "CLOSE", "UPDATE", "VOTE_NAMED"];
 
 const actionKeys: Record<string, MessageKey> = {
   CREATE: "action.create",
@@ -21,13 +25,23 @@ export function AdminAuditPage() {
   const { t } = useI18n();
   const failure = useFailure("error.auditLoad");
   const { setCause, clear } = failure;
+
+  const [pollIdInput, setPollIdInput] = useState("");
   const [pollId, setPollId] = useState("");
   const [action, setAction] = useState("");
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<AuditEventPublic[]>([]);
   const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   const pageSize = 12;
+
+  const queryKey = `${page}:${pollId}:${action}`;
+  const [seenKey, setSeenKey] = useState(queryKey);
+  if (seenKey !== queryKey) {
+    setSeenKey(queryKey);
+    setLoading(true);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -48,68 +62,91 @@ export function AdminAuditPage() {
         if (!cancelled) {
           setCause(caught);
         }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
       });
     return () => {
       cancelled = true;
     };
   }, [page, pollId, action, setCause, clear]);
 
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+
+  const renderActionBadge = (act: string) => {
+    const label = actionKeys[act] ? t(actionKeys[act]) : act;
+    let cls = "admin-audit-tag-create";
+    if (act === "PUBLISH") cls = "admin-audit-tag-publish";
+    else if (act === "CLOSE") cls = "admin-audit-tag-close";
+    else if (act === "UPDATE") cls = "admin-audit-tag-update";
+    else if (act === "VOTE_NAMED") cls = "admin-audit-tag-vote";
+
+    return <span className={`admin-audit-tag ${cls}`}>{label}</span>;
+  };
+
   return (
-    <div className="view-root">
-      <header className="view-header">
-        <h1 className="view-title">{t("admin.auditTitle")}</h1>
-        <p className="view-subtitle">
-          {t("admin.auditNote")}
-        </p>
+    <div className="admin-page-root">
+      {/* Header Area */}
+      <header className="admin-header">
+        <div className="admin-header-title-area">
+          <div className="admin-header-title-row">
+            <h1 className="admin-page-title">{t("admin.auditTitle")}</h1>
+            <span className="admin-readonly-pill">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              <span>{t("admin.immutableBadge")}</span>
+            </span>
+          </div>
+          <p className="admin-page-subtitle">{t("admin.auditNote")}</p>
+        </div>
+
+        <div className="admin-stat-chip">
+          <span>{t("common.events", { total })}</span>
+        </div>
       </header>
 
-      {/* Filter Toolbar */}
-      <div className="view-card" style={{ padding: "18px 24px", marginBottom: 20 }}>
-        <form
-          style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: 14 }}
-          onSubmit={(event) => {
-            event.preventDefault();
-            const data = new FormData(event.currentTarget);
-            setPage(1);
-            setPollId(String(data.get("poll_id") ?? ""));
-            setAction(String(data.get("action") ?? ""));
-          }}
-        >
-          <label style={{ fontSize: "0.88rem", fontWeight: 700, color: "#334155" }}>
-            {t("admin.pollId")}
-            <input
-              name="poll_id"
-              defaultValue={pollId}
-              inputMode="numeric"
-              placeholder={t("admin.pollIdHint")}
-              style={{
-                display: "block",
-                padding: "8px 12px",
-                borderRadius: 8,
-                border: "1.5px solid #cbd5e1",
-                fontSize: "0.92rem",
-                marginTop: 4,
-                width: 140,
-                outline: "none",
-              }}
-            />
+      {/* Modern Filter Toolbar */}
+      <form
+        className="polls-filter-card"
+        onSubmit={(event) => {
+          event.preventDefault();
+          setPage(1);
+          setPollId(pollIdInput.trim());
+        }}
+      >
+        <div className="polls-filter-main-row" style={{ flexWrap: "wrap", gap: 14 }}>
+          {/* Poll ID Input */}
+          <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: "0.82rem", fontWeight: 700, color: "#475569" }}>
+            <span>{t("admin.pollId")}</span>
+            <div className="admin-poll-input-wrap">
+              <span style={{ color: "#94a3b8", fontWeight: 700 }}>#</span>
+              <input
+                name="poll_id"
+                type="text"
+                inputMode="numeric"
+                className="admin-poll-input"
+                placeholder={t("admin.pollIdHint")}
+                value={pollIdInput}
+                onChange={(event) => {
+                  setPollIdInput(event.target.value);
+                }}
+              />
+            </div>
           </label>
 
-          <label style={{ fontSize: "0.88rem", fontWeight: 700, color: "#334155" }}>
-            {t("admin.action")}
+          {/* Action Select */}
+          <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: "0.82rem", fontWeight: 700, color: "#475569" }}>
+            <span>{t("admin.action")}</span>
             <select
               name="action"
-              defaultValue={action}
-              style={{
-                display: "block",
-                padding: "8px 12px",
-                borderRadius: 8,
-                border: "1.5px solid #cbd5e1",
-                fontSize: "0.92rem",
-                marginTop: 4,
-                minWidth: 160,
-                outline: "none",
-                background: "#ffffff",
+              value={action}
+              className="admin-action-select"
+              onChange={(event) => {
+                setPage(1);
+                setAction(event.target.value);
               }}
             >
               {actions.map((item) => (
@@ -120,107 +157,195 @@ export function AdminAuditPage() {
             </select>
           </label>
 
-          <button
-            type="submit"
-            className="view-btn view-btn-primary"
-            style={{ padding: "9px 20px", fontSize: "0.92rem" }}
-          >
-            {t("common.filter")}
-          </button>
-        </form>
-      </div>
-
-      {failure.message ? (
-        <div style={{ marginBottom: 20, padding: "12px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10 }}>
-          <p role="alert" style={{ margin: 0, color: "#dc2626", fontWeight: 600 }}>{failure.message}</p>
-        </div>
-      ) : null}
-
-      {/* Independent Scrolling Frame */}
-      <div className="view-scroll-frame">
-        <div className="saas-table-card">
-          <table className="saas-table">
-            <thead>
-              <tr>
-                <th>{t("admin.time")}</th>
-                <th>{t("admin.actor")}</th>
-                <th>{t("admin.action")}</th>
-                <th>{t("admin.poll")}</th>
-                <th>{t("admin.receipt")}</th>
-                <th>{t("admin.requestId")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.length === 0 ? (
-                <tr>
-                  <td colSpan={6} style={{ textAlign: "center", padding: "40px 20px", color: "#64748b" }}>
-                    {t("admin.emptyAudit")}
-                  </td>
-                </tr>
-              ) : (
-                items.map((item) => (
-                  <tr key={item.id}>
-                    <td style={{ fontSize: "0.85rem", color: "#64748b" }}>
-                      {formatHongKong(item.created_at)}
-                    </td>
-                    <td style={{ fontFamily: "ui-monospace, monospace", fontWeight: 600 }}>
-                      {item.actor_id}
-                    </td>
-                    <td>
-                      <span
-                        style={{
-                          padding: "2px 8px",
-                          borderRadius: 6,
-                          background: "#eff6ff",
-                          color: "#1363df",
-                          fontSize: "0.82rem",
-                          fontWeight: 700,
-                        }}
-                      >
-                        {actionKeys[item.action] ? t(actionKeys[item.action]) : item.action}
-                      </span>
-                    </td>
-                    <td style={{ fontWeight: 600 }}>#{item.poll_id}</td>
-                    <td>
-                      {item.receipt_id ? (
-                        <span className="receipt-id-box" style={{ margin: 0, fontSize: "0.82rem" }}>
-                          {item.receipt_id}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td style={{ fontFamily: "ui-monospace, monospace", fontSize: "0.82rem", color: "#94a3b8" }}>
-                      {item.request_id}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
-          <p style={{ margin: 0, color: "#64748b", fontSize: "0.9rem" }}>{t("common.events", { total })}</p>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              type="button"
-              className="view-btn view-btn-secondary"
-              disabled={page <= 1}
-              onClick={() => setPage((value) => value - 1)}
-            >
-              {t("common.previous")}
+          {/* Filter Action Buttons */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: "auto" }}>
+            <button type="submit" className="admin-filter-submit-btn">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <span>{t("common.filter")}</span>
             </button>
-            <button
-              type="button"
-              className="view-btn view-btn-secondary"
-              disabled={page * pageSize >= total}
-              onClick={() => setPage((value) => value + 1)}
-            >
-              {t("common.next")}
-            </button>
+
+            {pollId || pollIdInput || action ? (
+              <button
+                type="button"
+                className="admin-clear-filter-btn"
+                onClick={() => {
+                  setPollIdInput("");
+                  setPollId("");
+                  setAction("");
+                  setPage(1);
+                }}
+              >
+                {t("admin.reset")}
+              </button>
+            ) : null}
           </div>
         </div>
+
+        {/* Action Quick Filter Tabs */}
+        <div className="polls-status-tabs">
+          {actions.map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={`polls-tab-btn ${action === item ? "active" : ""}`}
+              onClick={() => {
+                setPage(1);
+                setAction(item);
+              }}
+            >
+              <span>{item ? (actionKeys[item] ? t(actionKeys[item]) : item) : t("action.all")}</span>
+            </button>
+          ))}
+        </div>
+      </form>
+
+      {/* Independent Scrolling Frame */}
+      <div className="polls-scroll-frame">
+        <PageState
+          loading={loading}
+          error={failure.message}
+          empty={
+            !loading && items.length === 0 ? (
+              <div className="polls-empty-card">
+                <span className="polls-empty-icon">🛡️</span>
+                <p className="polls-empty-text">{t("admin.emptyAudit")}</p>
+                {pollId || action ? (
+                  <button
+                    type="button"
+                    className="admin-clear-filter-btn"
+                    style={{ marginTop: 8 }}
+                    onClick={() => {
+                      setPollIdInput("");
+                      setPollId("");
+                      setAction("");
+                      setPage(1);
+                    }}
+                  >
+                    {t("admin.reset")}
+                  </button>
+                ) : null}
+              </div>
+            ) : null
+          }
+        >
+          <div className="admin-table-card">
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>{t("admin.time")}</th>
+                    <th>{t("admin.action")}</th>
+                    <th>{t("admin.actor")}</th>
+                    <th>{t("admin.poll")}</th>
+                    <th>{t("admin.receipt")}</th>
+                    <th>{t("admin.requestId")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item) => (
+                    <tr key={item.id} data-testid="audit-row">
+                      {/* 1. Time */}
+                      <td>
+                        <span className="admin-audit-time">
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 14 14" />
+                          </svg>
+                          <span>{formatHongKong(item.created_at)}</span>
+                        </span>
+                      </td>
+
+                      {/* 2. Action */}
+                      <td>{renderActionBadge(item.action)}</td>
+
+                      {/* 3. Actor */}
+                      <td>
+                        <span className="admin-creator-chip">
+                          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                          <span>User #{item.actor_id}</span>
+                        </span>
+                      </td>
+
+                      {/* 4. Target Poll */}
+                      <td>
+                        <Link to={`/admin/polls/${item.poll_id}`} className="admin-audit-poll-link" title={t("admin.inspect")}>
+                          #{item.poll_id}
+                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <polyline points="9 18 15 12 9 6" />
+                          </svg>
+                        </Link>
+                      </td>
+
+                      {/* 5. Receipt */}
+                      <td>
+                        {item.receipt_id ? (
+                          <span className="admin-audit-receipt" title={item.receipt_id}>
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                              <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                            <span>{item.receipt_id}</span>
+                          </span>
+                        ) : (
+                          <span style={{ color: "#94a3b8" }}>—</span>
+                        )}
+                      </td>
+
+                      {/* 6. Request ID */}
+                      <td>
+                        <span
+                          className="admin-audit-request-id"
+                          title={item.request_id}
+                        >
+                          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <polyline points="4 17 10 11 4 5" />
+                            <line x1="12" y1="19" x2="20" y2="19" />
+                          </svg>
+                          <span>
+                            {item.request_id.length > 18
+                              ? `${item.request_id.slice(0, 8)}…${item.request_id.slice(-6)}`
+                              : item.request_id}
+                          </span>
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </PageState>
+
+        {/* Pagination Bar */}
+        {total > pageSize ? (
+          <div className="polls-pagination-bar">
+            <span>{t("common.pageOf", { page, pages, total })}</span>
+            <div className="polls-page-btn-group">
+              <button
+                type="button"
+                className="polls-page-btn"
+                disabled={page <= 1}
+                onClick={() => setPage((value) => value - 1)}
+              >
+                {t("common.previous")}
+              </button>
+              <button
+                type="button"
+                className="polls-page-btn"
+                disabled={page >= pages}
+                onClick={() => setPage((value) => value + 1)}
+              >
+                {t("common.next")}
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
