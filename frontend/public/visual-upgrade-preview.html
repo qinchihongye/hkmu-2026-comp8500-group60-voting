@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoteMaster - 全站视觉系统升级效果预览 (Visual Upgrade Preview)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      
+      /* Upgraded Design Tokens */
+      --primary: #1363df;
+      --primary-hover: #0f52ba;
+      --primary-light: #eff6ff;
+      --primary-glow: rgba(19, 99, 223, 0.16);
+      
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-400: #94a3b8;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+      
+      --emerald-500: #10b981;
+      --emerald-50: #ecfdf5;
+      --amber-500: #f59e0b;
+      --amber-50: #fffbeb;
+      --purple-500: #8b5cf6;
+      --purple-50: #faf5ff;
+
+      /* Soft Elevation */
+      --shadow-soft: 0 1px 3px rgba(15, 23, 42, 0.04), 0 6px 18px -2px rgba(15, 23, 42, 0.05);
+      --shadow-hover: 0 12px 28px -6px rgba(19, 99, 223, 0.14), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
+      --border-glass: rgba(226, 232, 240, 0.85);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: #f8fafc;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(224, 238, 255, 0.75) 0px, transparent 45%),
+        radial-gradient(at 100% 0%, rgba(254, 240, 248, 0.65) 0px, transparent 45%),
+        radial-gradient(at 100% 100%, rgba(236, 253, 245, 0.65) 0px, transparent 45%),
+        radial-gradient(at 0% 100%, rgba(238, 242, 255, 0.75) 0px, transparent 45%);
+      background-attachment: fixed;
+      color: var(--slate-800);
+      min-height: 100vh;
+      padding: 36px 20px 80px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Top Banner */
+    .hero-banner {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      border-radius: 20px;
+      padding: 28px 32px;
+      margin-bottom: 36px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .hero-left h1 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      letter-spacing: -0.025em;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1d4ed8;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .hero-desc {
+      font-size: 0.96rem;
+      color: var(--slate-500);
+      line-height: 1.5;
+    }
+
+    .hero-tag-pills {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tag-pill {
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 10px;
+      background: #f1f5f9;
+      color: var(--slate-700);
+      border: 1px solid #e2e8f0;
+    }
+
+    /* Section Grid */
+    .preview-section {
+      margin-bottom: 40px;
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title span.badge-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+    }
+
+    /* Compare Grid */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 860px) {
+      .compare-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .compare-column {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-glass);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .compare-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--slate-200);
+      padding-bottom: 12px;
+    }
+
+    .compare-tag {
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .tag-current {
+      background: #f1f5f9;
+      color: #64748b;
+      border: 1px solid #cbd5e1;
+    }
+
+    .tag-upgraded {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #93c5fd;
+    }
+
+    /* 1. Dashboard Stats Card Demo */
+    .stats-card-current {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 18px 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+
+    .stats-card-current .title {
+      font-size: 0.85rem;
+      color: #64748b;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .stats-card-current .value {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .stats-card-upgraded {
+      background: #ffffff;
+      border: 1px solid rgba(226, 232, 240, 0.85);
+      border-radius: 16px;
+      padding: 20px 22px;
+      box-shadow: var(--shadow-soft);
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stats-card-upgraded:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+      border-color: rgba(19, 99, 223, 0.35);
+    }
+
+    .stats-card-upgraded::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #1363df, #38bdf8);
+      opacity: 0.9;
+    }
+
+    .stats-card-upgraded .top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .stats-card-upgraded .title {
+      font-size: 0.88rem;
+      color: var(--slate-500);
+      font-weight: 600;
+    }
+
+    .stats-card-upgraded .icon-pill {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: #eff6ff;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    .stats-card-upgraded .value {
+      font-size: 2.3rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #0f172a;
+      font-variant-numeric: tabular-nums;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .stats-card-upgraded .trend {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--emerald-500);
+      background: var(--emerald-50);
+      padding: 2px 8px;
+      border-radius: 9999px;
+      border: 1px solid #a7f3d0;
+    }
+
+    /* 2. Poll Plaza Card Demo */
+    .plaza-demo-card {
+      border-radius: 16px;
+      padding: 18px 20px;
+      background: #ffffff;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .plaza-demo-card.current {
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .plaza-demo-card.upgraded {
+      border: 1px solid rgba(226, 232, 240, 0.85);
+      box-shadow: var(--shadow-soft);
+      position: relative;
+    }
+
+    .plaza-demo-card.upgraded:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+      border-color: rgba(19, 99, 223, 0.3);
+    }
+
+    .plaza-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 6px;
+    }
+
+    .plaza-meta {
+      font-size: 0.82rem;
+      color: #64748b;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid #a7f3d0;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+    }
+
+    /* 3. Ballot Option Selector Demo */
+    .option-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      border-radius: 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    .option-row.current-selected {
+      background: #f8fafc;
+      border: 1px solid #0f172a;
+    }
+
+    .option-row.upgraded-unselected {
+      background: #ffffff;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+    }
+
+    .option-row.upgraded-unselected:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    .option-row.upgraded-selected {
+      background: #eff6ff;
+      border: 1.5px solid #1363df;
+      box-shadow: 0 0 0 3px rgba(19, 99, 223, 0.12), 0 2px 6px rgba(19, 99, 223, 0.08);
+    }
+
+    .radio-circle {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .option-row.upgraded-selected .radio-circle {
+      border-color: #1363df;
+      background: #1363df;
+    }
+
+    .radio-inner-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ffffff;
+    }
+
+    .option-text {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    /* 4. Results Progress Bar Demo */
+    .results-demo-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .result-bar-box {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .result-top-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .result-track {
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 9999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .result-fill-current {
+      height: 100%;
+      width: 68%;
+      background: #1363df;
+      border-radius: 9999px;
+    }
+
+    .result-fill-upgraded {
+      height: 100%;
+      width: 68%;
+      background: linear-gradient(90deg, #1363df 0%, #38bdf8 100%);
+      border-radius: 9999px;
+      box-shadow: 0 0 10px rgba(19, 99, 223, 0.35);
+    }
+
+    .leading-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      margin-left: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    /* Bottom Action Footnote */
+    .footer-action {
+      text-align: center;
+      margin-top: 40px;
+      padding: 24px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid var(--border-glass);
+      border-radius: 16px;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 12px;
+      background: #1363df;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 1rem;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(19, 99, 223, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+      background: #0f52ba;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(19, 99, 223, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Header -->
+    <header class="hero-banner">
+      <div class="hero-left">
+        <h1>
+          <span>✨</span>
+          <span>全站视觉系统升级对照效果图</span>
+          <span class="hero-badge">High-Fidelity Preview</span>
+        </h1>
+        <p class="hero-desc">
+          严格保持原有结构与布局，针对<strong>色彩体系、阴影层级、选中态高光、进度条渐变与数据排版</strong>进行系统性品质跃升。
+        </p>
+      </div>
+      <div class="hero-tag-pills">
+        <span class="tag-pill">🎯 布局结构 100% 保持</span>
+        <span class="tag-pill">🎨 弥散微光阴影 (Elevation)</span>
+        <span class="tag-pill">💎 Linear / Stripe 级质感</span>
+      </div>
+    </header>
+
+    <!-- SECTION 1: 指标卡片与阴影层级 -->
+    <section class="preview-section">
+      <h2 class="section-title">
+        <span class="badge-num">1</span>
+        <span>控制台数据指标卡 (Dashboard Metric Cards)</span>
+      </h2>
+      <div class="compare-grid">
+        <!-- Current -->
+        <div class="compare-column">
+          <div class="compare-header">
+            <strong>原视觉效果 (Current)</strong>
+            <span class="compare-tag tag-current">当前基准</span>
+          </div>
+          <div class="stats-card-current">
+            <div class="title">进行中的投票 (Active Polls)</div>
+            <div class="value">28</div>
+          </div>
+          <p style="font-size: 0.84rem; color: #64748b; line-height: 1.5;">
+            • 表现较为平淡，单层灰色阴影略显生硬。<br>
+            • 缺少品牌主色呼应与呼吸感指示器。
+          </p>
+        </div>
+
+        <!-- Upgraded -->
+        <div class="compare-column">
+          <div class="compare-header">
+            <strong>升级后视觉效果 (Upgraded)</strong>
+            <span class="compare-tag tag-upgraded">设计推荐</span>
+          </div>
+          <div class="stats-card-upgraded">
+            <div class="top-row">
+              <span class="title">进行中的投票 (Active Polls)</span>
+              <span class="icon-pill">🗳️</span>
+            </div>
+            <div class="value">
+              <span>28</span>
+              <span class="trend">● 实时进行</span>
+            </div>
+          </div>
+          <p style="font-size: 0.84rem; color: #1e293b; line-height: 1.5;">
+            • <strong>顶边微渐变高光线</strong> + 弥散光晕多层阴影（悬停轻盈上浮）。<br>
+            • 数字采用 <strong>tabular-nums</strong> 防抖排版，深蓝层次分明。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: 投票广场卡片 -->
+    <section class="preview-section">
+      <h2 class="section-title">
+        <span class="badge-num">2</span>
+        <span>投票广场卡片 (Public Poll Cards)</span>
+      </h2>
+      <div class="compare-grid">
+        <!-- Current -->
+        <div class="compare-column">
+          <div class="compare-header">
+            <strong>原视觉效果 (Current)</strong>
+            <span class="compare-tag tag-current">当前基准</span>
+          </div>
+          <div class="plaza-demo-card current">
+            <div class="plaza-title">2026 年度技术委员会轮值主席评选</div>
+            <div class="plaza-meta">公开投票 · 匿名记名 · 截止时间 10/31</div>
+            <span class="badge-live">进行中</span>
+          </div>
+        </div>
+
+        <!-- Upgraded -->
+        <div class="compare-column">
+          <div class="compare-header">
+            <strong>升级后视觉效果 (Upgraded)</strong>
+            <span class="compare-tag tag-upgraded">设计推荐</span>
+          </div>
+          <div class="plaza-demo-card upgraded">
+            <div class="plaza-title">2026 年度技术委员会轮值主席评选</div>
+            <div class="plaza-meta">公开投票 · 匿名记名 · 截止时间 10/31</div>
+            <span class="badge-live">
+              <span class="pulse-dot"></span>
+              <span>进行中</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: 投票参与选项交互 -->
+    <section class="preview-section">
+      <h2 class="section-title">
+        <span class="badge-num">3</span>
+        <span>投票选项选择行 (Ballot Option Selection)</span>
+      </h2>
+      <div class="compare-grid">
+        <!-- Current -->
+        <div class="compare-column">
+          <div class="compare-header">
+            <strong>原视觉效果 (Current)</strong>
+            <span class="compare-tag tag-current">当前基准</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="option-row" style="background:#fff; border:1px solid #e2e8f0;">
+              <div class="radio-circle"></div>
+              <span class="option-text">方案 A：深入理解 React 19 并发机制</span>
+            </div>
+            <div class="option-row current-selected">
+              <div class="radio-circle" style="border-color:#0f172a; background:#0f172a;">
+                <div class="radio-inner-dot"></div>
+              </div>
+              <span class="option-text">方案 B：PostgreSQL 复杂索引调优与查询规划</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Upgraded -->
+        <div class="compare-column">
+          <div class="compare-header">
+            <strong>升级后视觉效果 (Upgraded)</strong>
+            <span class="compare-tag tag-upgraded">设计推荐</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="option-row upgraded-unselected">
+              <div class="radio-circle"></div>
+              <span class="option-text">方案 A：深入理解 React 19 并发机制</span>
+            </div>
+            <div class="option-row upgraded-selected">
+              <div class="radio-circle">
+                <div class="radio-inner-dot"></div>
+              </div>
+              <span class="option-text" style="color: #1363df;">方案 B：PostgreSQL 复杂索引调优与查询规划</span>
+            </div>
+          </div>
+          <p style="font-size: 0.84rem; color: #1e293b; line-height: 1.5;">
+            • 选中时呈现<strong>清爽天蓝浅底（#eff6ff）+ 钴蓝高光微光外晕</strong>，选中状态一目了然。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: 结果数据可视化 -->
+    <section class="preview-section">
+      <h2 class="section-title">
+        <span class="badge-num">4</span>
+        <span>投票结果大屏与进度条 (Results Visualization)</span>
+      </h2>
+      <div class="compare-grid">
+        <!-- Current -->
+        <div class="compare-column">
+          <div class="compare-header">
+            <strong>原视觉效果 (Current)</strong>
+            <span class="compare-tag tag-current">当前基准</span>
+          </div>
+          <div class="results-demo-wrap">
+            <div class="result-bar-box">
+              <div class="result-top-info">
+                <span>方案 B (领先)</span>
+                <span>68.2% (142 票)</span>
+              </div>
+              <div class="result-track">
+                <div class="result-fill-current"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Upgraded -->
+        <div class="compare-column">
+          <div class="compare-header">
+            <strong>升级后视觉效果 (Upgraded)</strong>
+            <span class="compare-tag tag-upgraded">设计推荐</span>
+          </div>
+          <div class="results-demo-wrap">
+            <div class="result-bar-box">
+              <div class="result-top-info">
+                <span style="display:flex; align-items:center;">
+                  <span>方案 B</span>
+                  <span class="leading-badge">★ Leading</span>
+                </span>
+                <span style="font-variant-numeric: tabular-nums; font-weight: 700; color: #1363df;">68.2% (142 票)</span>
+              </div>
+              <div class="result-track">
+                <div class="result-fill-upgraded"></div>
+              </div>
+            </div>
+          </div>
+          <p style="font-size: 0.84rem; color: #1e293b; line-height: 1.5;">
+            • 领先选项使用<strong>双色平滑渐变（Cobalt to Sky）</strong>并自带专属光感投影。<br>
+            • 配合精致的 Leading 药丸徽章，视觉层级鲜明。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer Action -->
+    <div class="footer-action">
+      <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 8px;">准备好开始升级了吗？</h3>
+      <p style="color: #64748b; font-size: 0.92rem; margin-bottom: 18px;">
+        所有升级均采用非侵入式 CSS 变量与设计体系沉淀，零逻辑改动，安全可靠。
+      </p>
+      <button class="btn-action" onclick="alert('方案已全部就绪！请在助手对话中回复 Proceed 即可立即执行。')">
+        <span>🚀 批准方案并开始 Phase 1</span>
+      </button>
+    </div>
+
+  </div>
+
+</body>
+</html>
+

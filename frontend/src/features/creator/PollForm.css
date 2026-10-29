@@ -31,10 +31,10 @@
 /* Card Form Container */
 .poll-form-card {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(226, 232, 240, 0.85);
   border-radius: 20px;
   padding: 36px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 10px 30px -4px rgba(15, 23, 42, 0.06);
   display: flex;
   flex-direction: column;
   gap: 32px;

@@ -268,12 +268,26 @@ export function ResultsPanel({ results }: { results: PollResults }) {
                     <span className="results-swatch" style={{ background: sliceColor(index) }} aria-hidden="true" />
                     <strong>{option.label}</strong>
                     {leaders.has(option.option_id) ? (
-                      <span style={{ color: "#1363df", marginLeft: 6, fontWeight: 700 }}>
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          fontSize: "0.72rem",
+                          fontWeight: 700,
+                          padding: "2px 8px",
+                          borderRadius: 9999,
+                          background: "#eff6ff",
+                          color: "#1363df",
+                          border: "1px solid #bfdbfe",
+                          marginLeft: 8,
+                          letterSpacing: "0.03em",
+                        }}
+                      >
                         {results.is_final ? t("results.winner") : t("results.leading")}
                       </span>
                     ) : null}
                   </td>
-                  <td>{option.count}</td>
+                  <td style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{option.count}</td>
                 </tr>
               ))}
             </tbody>

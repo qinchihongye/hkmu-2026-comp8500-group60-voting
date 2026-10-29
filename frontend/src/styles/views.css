@@ -183,7 +183,8 @@
 
 .ballot-option-tile.selected {
   border-color: #1363df;
-  background: #f0f7ff;
+  background: #eff6ff;
+  box-shadow: 0 0 0 3px rgba(19, 99, 223, 0.12), 0 2px 6px rgba(19, 99, 223, 0.08);
 }
 
 .ballot-option-left {
@@ -455,10 +456,10 @@
    ========================================================= */
 .saas-table-card {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 18px;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.02);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
   margin-bottom: 24px;
 }
 
@@ -470,17 +471,21 @@
 }
 
 .saas-table th {
-  padding: 14px 18px;
+  padding: 14px 20px;
   background: #f8fafc;
   color: #475569;
   font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   border-bottom: 1px solid #e2e8f0;
 }
 
 .saas-table td {
-  padding: 14px 18px;
+  padding: 16px 20px;
   border-bottom: 1px solid #f1f5f9;
   color: #1e293b;
+  vertical-align: middle;
 }
 
 .saas-table tr:last-child td {
@@ -488,7 +493,7 @@
 }
 
 .saas-table tr:hover td {
-  background: #f8fbff;
+  background: #f8fafc;
 }
 
 /* Action Buttons */

@@ -175,9 +175,24 @@
 
 .sidebar-nav-item.active,
 .sidebar-nav-item[aria-current="page"] {
-  background: #eef4ff;
+  background: #eff6ff;
   color: #1363df;
   font-weight: 700;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(19, 99, 223, 0.08);
+}
+
+.sidebar-nav-item.active::before,
+.sidebar-nav-item[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3.5px;
+  background: #1363df;
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 8px rgba(19, 99, 223, 0.6);
 }
 
 .sidebar-nav-icon {

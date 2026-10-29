@@ -215,6 +215,7 @@ textarea {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
 }
 
 .muted {
@@ -356,7 +357,7 @@ button[data-testid="vote-submit"] {
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 4px 14px rgba(19, 99, 223, 0.3);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-fast);
 }
 
@@ -364,7 +365,7 @@ button[type="submit"]:hover:not(:disabled),
 .btn-primary:hover:not(:disabled),
 button[data-testid="vote-submit"]:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45);
+  box-shadow: 0 6px 20px rgba(19, 99, 223, 0.4);
 }
 
 button[type="submit"]:active:not(:disabled),

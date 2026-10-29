@@ -10,10 +10,10 @@ interface StatusConfig {
 }
 
 const STATUS_MAP: Record<string, StatusConfig> = {
-  OPEN: { bg: "#ecfdf5", color: "#15803d", border: "#bbf7d0", key: "status.open", dot: true },
+  OPEN: { bg: "#ecfdf5", color: "#059669", border: "#a7f3d0", key: "status.open", dot: true },
   SCHEDULED: { bg: "#fffbeb", color: "#b45309", border: "#fde68a", key: "status.scheduled" },
   CLOSED: { bg: "#f1f5f9", color: "#475569", border: "#e2e8f0", key: "status.closed" },
-  DRAFT: { bg: "#faf5ff", color: "#7e22ce", border: "#e9d5ff", key: "status.draft" },
+  DRAFT: { bg: "#faf5ff", color: "#7c3aed", border: "#ddd6fe", key: "status.draft" },
 };
 
 export function StatusTag({ status }: { status: string }) {
@@ -47,6 +47,7 @@ export function StatusTag({ status }: { status: string }) {
             height: 6,
             borderRadius: "50%",
             background: "currentColor",
+            boxShadow: "0 0 0 2px rgba(16, 185, 129, 0.25)",
           }}
         />
       ) : null}

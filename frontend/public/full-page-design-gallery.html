@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoteMaster - 全页面高保真设计图画廊 (Full-Page Design Studio)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      
+      /* Modern SaaS Design Tokens */
+      --primary: #1363df;
+      --primary-hover: #0f52ba;
+      --primary-light: #eff6ff;
+      --primary-glow: rgba(19, 99, 223, 0.16);
+      
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-400: #94a3b8;
+      --slate-300: #cbd5e1;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+      
+      --emerald-600: #059669;
+      --emerald-500: #10b981;
+      --emerald-50: #ecfdf5;
+      
+      --amber-600: #d97706;
+      --amber-500: #f59e0b;
+      --amber-50: #fffbeb;
+      
+      --purple-600: #7c3aed;
+      --purple-500: #8b5cf6;
+      --purple-50: #faf5ff;
+      
+      --rose-500: #f43f5e;
+      --rose-50: #fff1f2;
+
+      /* Soft Ambient Shadows */
+      --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.04), 0 10px 24px -4px rgba(15, 23, 42, 0.06);
+      --shadow-hover: 0 12px 28px -6px rgba(19, 99, 223, 0.14), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
+      --border-subtle: rgba(226, 232, 240, 0.85);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: #090d16;
+      color: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Navigation Studio Bar */
+    .studio-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .studio-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .studio-logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #1363df, #38bdf8);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #fff;
+      font-size: 1rem;
+      box-shadow: 0 0 12px rgba(19, 99, 223, 0.5);
+    }
+
+    .studio-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+    }
+
+    .studio-subtitle {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-left: 6px;
+    }
+
+    /* Page Switcher Tabs */
+    .page-tabs {
+      display: flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 2px;
+      overflow-x: auto;
+      max-width: 100%;
+    }
+
+    .page-tab-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-family: inherit;
+      font-size: 0.84rem;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 7px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .page-tab-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .page-tab-btn.active {
+      background: #1363df;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(19, 99, 223, 0.4);
+    }
+
+    .studio-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .preview-pill {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 4px 10px;
+      border-radius: 9999px;
+    }
+
+    /* Main Canvas Area */
+    .studio-canvas {
+      flex: 1;
+      padding: 32px 24px;
+      display: flex;
+      justify-content: center;
+      background: #0b0f19;
+      background-image: 
+        radial-gradient(circle at 10% 10%, rgba(19, 99, 223, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(56, 189, 248, 0.1) 0%, transparent 40%);
+    }
+
+    .app-frame {
+      width: 100%;
+      max-width: 1280px;
+      min-height: 820px;
+      background: #f8fafc;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(224, 238, 255, 0.75) 0px, transparent 45%),
+        radial-gradient(at 100% 0%, rgba(254, 240, 248, 0.65) 0px, transparent 45%),
+        radial-gradient(at 100% 100%, rgba(236, 253, 245, 0.65) 0px, transparent 45%),
+        radial-gradient(at 0% 100%, rgba(238, 242, 255, 0.75) 0px, transparent 45%);
+      border-radius: 20px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.15);
+      display: flex;
+      overflow: hidden;
+      color: var(--slate-800);
+      position: relative;
+    }
+
+    /* --- Shell: Sidebar --- */
+    .shell-sidebar {
+      width: 240px;
+      min-width: 240px;
+      background: #ffffff;
+      border-right: 1px solid rgba(226, 232, 240, 0.85);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .brand-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+      padding: 0 8px;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 12px rgba(19, 99, 223, 0.35);
+    }
+
+    .brand-name {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      letter-spacing: -0.02em;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--slate-600);
+      text-decoration: none;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s ease;
+    }
+
+    .nav-item:hover {
+      background: var(--slate-100);
+      color: var(--slate-900);
+    }
+
+    .nav-item.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .nav-item.active::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 6px;
+      bottom: 6px;
+      width: 3.5px;
+      background: var(--primary);
+      border-radius: 0 4px 4px 0;
+      box-shadow: 0 0 8px rgba(19, 99, 223, 0.6);
+    }
+
+    .nav-icon {
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
+    .nav-group-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--slate-400);
+      margin: 20px 8px 8px;
+    }
+
+    .sidebar-user-pill {
+      margin-top: auto;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1363df, #818cf8);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .user-name {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--slate-900);
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    .user-role {
+      font-size: 0.72rem;
+      color: var(--slate-500);
+    }
+
+    /* --- Shell: Main Content View --- */
+    .shell-content {
+      flex: 1;
+      padding: 32px 36px 40px;
+      overflow-y: auto;
+      max-height: 820px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Bar on Pages */
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .header-left h2 {
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      letter-spacing: -0.03em;
+      margin-bottom: 4px;
+    }
+
+    .header-left p {
+      font-size: 0.94rem;
+      color: var(--slate-500);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-live-pulse {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      background: var(--emerald-50);
+      border: 1px solid #a7f3d0;
+      color: var(--emerald-600);
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+
+    .dot-pulse {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--emerald-500);
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+    }
+
+    /* Primary Buttons */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 12px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.92rem;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(19, 99, 223, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(19, 99, 223, 0.4);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: 12px;
+      background: #ffffff;
+      color: var(--slate-700);
+      font-weight: 600;
+      font-size: 0.9rem;
+      border: 1px solid var(--slate-200);
+      cursor: pointer;
+      box-shadow: var(--shadow-xs);
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background: var(--slate-50);
+      border-color: var(--slate-300);
+      color: var(--slate-900);
+    }
+
+    /* Cards Base */
+    .card-saas {
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card-saas:hover {
+      box-shadow: var(--shadow-hover);
+      border-color: rgba(19, 99, 223, 0.25);
+    }
+
+    /* View 1: Dashboard Stats Row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    .stat-box {
+      padding: 22px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-box::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #1363df, #38bdf8);
+    }
+
+    .stat-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .stat-label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--slate-500);
+    }
+
+    .stat-icon-wrap {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--primary-light);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+    }
+
+    .stat-num {
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--slate-900);
+      font-variant-numeric: tabular-nums;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .stat-sub {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--emerald-600);
+      background: var(--emerald-50);
+      border: 1px solid #a7f3d0;
+      padding: 2px 8px;
+      border-radius: 9999px;
+    }
+
+    /* Search & Filter Bar */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 20px;
+      margin-bottom: 24px;
+    }
+
+    .search-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      max-width: 360px;
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: 10px;
+      padding: 8px 14px;
+      transition: all 0.2s ease;
+    }
+
+    .search-input-wrap:focus-within {
+      background: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(19, 99, 223, 0.12);
+    }
+
+    .search-input-wrap input {
+      border: none;
+      background: transparent;
+      outline: none;
+      font-family: inherit;
+      font-size: 0.9rem;
+      color: var(--slate-800);
+      width: 100%;
+    }
+
+    .status-capsules {
+      display: flex;
+      background: var(--slate-100);
+      border: 1px solid var(--slate-200);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 3px;
+    }
+
+    .status-capsule-btn {
+      border: none;
+      background: transparent;
+      padding: 6px 14px;
+      border-radius: 7px;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--slate-500);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .status-capsule-btn.active {
+      background: #ffffff;
+      color: var(--slate-900);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Plaza Grid (2 Columns) */
+    .plaza-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .plaza-card-item {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 180px;
+      position: relative;
+    }
+
+    .plaza-item-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .plaza-item-title {
+      font-size: 1.12rem;
+      font-weight: 700;
+      color: var(--slate-900);
+      line-height: 1.35;
+      letter-spacing: -0.015em;
+    }
+
+    .plaza-item-meta {
+      font-size: 0.83rem;
+      color: var(--slate-500);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .plaza-item-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 14px;
+      border-top: 1px solid var(--slate-100);
+    }
+
+    .time-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.83rem;
+      color: var(--slate-600);
+    }
+
+    /* View 2: My Polls Row Cards */
+    .row-cards-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .my-poll-row {
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .my-poll-info {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .my-poll-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .id-pill {
+      font-size: 0.76rem;
+      font-weight: 700;
+      background: var(--slate-100);
+      color: var(--slate-600);
+      border: 1px solid var(--slate-200);
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+    }
+
+    .my-poll-heading {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--slate-900);
+    }
+
+    .my-poll-tags {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 9999px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .tag-open {
+      background: var(--emerald-50);
+      color: var(--emerald-600);
+      border: 1px solid #a7f3d0;
+    }
+
+    .tag-draft {
+      background: var(--purple-50);
+      color: var(--purple-600);
+      border: 1px solid #ddd6fe;
+    }
+
+    .tag-meta {
+      background: var(--slate-100);
+      color: var(--slate-600);
+      border: 1px solid var(--slate-200);
+    }
+
+    .my-poll-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* View 3: Ballot Form & Selection */
+    .ballot-container {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .poll-brief-card {
+      padding: 24px 28px;
+    }
+
+    .ballot-options-card {
+      padding: 24px 28px;
+    }
+
+    .ballot-option-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      border-radius: 12px;
+      border: 1px solid var(--slate-200);
+      margin-bottom: 12px;
+      cursor: pointer;
+      background: #ffffff;
+      transition: all 0.2s ease;
+    }
+
+    .ballot-option-item:hover {
+      background: var(--slate-50);
+      border-color: var(--slate-300);
+    }
+
+    .ballot-option-item.selected {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(19, 99, 223, 0.12);
+    }
+
+    .radio-pill {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid var(--slate-300);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .ballot-option-item.selected .radio-pill {
+      border-color: var(--primary);
+      background: var(--primary);
+    }
+
+    .radio-center-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ffffff;
+    }
+
+    .ballot-option-label {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--slate-900);
+    }
+
+    .ballot-option-item.selected .ballot-option-label {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    /* View 4: Results Visualization */
+    .results-wrap {
+      max-width: 840px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .result-bar-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .result-info-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--slate-900);
+    }
+
+    .leading-tag {
+      font-size: 0.72rem;
+      font-weight: 800;
+      background: var(--primary-light);
+      color: var(--primary);
+      border: 1px solid #bfdbfe;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      margin-left: 8px;
+    }
+
+    .progress-track {
+      height: 12px;
+      background: var(--slate-100);
+      border: 1px solid var(--slate-200);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .progress-fill-leading {
+      height: 100%;
+      width: 68%;
+      background: linear-gradient(90deg, #1363df 0%, #38bdf8 100%);
+      border-radius: 9999px;
+      box-shadow: 0 0 12px rgba(19, 99, 223, 0.4);
+    }
+
+    .progress-fill-normal {
+      height: 100%;
+      width: 24%;
+      background: var(--slate-400);
+      border-radius: 9999px;
+    }
+
+    /* View 5: SaaS Data Table (Admin / Audit) */
+    .saas-table-card {
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .saas-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .saas-table th {
+      background: var(--slate-50);
+      padding: 14px 20px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--slate-500);
+      border-bottom: 1px solid var(--slate-200);
+    }
+
+    .saas-table td {
+      padding: 16px 20px;
+      font-size: 0.9rem;
+      color: var(--slate-700);
+      border-bottom: 1px solid var(--slate-100);
+      vertical-align: middle;
+    }
+
+    .saas-table tbody tr {
+      transition: background 0.15s ease;
+    }
+
+    .saas-table tbody tr:hover {
+      background: var(--slate-50);
+    }
+
+    .hash-code {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      background: var(--slate-100);
+      border: 1px solid var(--slate-200);
+      padding: 3px 8px;
+      border-radius: 6px;
+      color: var(--slate-800);
+    }
+
+    /* Hidden View Helper */
+    .view-page {
+      display: none;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+
+    .view-page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Studio Bar with Page Switcher -->
+  <header class="studio-bar">
+    <div class="studio-brand">
+      <div class="studio-logo">V</div>
+      <div class="studio-title">VoteMaster Design Studio</div>
+      <span class="studio-subtitle">全站各页整体设计图 (1:1 高保真)</span>
+    </div>
+
+    <!-- Navigation Tab Buttons -->
+    <nav class="page-tabs">
+      <button class="page-tab-btn active" onclick="switchView('dashboard', this)">
+        <span>📊</span>
+        <span>看板大屏 (Dashboard)</span>
+      </button>
+      <button class="page-tab-btn" onclick="switchView('plaza', this)">
+        <span>🗳️</span>
+        <span>公共广场 (Public Polls)</span>
+      </button>
+      <button class="page-tab-btn" onclick="switchView('mypolls', this)">
+        <span>📝</span>
+        <span>我的投票 (My Polls)</span>
+      </button>
+      <button class="page-tab-btn" onclick="switchView('ballot', this)">
+        <span>✨</span>
+        <span>投票参与 (Ballot)</span>
+      </button>
+      <button class="page-tab-btn" onclick="switchView('results', this)">
+        <span>📈</span>
+        <span>结果大屏 (Results)</span>
+      </button>
+      <button class="page-tab-btn" onclick="switchView('audit', this)">
+        <span>🛡️</span>
+        <span>审计流水 (Audit Logs)</span>
+      </button>
+    </nav>
+
+    <div class="studio-controls">
+      <span class="preview-pill">● 布局结构 100% 保持</span>
+    </div>
+  </header>
+
+  <!-- Studio Canvas Area -->
+  <main class="studio-canvas">
+    
+    <!-- Application Frame Container -->
+    <div class="app-frame">
+      
+      <!-- Unified Left Navigation Sidebar -->
+      <aside class="shell-sidebar">
+        <div class="brand-area">
+          <div class="brand-icon">🗳️</div>
+          <span class="brand-name">VoteMaster</span>
+        </div>
+
+        <ul class="nav-list">
+          <li class="nav-group-title">Platform</li>
+          <li>
+            <a class="nav-item active" id="nav-item-dashboard" onclick="document.querySelectorAll('.page-tab-btn')[0].click()">
+              <span class="nav-icon">📊</span>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-item" id="nav-item-plaza" onclick="document.querySelectorAll('.page-tab-btn')[1].click()">
+              <span class="nav-icon">🌐</span>
+              <span>Public Polls</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-item" id="nav-item-mypolls" onclick="document.querySelectorAll('.page-tab-btn')[2].click()">
+              <span class="nav-icon">🗳️</span>
+              <span>My Polls</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-item" onclick="document.querySelectorAll('.page-tab-btn')[3].click()">
+              <span class="nav-icon">📜</span>
+              <span>My Votes</span>
+            </a>
+          </li>
+
+          <li class="nav-group-title">Governance</li>
+          <li>
+            <a class="nav-item" onclick="document.querySelectorAll('.page-tab-btn')[5].click()">
+              <span class="nav-icon">🛡️</span>
+              <span>Audit Logs</span>
+            </a>
+          </li>
+        </ul>
+
+        <!-- Bottom User Card -->
+        <div class="sidebar-user-pill">
+          <div class="user-avatar">AD</div>
+          <div class="user-info">
+            <span class="user-name">Alex Davis</span>
+            <span class="user-role">Poll Creator</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Shell Content Canvas -->
+      <div class="shell-content">
+        
+        <!-- ================= PAGE 1: DASHBOARD ================= -->
+        <div id="view-dashboard" class="view-page active">
+          <div class="page-header">
+            <div class="header-left">
+              <h2>Dashboard Overview</h2>
+              <p>
+                <span>实时投票网络状态与指标总览</span>
+                <span class="badge-live-pulse">
+                  <span class="dot-pulse"></span>
+                  <span>LIVE ACTIVE</span>
+                </span>
+              </p>
+            </div>
+            <button class="btn-primary" onclick="alert('进入创建投票页面 (PollForm)')">
+              <span>+</span>
+              <span>Create Poll</span>
+            </button>
+          </div>
+
+          <!-- Stats Grid -->
+          <div class="stats-row">
+            <div class="card-saas stat-box">
+              <div class="stat-top">
+                <span class="stat-label">进行中的投票 (Active Polls)</span>
+                <div class="stat-icon-wrap">🗳️</div>
+              </div>
+              <div class="stat-num">
+                <span>38</span>
+                <span class="stat-sub">↑ 4 今日新增</span>
+              </div>
+            </div>
+
+            <div class="card-saas stat-box">
+              <div class="stat-top">
+                <span class="stat-label">我的已投选票 (Votes Cast)</span>
+                <div class="stat-icon-wrap" style="background:#ecfdf5; color:#10b981;">✅</div>
+              </div>
+              <div class="stat-num">
+                <span>12</span>
+                <span class="stat-sub" style="background:#f1f5f9; color:#64748b; border-color:#e2e8f0;">已加密归档</span>
+              </div>
+            </div>
+
+            <div class="card-saas stat-box">
+              <div class="stat-top">
+                <span class="stat-label">草稿待发布 (Drafts)</span>
+                <div class="stat-icon-wrap" style="background:#faf5ff; color:#8b5cf6;">📝</div>
+              </div>
+              <div class="stat-num">
+                <span>2</span>
+                <span class="stat-sub" style="background:#faf5ff; color:#8b5cf6; border-color:#ddd6fe;">可随时编辑</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Public Polls Carousel/Grid -->
+          <div class="card-saas" style="padding: 24px; margin-bottom: 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+              <h3 style="font-size:1.15rem; font-weight:700; color:#0f172a;">热点进行中投票 (Trending Polls)</h3>
+              <a href="#" style="color:#1363df; font-weight:600; font-size:0.88rem; text-decoration:none;" onclick="document.querySelectorAll('.page-tab-btn')[1].click()">查看全部 →</a>
+            </div>
+
+            <div class="plaza-grid">
+              <div class="card-saas plaza-card-item">
+                <div class="plaza-item-top">
+                  <div class="plaza-item-title">2026 年度技术委员会轮值主席公开选举</div>
+                  <span class="tag-badge tag-open">进行中</span>
+                </div>
+                <div class="plaza-item-meta">公开投票 · 匿名记名 · 截止时间 10/31 22:00</div>
+                <div class="plaza-item-footer">
+                  <span class="time-badge">⏰ 剩余 2 天 14 小时</span>
+                  <button class="btn-primary" style="padding: 6px 16px; font-size: 0.85rem;" onclick="document.querySelectorAll('.page-tab-btn')[3].click()">立即投票</button>
+                </div>
+              </div>
+
+              <div class="card-saas plaza-card-item">
+                <div class="plaza-item-top">
+                  <div class="plaza-item-title">Q4 季度技术分享主题征集与意向调查</div>
+                  <span class="tag-badge tag-open">进行中</span>
+                </div>
+                <div class="plaza-item-meta">公开投票 · 实名记名 · 截止时间 11/05 18:00</div>
+                <div class="plaza-item-footer">
+                  <span class="time-badge">⏰ 剩余 7 天</span>
+                  <button class="btn-primary" style="padding: 6px 16px; font-size: 0.85rem;" onclick="document.querySelectorAll('.page-tab-btn')[3].click()">立即投票</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PAGE 2: PUBLIC POLLS PLAZA ================= -->
+        <div id="view-plaza" class="view-page">
+          <div class="page-header">
+            <div class="header-left">
+              <h2>Public Polls</h2>
+              <p>发现并参与正在进行的公开决策与调研</p>
+            </div>
+          </div>
+
+          <!-- Search & Filter Card -->
+          <div class="card-saas filter-bar">
+            <div class="search-input-wrap">
+              <span>🔍</span>
+              <input type="text" placeholder="搜索公开投票标题或关键词..." value="技术委员会">
+            </div>
+
+            <div class="status-capsules">
+              <button class="status-capsule-btn active">全部 (38)</button>
+              <button class="status-capsule-btn">● 进行中 (24)</button>
+              <button class="status-capsule-btn">预热中 (6)</button>
+              <button class="status-capsule-btn">已结束 (8)</button>
+            </div>
+          </div>
+
+          <!-- Cards Grid -->
+          <div class="plaza-grid">
+            <div class="card-saas plaza-card-item">
+              <div class="plaza-item-top">
+                <div class="plaza-item-title">2026 年度技术委员会轮值主席公开选举</div>
+                <span class="tag-badge tag-open">● 进行中</span>
+              </div>
+              <div class="plaza-item-meta">公开投票 · 匿名记名 · 10/28 ~ 10/31</div>
+              <div class="plaza-item-footer">
+                <span class="time-badge">⏰ 剩余 2 天</span>
+                <button class="btn-primary" style="padding: 6px 16px; font-size: 0.85rem;" onclick="document.querySelectorAll('.page-tab-btn')[3].click()">参与投票</button>
+              </div>
+            </div>
+
+            <div class="card-saas plaza-card-item">
+              <div class="plaza-item-top">
+                <div class="plaza-item-title">PostgreSQL 索引优化与分布式缓存架构评审</div>
+                <span class="tag-badge tag-open">● 进行中</span>
+              </div>
+              <div class="plaza-item-meta">公开投票 · 实名记名 · 10/25 ~ 11/02</div>
+              <div class="plaza-item-footer">
+                <span class="time-badge">⏰ 剩余 4 天</span>
+                <button class="btn-primary" style="padding: 6px 16px; font-size: 0.85rem;" onclick="document.querySelectorAll('.page-tab-btn')[3].click()">参与投票</button>
+              </div>
+            </div>
+
+            <div class="card-saas plaza-card-item">
+              <div class="plaza-item-top">
+                <div class="plaza-item-title">前端自动化测试与流水线质量门禁方案投票</div>
+                <span class="tag-badge" style="background:#fffbeb; color:#b45309; border:1px solid #fde68a;">预热中</span>
+              </div>
+              <div class="plaza-item-meta">公开投票 · 匿名记名 · 11/01 开始</div>
+              <div class="plaza-item-footer">
+                <span class="time-badge">⏳ 距离开启 3 天</span>
+                <button class="btn-secondary" style="padding: 6px 16px; font-size: 0.85rem;">查看详情</button>
+              </div>
+            </div>
+
+            <div class="card-saas plaza-card-item">
+              <div class="plaza-item-top">
+                <div class="plaza-item-title">2026 Q3 季末产品技术路线优先级决议</div>
+                <span class="tag-badge" style="background:#f1f5f9; color:#475569; border:1px solid #e2e8f0;">已截票</span>
+              </div>
+              <div class="plaza-item-meta">公开投票 · 实名记名 · 已于 10/20 截止</div>
+              <div class="plaza-item-footer">
+                <span class="time-badge">📊 总有效票 268 票</span>
+                <button class="btn-secondary" style="padding: 6px 16px; font-size: 0.85rem;" onclick="document.querySelectorAll('.page-tab-btn')[4].click()">查看结果</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PAGE 3: MY POLLS ================= -->
+        <div id="view-mypolls" class="view-page">
+          <div class="page-header">
+            <div class="header-left">
+              <h2>My Created Polls</h2>
+              <p>管理您发起的所有投票、监控生命周期与查看实时回执</p>
+            </div>
+            <button class="btn-primary">
+              <span>+</span>
+              <span>Create Poll</span>
+            </button>
+          </div>
+
+          <!-- Filter Bar -->
+          <div class="card-saas filter-bar">
+            <div class="search-input-wrap">
+              <span>🔍</span>
+              <input type="text" placeholder="搜索我发起的投票...">
+            </div>
+
+            <div class="status-capsules">
+              <button class="status-capsule-btn active">全部 (8)</button>
+              <button class="status-capsule-btn">草稿 (2)</button>
+              <button class="status-capsule-btn">● 进行中 (5)</button>
+              <button class="status-capsule-btn">已截止 (1)</button>
+            </div>
+          </div>
+
+          <!-- Row Cards Stack -->
+          <div class="row-cards-stack">
+            <div class="card-saas my-poll-row">
+              <div class="my-poll-info">
+                <div class="my-poll-title-wrap">
+                  <span class="id-pill">#108</span>
+                  <span class="my-poll-heading">周五技术分享主题讨论：React 并发机制与索引调优</span>
+                </div>
+                <div class="my-poll-tags">
+                  <span class="tag-badge tag-open">● 进行中</span>
+                  <span class="tag-badge tag-meta">匿名记名</span>
+                  <span class="tag-badge tag-meta">公开访问</span>
+                  <span class="tag-badge tag-meta" style="font-family:var(--font-mono)">v2</span>
+                </div>
+              </div>
+              <div class="my-poll-actions">
+                <button class="btn-secondary" onclick="document.querySelectorAll('.page-tab-btn')[4].click()">实时大屏</button>
+                <button class="btn-primary" style="padding: 8px 18px; font-size: 0.88rem;">管理工作台</button>
+              </div>
+            </div>
+
+            <div class="card-saas my-poll-row">
+              <div class="my-poll-info">
+                <div class="my-poll-title-wrap">
+                  <span class="id-pill">#107</span>
+                  <span class="my-poll-heading">新一期研发团队团建场地与出行时间投票</span>
+                </div>
+                <div class="my-poll-tags">
+                  <span class="tag-badge tag-draft">草稿 DRAFT</span>
+                  <span class="tag-badge tag-meta">实名投票</span>
+                  <span class="tag-badge tag-meta">受邀私密</span>
+                  <span class="tag-badge tag-meta" style="font-family:var(--font-mono)">v1</span>
+                </div>
+              </div>
+              <div class="my-poll-actions">
+                <button class="btn-secondary">继续编辑草稿</button>
+                <button class="btn-primary" style="padding: 8px 18px; font-size: 0.88rem; background:#0f172a;">发布投票</button>
+              </div>
+            </div>
+
+            <div class="card-saas my-poll-row">
+              <div class="my-poll-info">
+                <div class="my-poll-title-wrap">
+                  <span class="id-pill">#99</span>
+                  <span class="my-poll-heading">2026 开源组件库选型建议：AntD vs Tailwind UI</span>
+                </div>
+                <div class="my-poll-tags">
+                  <span class="tag-badge" style="background:#f1f5f9; color:#475569; border:1px solid #e2e8f0;">已截票 CLOSED</span>
+                  <span class="tag-badge tag-meta">实名投票</span>
+                  <span class="tag-badge tag-meta">公开投票</span>
+                </div>
+              </div>
+              <div class="my-poll-actions">
+                <button class="btn-secondary" onclick="document.querySelectorAll('.page-tab-btn')[4].click()">查看结果回执</button>
+                <button class="btn-secondary">下载审计日志</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PAGE 4: BALLOT FORM ================= -->
+        <div id="view-ballot" class="view-page">
+          <div class="ballot-container">
+            <!-- Header Card -->
+            <div class="card-saas poll-brief-card">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                <span class="tag-badge tag-open">● 投票进行中</span>
+                <span style="font-size:0.82rem; color:#64748b;">单选模式 · 剩余 2 天</span>
+              </div>
+              <h2 style="font-size:1.5rem; font-weight:800; color:#0f172a; margin-bottom:8px;">
+                2026 年度技术分享主题征集
+              </h2>
+              <p style="font-size:0.92rem; color:#64748b; line-height:1.5;">
+                请在下列候选议题中为您最感兴趣的主题投出宝贵的一票，得票最高的主题将作为本周五全员技术沙龙的首发专题。
+              </p>
+            </div>
+
+            <!-- Option Select Card -->
+            <div class="card-saas ballot-options-card">
+              <h3 style="font-size:1rem; font-weight:700; color:#0f172a; margin-bottom:16px;">
+                选择您的投票选项 (请选择 1 项)
+              </h3>
+
+              <div class="ballot-option-item" onclick="toggleOption(this)">
+                <div class="radio-pill"></div>
+                <div class="ballot-option-label">深入理解 React 19 并发机制与 Server Actions 实践</div>
+              </div>
+
+              <div class="ballot-option-item selected" onclick="toggleOption(this)">
+                <div class="radio-pill">
+                  <div class="radio-center-dot"></div>
+                </div>
+                <div class="ballot-option-label">PostgreSQL 索引优化、查询规划与大并发写入实战</div>
+              </div>
+
+              <div class="ballot-option-item" onclick="toggleOption(this)">
+                <div class="radio-pill"></div>
+                <div class="ballot-option-label">端到端自动化测试与 Vitest 前端质量门禁落地经验</div>
+              </div>
+
+              <div style="margin-top: 24px; display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 0.85rem; color: #10b981; font-weight: 600; display:flex; align-items:center; gap:6px;">
+                  <span>🔒</span>
+                  <span>您的投票将进行匿名密码学加密封存</span>
+                </span>
+                <button class="btn-primary" style="padding: 10px 28px;" onclick="document.querySelectorAll('.page-tab-btn')[4].click()">
+                  确认投出选票
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PAGE 5: RESULTS ================= -->
+        <div id="view-results" class="view-page">
+          <div class="results-wrap">
+            <div class="card-saas" style="padding: 28px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div>
+                  <h2 style="font-size:1.6rem; font-weight:800; color:#0f172a; margin-bottom:4px;">
+                    实时计票结果 (Live Results)
+                  </h2>
+                  <p style="font-size:0.9rem; color:#64748b;">
+                    总有效选票：208 票 · 计票时间：2026/10/28 23:30 (HKT)
+                  </p>
+                </div>
+                <span class="badge-live-pulse">
+                  <span class="dot-pulse"></span>
+                  <span>票数自动同步</span>
+                </span>
+              </div>
+
+              <!-- Option 1 (Leading) -->
+              <div class="result-bar-row">
+                <div class="result-info-header">
+                  <span style="display:flex; align-items:center;">
+                    <span>PostgreSQL 索引优化与高并发写入实战</span>
+                    <span class="leading-tag">★ LEADING (领先)</span>
+                  </span>
+                  <span style="font-variant-numeric: tabular-nums; font-weight: 700; color: #1363df;">
+                    68.2% (142 票)
+                  </span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill-leading"></div>
+                </div>
+              </div>
+
+              <!-- Option 2 -->
+              <div class="result-bar-row">
+                <div class="result-info-header">
+                  <span>深入理解 React 19 并发机制与实践</span>
+                  <span style="font-variant-numeric: tabular-nums; font-weight: 600; color: #64748b;">
+                    21.6% (45 票)
+                  </span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill-normal" style="width: 21.6%;"></div>
+                </div>
+              </div>
+
+              <!-- Option 3 -->
+              <div class="result-bar-row">
+                <div class="result-info-header">
+                  <span>端到端自动化测试与 Vitest 质量落地</span>
+                  <span style="font-variant-numeric: tabular-nums; font-weight: 600; color: #64748b;">
+                    10.2% (21 票)
+                  </span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill-normal" style="width: 10.2%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PAGE 6: AUDIT TABLE ================= -->
+        <div id="view-audit" class="view-page">
+          <div class="page-header">
+            <div class="header-left">
+              <h2>System Audit Logs</h2>
+              <p>不可篡改的投票与变更行为安全审计记录</p>
+            </div>
+            <button class="btn-secondary">
+              <span>📥 导出 CSV 审计流水</span>
+            </button>
+          </div>
+
+          <!-- SaaS Table Card -->
+          <div class="saas-table-card">
+            <table class="saas-table">
+              <thead>
+                <tr>
+                  <th>时间 (HKT)</th>
+                  <th>事件类型</th>
+                  <th>投票 ID</th>
+                  <th>操作人员 / 凭据</th>
+                  <th>加密哈希 (Hash)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="font-family:var(--font-mono); font-size:0.84rem;">2026-10-28 23:25:12</td>
+                  <td><span class="tag-badge tag-open">VOTE_CAST</span></td>
+                  <td><strong>#108</strong></td>
+                  <td>User_8271 (实名投票)</td>
+                  <td><span class="hash-code">0x7f8a92...b4c2</span></td>
+                </tr>
+                <tr>
+                  <td style="font-family:var(--font-mono); font-size:0.84rem;">2026-10-28 22:50:01</td>
+                  <td><span class="tag-badge tag-open">VOTE_CAST</span></td>
+                  <td><strong>#108</strong></td>
+                  <td>Anonymous (密码学凭证)</td>
+                  <td><span class="hash-code">0x4e21a8...91ff</span></td>
+                </tr>
+                <tr>
+                  <td style="font-family:var(--font-mono); font-size:0.84rem;">2026-10-28 20:46:00</td>
+                  <td><span class="tag-badge" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">PUBLISH</span></td>
+                  <td><strong>#108</strong></td>
+                  <td>Alex Davis (Creator)</td>
+                  <td><span class="hash-code">0x992b10...ca82</span></td>
+                </tr>
+                <tr>
+                  <td style="font-family:var(--font-mono); font-size:0.84rem;">2026-10-28 20:30:15</td>
+                  <td><span class="tag-badge tag-draft">CREATE</span></td>
+                  <td><strong>#108</strong></td>
+                  <td>Alex Davis (Creator)</td>
+                  <td><span class="hash-code">0x1102ca...881f</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function switchView(viewName, btn) {
+      // 1. Hide all views
+      document.querySelectorAll('.view-page').forEach(function(el) {
+        el.classList.remove('active');
+      });
+
+      // 2. Show target view
+      var target = document.getElementById('view-' + viewName);
+      if (target) {
+        target.classList.add('active');
+      }
+
+      // 3. Update top tabs
+      document.querySelectorAll('.page-tab-btn').forEach(function(el) {
+        el.classList.remove('active');
+      });
+      if (btn) {
+        btn.classList.add('active');
+      }
+
+      // 4. Update sidebar active item
+      document.querySelectorAll('.nav-item').forEach(function(el) {
+        el.classList.remove('active');
+      });
+      var navItem = document.getElementById('nav-item-' + viewName);
+      if (navItem) {
+        navItem.classList.add('active');
+      }
+    }
+
+    function toggleOption(el) {
+      document.querySelectorAll('.ballot-option-item').forEach(function(item) {
+        item.classList.remove('selected');
+        var pill = item.querySelector('.radio-pill');
+        if (pill) {
+          pill.innerHTML = '';
+        }
+      });
+      el.classList.add('selected');
+      var pill = el.querySelector('.radio-pill');
+      if (pill) {
+        pill.innerHTML = '<div class="radio-center-dot"></div>';
+      }
+    }
+  </script>
+
+</body>
+</html>
+
