@@ -12,7 +12,7 @@ const mockNotifications: NotificationItem[] = [
     type: "result",
     titleKey: "notifications.resultReadyTitle",
     titleFallback: "Poll Results Finalized",
-    pollTitle: "Campus activity preferences · B07",
+    pollTitle: "Campus Fitness Center Equipment Upgrades",
     messageKey: "notifications.resultReadyDesc",
     messageFallback: "Voting has ended. View final results and winning choices.",
     pollId: 1,
@@ -25,7 +25,7 @@ const mockNotifications: NotificationItem[] = [
     type: "new_poll",
     titleKey: "notifications.newPollTitle",
     titleFallback: "Active Poll Ready",
-    pollTitle: "Upcoming campus event",
+    pollTitle: "Upcoming Campus AI Innovation Showcase 2026",
     messageKey: "notifications.newPollDesc",
     messageFallback: "Open for voting now in Overview. Have your say!",
     pollId: 2,
@@ -56,8 +56,8 @@ describe("NotificationDropdown", () => {
     expect(screen.getByTestId("notif-unread-count")).toHaveTextContent("1");
     expect(screen.getByText("All (2)")).toBeInTheDocument();
     expect(screen.getByText("Unread (1)")).toBeInTheDocument();
-    expect(screen.getByText("Campus activity preferences · B07")).toBeInTheDocument();
-    expect(screen.getByText("Upcoming campus event")).toBeInTheDocument();
+    expect(screen.getByText("Campus Fitness Center Equipment Upgrades")).toBeInTheDocument();
+    expect(screen.getByText("Upcoming Campus AI Innovation Showcase 2026")).toBeInTheDocument();
   });
 
   it("filters unread notifications when Unread tab is clicked", async () => {
@@ -78,8 +78,8 @@ describe("NotificationDropdown", () => {
     );
 
     await user.click(screen.getByText("Unread (1)"));
-    expect(screen.getByText("Campus activity preferences · B07")).toBeInTheDocument();
-    expect(screen.queryByText("Upcoming campus event")).not.toBeInTheDocument();
+    expect(screen.getByText("Campus Fitness Center Equipment Upgrades")).toBeInTheDocument();
+    expect(screen.queryByText("Upcoming Campus AI Innovation Showcase 2026")).not.toBeInTheDocument();
   });
 
   it("triggers onMarkAllAsRead when Mark all read button is clicked", async () => {
@@ -125,7 +125,7 @@ describe("NotificationDropdown", () => {
       </Providers>,
     );
 
-    const item = screen.getByText("Campus activity preferences · B07");
+    const item = screen.getByText("Campus Fitness Center Equipment Upgrades");
     await user.click(item);
 
     expect(handleMarkAsRead).toHaveBeenCalledWith("notif-1");

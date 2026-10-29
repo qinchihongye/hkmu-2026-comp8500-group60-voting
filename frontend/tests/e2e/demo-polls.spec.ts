@@ -20,24 +20,24 @@ test.describe("固定示例", () => {
   test("进行中的实时结果按开关区分", async ({ page }) => {
     await openExamples(page);
     const section = page.getByTestId("demo-polls");
-    await section.getByPlaceholder("Search examples").fill("Technical sharing topics · A01");
-    const hiddenLink = section.getByRole("link", { name: "Technical sharing topics · A01" });
+    await section.getByPlaceholder("Search examples").fill("Annual Tech Symposium Keynote Speaker");
+    const hiddenLink = section.getByRole("link", { name: "Annual Tech Symposium Keynote Speaker" });
     await expect(hiddenLink).toBeVisible();
     const hiddenHref = await hiddenLink.getAttribute("href");
     await page.goto(`${hiddenHref}/results`);
     await expect(page.getByText("Results are not available yet.")).toBeVisible();
 
     await page.goto("/overview");
-    await section.getByPlaceholder("Search examples").fill("Technical sharing topics · A02");
-    await section.getByRole("link", { name: "Technical sharing topics · A02" }).click();
+    await section.getByPlaceholder("Search examples").fill("Student Union President Election 2026");
+    await section.getByRole("link", { name: "Student Union President Election 2026" }).click();
     await page.getByRole("link", { name: "View results" }).click();
-    await expect(page.getByText("React concurrency")).toBeVisible();
+    await expect(page.getByText("Alex Morgan (Faculty of Engineering)")).toBeVisible();
   });
 
   test("私密关闭示例先进入密码流程", async ({ page }) => {
     await openExamples(page);
     const section = page.getByTestId("demo-polls");
-    await section.getByPlaceholder("Search examples").fill("Completed team decision");
+    await section.getByPlaceholder("Search examples").fill("Executive Release Milestone Scope Decision");
     await section.getByRole("link", { name: "View results" }).click();
     await page.getByRole("link", { name: "Enter passcode" }).click();
     await page.getByLabel("Passcode", { exact: true }).fill("wrong-password");
@@ -45,17 +45,17 @@ test.describe("固定示例", () => {
     await expect(page.getByText("The passcode is incorrect.")).toBeVisible();
     await page.getByLabel("Passcode", { exact: true }).fill(pollPassword);
     await page.getByRole("button", { name: "Unlock" }).click();
-    await expect(page.getByRole("heading", { name: "Completed team decision" })).toBeVisible();
-    await expect(page.getByText("Keep the current scope")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Executive Release Milestone Scope Decision" })).toBeVisible();
+    await expect(page.getByText("Ship Target Release V1.0 on Schedule")).toBeVisible();
   });
 
   test("隔离数据集才试投最后一名额和匿名空场", async ({ page }) => {
     test.skip(process.env.DEMO_POLLS_ISOLATED !== "1", "避免把试投写进开发库的固定示例");
     await openExamples(page);
     const section = page.getByTestId("demo-polls");
-    await section.getByPlaceholder("Search examples").fill("Final workshop place");
-    await section.getByRole("link", { name: "Final workshop place" }).click();
-    await page.getByRole("radio", { name: "Frontend lab" }).check();
+    await section.getByPlaceholder("Search examples").fill("Final Seat: AI Ethics & Governance Roundtable");
+    await section.getByRole("link", { name: "Final Seat: AI Ethics & Governance Roundtable" }).click();
+    await page.getByRole("radio", { name: "Algorithmic Bias & Fairness Metrics" }).check();
     await page.getByRole("button", { name: "Submit vote" }).click();
     await expect(page.getByText(/Submitted/)).toBeVisible();
   });

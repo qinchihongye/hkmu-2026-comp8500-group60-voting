@@ -113,7 +113,7 @@ def test_search_matches_title_and_fixture_key_and_reflects_in_total(
     register_and_login(auth_client, "ada")
 
     # 按标题精确搜 1 场
-    by_title = envelope(auth_client.get("/api/v1/demo-polls?q=Technical sharing topics · A01"), 200)
+    by_title = envelope(auth_client.get("/api/v1/demo-polls?q=Annual Tech Symposium Keynote Speaker"), 200)
     assert by_title["total"] == 1
     assert len(by_title["items"]) == 1
     assert by_title["items"][0]["fixture_key"] == "named-public-01"

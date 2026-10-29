@@ -62,3 +62,4 @@ describe("PollHeroHeader", () => {
     expect(screen.queryByText(/v\d+/)).not.toBeInTheDocument();
   });
 });
+

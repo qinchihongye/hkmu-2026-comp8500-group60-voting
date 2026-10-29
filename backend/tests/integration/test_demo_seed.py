@@ -108,9 +108,9 @@ def test_first_seed_creates_38_and_second_seed_changes_nothing(auth_client: Test
     with open_session(auth_client) as session:
         assert session.scalar(select(func.count()).select_from(DemoPollFixture)) == 38
         assert session.scalar(select(func.count()).select_from(Vote)) == 108
-        single = session.scalar(select(Poll).where(Poll.title == "Technical sharing topics · A01"))
+        single = session.scalar(select(Poll).where(Poll.title == "Annual Tech Symposium Keynote Speaker"))
         multiple = session.scalar(
-            select(Poll).where(Poll.title == "Campus activity preferences · B04")
+            select(Poll).where(Poll.title == "Outdoor Adventure Club Excursion Destinations")
         )
         assert single is not None and multiple is not None
         assert _counts(session, single.id) == [1, 2, 0, 0]
@@ -139,7 +139,7 @@ def test_first_seed_creates_38_and_second_seed_changes_nothing(auth_client: Test
         fixture_user = session.scalar(select(User).where(User.username == "fixture_voter_01"))
         assert fixture_user is not None and fixture_user.is_active is False
         private = session.scalar(
-            select(Poll).where(Poll.title == "Project workshop priorities · C01")
+            select(Poll).where(Poll.title == "Enterprise Cloud Infrastructure Modernization")
         )
         assert private is not None
         snapshot = {
@@ -250,8 +250,8 @@ def test_closed_seed_ballots_stay_inside_the_poll_window(auth_client: TestClient
     _account(auth_client, "demo_user")
     _ensure(auth_client)
     with open_session(auth_client) as session:
-        closed = session.scalar(select(Poll).where(Poll.title == "Completed workshop survey"))
-        manual = session.scalar(select(Poll).where(Poll.title == "Completed team decision"))
+        closed = session.scalar(select(Poll).where(Poll.title == "Completed Spring Career Fair Feedback Survey"))
+        manual = session.scalar(select(Poll).where(Poll.title == "Executive Release Milestone Scope Decision"))
         assert closed is not None and manual is not None
         assert closed.lifecycle == "PUBLISHED" and closed.closed_at is None
         assert manual.lifecycle == "CLOSED" and manual.closed_at is not None
@@ -259,7 +259,7 @@ def test_closed_seed_ballots_stay_inside_the_poll_window(auth_client: TestClient
             votes = session.scalars(select(Vote).where(Vote.poll_id == poll.id)).all()
             assert len(votes) == 3
             assert all(poll.starts_at <= vote.submitted_at < poll.ends_at for vote in votes)
-        full = session.scalar(select(Poll).where(Poll.title == "Fully booked activity"))
+        full = session.scalar(select(Poll).where(Poll.title == "Cloud Architecture Hands-On Lab (Full)"))
         assert full is not None and full.lifecycle == "CLOSED" and full.vote_limit == 3
         key = auth_client.app.state.settings.anon_voter_hmac_key
         sample = session.scalar(select(Vote).where(Vote.poll_id == closed.id))
