@@ -1,21 +1,25 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import { exportPollResultsToExcel } from "../features/polls/export-excel";
+import { getPoll, getResults } from "../features/polls/api";
 import { ResultsPanel } from "../features/polls/ResultsPanel";
-import { getResults } from "../features/polls/api";
+import { ShareCardModal } from "../features/polls/ShareCardModal";
 import { resolveShare } from "../features/poll-access/api";
 import { I18nError, useFailure } from "../i18n/errors";
 import { useI18n } from "../i18n/LocaleProvider";
 import { ApiCode } from "../lib/api-codes";
 import { isApiClientError } from "../lib/api-error";
-import type { PollResults } from "../lib/api-types";
+import type { PollDetail, PollResults } from "../lib/api-types";
 
 export function PollResultPage() {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const failure = useFailure("error.resultsLoad");
   const { setCause, clear } = failure;
   const params = useParams();
   const [results, setResults] = useState<PollResults | null>(null);
+  const [pollDetail, setPollDetail] = useState<PollDetail | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [reloadTick, setReloadTick] = useState(0);
   const shareCode = params.shareCode;
@@ -35,9 +39,13 @@ export function PollResultPage() {
     void (async () => {
       try {
         const pollId = shareCode ? (await resolveShare(shareCode)).poll_id : Number(params.id);
-        const next = await getResults(pollId);
+        const [next, poll] = await Promise.all([
+          getResults(pollId),
+          getPoll(pollId).catch(() => null),
+        ]);
         if (!cancelled) {
           setResults(next);
+          setPollDetail(poll);
           clear();
         }
       } catch (caught) {
@@ -99,15 +107,57 @@ export function PollResultPage() {
         <Link to={shareCode ? `/s/${shareCode}` : `/polls/${params.id}`} className="view-btn view-btn-secondary" style={{ padding: "8px 16px", fontSize: "0.88rem", textDecoration: "none" }}>
           {t("resultPage.back")}
         </Link>
-        <button
-          type="button"
-          className="view-btn view-btn-secondary"
-          onClick={refresh}
-          style={{ padding: "8px 16px", fontSize: "0.88rem", display: "inline-flex", alignItems: "center", gap: 6 }}
-        >
-          <span>🔄</span>
-          <span>{t("common.refresh")}</span>
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          {results.is_final ? (
+            <>
+              {/* Share PNG Card Button */}
+              <button
+                type="button"
+                className="view-btn view-btn-primary"
+                onClick={() => setShareModalOpen(true)}
+                style={{ padding: "8px 16px", fontSize: "0.88rem", display: "inline-flex", alignItems: "center", gap: 6 }}
+                data-testid="share-image-btn"
+              >
+                <span>🖼️</span>
+                <span>{t("resultPage.shareImage")}</span>
+              </button>
+
+              {/* Export Excel Button */}
+              <button
+                type="button"
+                className="view-btn view-btn-secondary"
+                onClick={() => exportPollResultsToExcel(results, pollDetail, locale)}
+                style={{ padding: "8px 16px", fontSize: "0.88rem", display: "inline-flex", alignItems: "center", gap: 6 }}
+                data-testid="export-excel-btn"
+              >
+                <span>📊</span>
+                <span>{t("resultPage.exportExcel")}</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="view-btn view-btn-secondary"
+                onClick={refresh}
+                style={{ padding: "8px 16px", fontSize: "0.88rem", display: "inline-flex", alignItems: "center", gap: 6 }}
+              >
+                <span>🔄</span>
+                <span>{t("common.refresh")}</span>
+              </button>
+              <button
+                type="button"
+                className="view-btn view-btn-secondary"
+                onClick={() => exportPollResultsToExcel(results, pollDetail, locale)}
+                style={{ padding: "8px 16px", fontSize: "0.88rem", display: "inline-flex", alignItems: "center", gap: 6 }}
+                data-testid="export-excel-btn"
+              >
+                <span>📊</span>
+                <span>{t("resultPage.exportExcel")}</span>
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <header className="view-header" style={{ marginBottom: 20 }}>
@@ -138,6 +188,14 @@ export function PollResultPage() {
       </header>
 
       <ResultsPanel results={results} />
+
+      {shareModalOpen && (
+        <ShareCardModal
+          results={results}
+          pollDetail={pollDetail}
+          onClose={() => setShareModalOpen(false)}
+        />
+      )}
     </div>
   ) : null;
 }

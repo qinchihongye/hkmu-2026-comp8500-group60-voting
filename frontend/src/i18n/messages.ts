@@ -391,6 +391,8 @@ export const en = {
     plaza: "Back to public polls",
     privateHint: "This private poll needs access, or voting has not ended.",
     hiddenHint: "Results cannot be shown right now.",
+    shareImage: "Share Image",
+    exportExcel: "Export Excel",
   },
   missing: {
     title: "Page not found",
@@ -832,6 +834,8 @@ export const zh: StringTree<typeof en> = {
     plaza: "返回公开投票",
     privateHint: "这场私密投票需要先验证，或投票尚未结束。",
     hiddenHint: "现在不能显示结果。",
+    shareImage: "分享海报",
+    exportExcel: "导出 Excel",
   },
   missing: {
     title: "页面不存在",
