@@ -5,6 +5,8 @@ import { AuthLocaleMenu } from "../components/AuthLocaleMenu";
 import { useAuth } from "../features/auth/AuthProvider";
 import { useI18n } from "../i18n/LocaleProvider";
 import { GlobalAnnouncementTicker } from "./GlobalAnnouncementTicker";
+import { NotificationDropdown } from "../features/notifications/NotificationDropdown";
+import { useNotifications } from "../features/notifications/useNotifications";
 import "./AppLayout.css";
 
 const MOBILE_NAV_QUERY = "(max-width: 960px)";
@@ -37,6 +39,9 @@ export function AppLayout() {
   const mobileNav = useMobileNav();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useNotifications();
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem("sidebar_collapsed") === "true";
@@ -50,15 +55,19 @@ export function AppLayout() {
   const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
 
   useEffect(() => {
-    if (!userMenuOpen) return;
+    if (!userMenuOpen && !notifOpen) return;
     const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+      if (userMenuOpen && userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setUserMenuOpen(false);
+      }
+      if (notifOpen && notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setNotifOpen(false);
       }
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setUserMenuOpen(false);
+        setNotifOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -67,7 +76,7 @@ export function AppLayout() {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [userMenuOpen]);
+  }, [userMenuOpen, notifOpen]);
 
   function toggleSidebar() {
     setCollapsed((prev) => {
@@ -278,62 +287,86 @@ export function AppLayout() {
           {/* Right Action / User Profile */}
           <div className="topbar-right">
             {authenticated && auth.user ? (
-              <div className="topbar-user-section" ref={userMenuRef}>
-                {/* Notification Bell with red unread dot */}
-                <button
-                  type="button"
-                  className="topbar-bell-btn"
-                  title={t("nav.notifications")}
-                  aria-label={t("nav.notifications")}
-                >
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                  </svg>
-                  <span className="topbar-bell-dot" />
-                </button>
-
-                {/* User Dropdown Trigger Button */}
-                <button
-                  type="button"
-                  className={`topbar-user-trigger ${userMenuOpen ? "active" : ""}`}
-                  data-testid="topbar-user-menu"
-                  aria-label={t("nav.account")}
-                  aria-haspopup="true"
-                  aria-expanded={userMenuOpen}
-                  onClick={() => setUserMenuOpen((prev) => !prev)}
-                >
-                  {/* Avatar */}
-                  <span className="topbar-avatar">
-                    {(auth.user.username === "admin" ? "admin" : auth.user.display_name).charAt(0).toUpperCase()}
-                  </span>
-                  <span className="topbar-user-name">
-                    {auth.user.username === "admin" ? "admin" : auth.user.display_name}
-                  </span>
-
-                  {/* Dropdown chevron */}
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="16"
-                    height="16"
-                    fill="none"
-                    stroke="#64748b"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="topbar-chevron"
-                    style={{
-                      transform: userMenuOpen ? "rotate(180deg)" : "none",
+              <div className="topbar-user-section">
+                {/* Notification Bell with Dropdown */}
+                <div className="notif-dropdown-wrapper" ref={notifRef}>
+                  <button
+                    type="button"
+                    className={`topbar-bell-btn ${notifOpen ? "active" : ""}`}
+                    data-testid="topbar-bell-btn"
+                    title={t("nav.notifications")}
+                    aria-label={t("nav.notifications")}
+                    aria-haspopup="true"
+                    aria-expanded={notifOpen}
+                    onClick={() => {
+                      setNotifOpen((prev) => !prev);
+                      setUserMenuOpen(false);
                     }}
                   >
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </button>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                    {unreadCount > 0 ? <span className="topbar-bell-dot" data-testid="topbar-bell-dot" /> : null}
+                  </button>
 
-                {/* Dropdown Menu */}
-                <div
-                  className={`topbar-dropdown-menu ${userMenuOpen ? "open" : ""}`}
-                  role="menu"
+                  {notifOpen ? (
+                    <NotificationDropdown
+                      notifications={notifications}
+                      unreadCount={unreadCount}
+                      onMarkAsRead={markAsRead}
+                      onMarkAllAsRead={markAllAsRead}
+                      onClearAll={clearAll}
+                      onClose={() => setNotifOpen(false)}
+                    />
+                  ) : null}
+                </div>
+
+                {/* User Dropdown Trigger Button */}
+                <div style={{ position: "relative" }} ref={userMenuRef}>
+                  <button
+                    type="button"
+                    className={`topbar-user-trigger ${userMenuOpen ? "active" : ""}`}
+                    data-testid="topbar-user-menu"
+                    aria-label={t("nav.account")}
+                    aria-haspopup="true"
+                    aria-expanded={userMenuOpen}
+                    onClick={() => {
+                      setUserMenuOpen((prev) => !prev);
+                      setNotifOpen(false);
+                    }}
+                  >
+                    {/* Avatar */}
+                    <span className="topbar-avatar">
+                      {(auth.user.username === "admin" ? "admin" : auth.user.display_name).charAt(0).toUpperCase()}
+                    </span>
+                    <span className="topbar-user-name">
+                      {auth.user.username === "admin" ? "admin" : auth.user.display_name}
+                    </span>
+
+                    {/* Dropdown chevron */}
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="#64748b"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="topbar-chevron"
+                      style={{
+                        transform: userMenuOpen ? "rotate(180deg)" : "none",
+                      }}
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  <div
+                    className={`topbar-dropdown-menu ${userMenuOpen ? "open" : ""}`}
+                    role="menu"
                   aria-label={t("nav.accountMenu")}
                 >
                   {/* User Info Header */}
@@ -407,6 +440,7 @@ export function AppLayout() {
                   </button>
                 </div>
               </div>
+            </div>
             ) : (
               <div className="topbar-auth-links">
                 <Link to="/login" className="topbar-login-link">
