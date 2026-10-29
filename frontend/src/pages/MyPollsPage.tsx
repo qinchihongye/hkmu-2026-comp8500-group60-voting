@@ -162,31 +162,36 @@ export function MyPollsPage() {
                     <div className="my-poll-tags-line">
                       <StatusTag status={poll.effective_status} />
                       <ModeTags identity={poll.identity_mode} visibility={poll.visibility} />
-                      <span
-                        style={{
-                          fontSize: "0.78rem",
-                          fontWeight: 600,
-                          padding: "2px 8px",
-                          borderRadius: 6,
-                          background: "#f1f5f9",
-                          color: "#64748b",
-                        }}
-                      >
-                        v{poll.version}
-                      </span>
+                      {!isDraft ? (
+                        <span
+                          style={{
+                            fontSize: "0.78rem",
+                            fontWeight: 600,
+                            padding: "2px 8px",
+                            borderRadius: 6,
+                            background: "#f1f5f9",
+                            color: "#475569",
+                          }}
+                        >
+                          {poll.vote_limit
+                            ? `${poll.ballot_count} / ${poll.vote_limit} ${t("polls.ballotsReceived")}`
+                            : `${poll.ballot_count} ${t("polls.ballotsReceived")}`}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
 
                   {/* Right Action Buttons */}
                   <div className="my-poll-actions-right">
                     {isDraft ? (
-                      <Link to={`/my-polls/${poll.id}/edit`} className="my-poll-btn my-poll-btn-secondary">
+                      <Link to={`/my-polls/${poll.id}/edit`} className="my-poll-btn my-poll-btn-primary">
                         {t("polls.editDraft")}
                       </Link>
-                    ) : null}
-                    <Link to={`/my-polls/${poll.id}`} className="my-poll-btn my-poll-btn-primary">
-                      {t("polls.openWorkspace")}
-                    </Link>
+                    ) : (
+                      <Link to={`/my-polls/${poll.id}`} className="my-poll-btn my-poll-btn-primary">
+                        {t("polls.openWorkspace")}
+                      </Link>
+                    )}
                   </div>
                 </article>
               );

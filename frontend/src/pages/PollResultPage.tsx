@@ -17,8 +17,9 @@ export function PollResultPage() {
   const params = useParams();
   const [results, setResults] = useState<PollResults | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reloadTick, setReloadTick] = useState(0);
   const shareCode = params.shareCode;
-  const queryKey = `${params.id ?? ""}:${shareCode ?? ""}`;
+  const queryKey = `${params.id ?? ""}:${shareCode ?? ""}:${reloadTick}`;
   const [seenKey, setSeenKey] = useState(queryKey);
   if (seenKey !== queryKey) {
     setSeenKey(queryKey);
@@ -26,6 +27,8 @@ export function PollResultPage() {
     setResults(null);
     clear();
   }
+
+  const refresh = () => setReloadTick((tick) => tick + 1);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,7 +60,7 @@ export function PollResultPage() {
     return () => {
       cancelled = true;
     };
-  }, [params.id, shareCode, setCause, clear]);
+  }, [params.id, shareCode, reloadTick, setCause, clear]);
 
   if (loading) {
     return (
@@ -92,11 +95,48 @@ export function PollResultPage() {
   }
   return results ? (
     <div className="view-root">
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
         <Link to={shareCode ? `/s/${shareCode}` : `/polls/${params.id}`} className="view-btn view-btn-secondary" style={{ padding: "8px 16px", fontSize: "0.88rem", textDecoration: "none" }}>
           {t("resultPage.back")}
         </Link>
+        <button
+          type="button"
+          className="view-btn view-btn-secondary"
+          onClick={refresh}
+          style={{ padding: "8px 16px", fontSize: "0.88rem", display: "inline-flex", alignItems: "center", gap: 6 }}
+        >
+          <span>🔄</span>
+          <span>{t("common.refresh")}</span>
+        </button>
       </div>
+
+      <header className="view-header" style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, marginBottom: 10 }}>
+          <span
+            style={{
+              padding: "4px 10px",
+              borderRadius: "999px",
+              fontSize: "0.78rem",
+              fontWeight: 700,
+              letterSpacing: "0.02em",
+              background: results.is_final ? "#f1f5f9" : "#ecfdf5",
+              color: results.is_final ? "#475569" : "#059669",
+              border: `1px solid ${results.is_final ? "#e2e8f0" : "#a7f3d0"}`
+            }}
+          >
+            {results.is_final ? t("results.finalTitle") : t("results.liveTitle")}
+          </span>
+          <span style={{ fontSize: "0.82rem", color: "#64748b", fontWeight: 500 }}>
+            {t("results.updatedAt", {
+              time: new Date(results.server_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+            })}
+          </span>
+        </div>
+        <h1 className="view-title" style={{ fontSize: "1.75rem", marginBottom: 6 }}>
+          {results.poll_title || t("results.titleFallback")}
+        </h1>
+      </header>
+
       <ResultsPanel results={results} />
     </div>
   ) : null;

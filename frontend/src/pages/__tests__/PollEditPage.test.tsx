@@ -59,7 +59,7 @@ describe("PollEditPage", () => {
     const fetchMock = install(detail());
     renderRoute("/my-polls/9/edit");
     expect(await screen.findByLabelText("Ballot limit")).toHaveValue("80");
-    expect(screen.getByRole("radio", { name: "Multi-Vote" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Multiple choice" })).toBeChecked();
     const limit = screen.getByLabelText("Ballot limit");
     await userEvent.clear(limit);
     await userEvent.type(limit, "90");
@@ -87,7 +87,7 @@ describe("PollEditPage", () => {
     }));
     renderRoute("/my-polls/9/edit");
     expect(await screen.findByLabelText("Ballot limit")).toHaveValue("");
-    expect(screen.getByRole("radio", { name: "Single Vote" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Single choice" })).toBeChecked();
     await userEvent.click(screen.getByTestId("save-poll"));
     await waitFor(() => {
       const saved = fetchMock.mock.calls.find((call) => call[1]?.method === "PATCH");
@@ -104,7 +104,7 @@ describe("PollEditPage", () => {
     renderRoute("/my-polls/9/edit");
     expect(await screen.findByRole("heading", { name: "Published polls cannot be edited" })).toBeInTheDocument();
     expect(screen.getByText("100")).toBeInTheDocument();
-    expect(screen.getByText("Multi-Vote")).toBeInTheDocument();
+    expect(screen.getByText("Multiple choice")).toBeInTheDocument();
     expect(screen.queryByTestId("save-poll")).not.toBeInTheDocument();
     expect(screen.queryByRole("switch")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Ballot limit")).not.toBeInTheDocument();

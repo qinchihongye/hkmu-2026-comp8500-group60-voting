@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 
 import { ModeTags, StatusTag } from "../../components/StatusTag";
 import { useFailure } from "../../i18n/errors";
@@ -8,11 +8,114 @@ import { ApiCode } from "../../lib/api-codes";
 import { isApiClientError } from "../../lib/api-error";
 import type { PollDetail, PollResults, VoteReceipt } from "../../lib/api-types";
 import { formatHongKong } from "../../lib/time";
+import { unlockPoll } from "../poll-access/api";
 import { useGuest } from "../poll-access/GuestProvider";
 import type { PollAccessView } from "../poll-access/usePollAccess";
 import { castVote, getPoll, getResults } from "./api";
 import { BallotForm } from "./BallotForm";
 import { ResultsPanel } from "./ResultsPanel";
+
+function InlinePasscodeForm({
+  pollId,
+  shareCode,
+  onUnlocked,
+}: {
+  pollId: number;
+  shareCode: string;
+  onUnlocked: () => void;
+}) {
+  const { t } = useI18n();
+  const guest = useGuest();
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const failure = useFailure("error.unlockFailed");
+  const { setCause, clear } = failure;
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!password.trim() || busy) {
+      return;
+    }
+    setBusy(true);
+    clear();
+    try {
+      await guest.ensureGuest();
+      await unlockPoll(pollId, { share_code: shareCode, password });
+      onUnlocked();
+    } catch (caught) {
+      setCause(caught);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={submit} style={{ maxWidth: 360, margin: "16px auto 0", textAlign: "left" }}>
+      <div style={{ marginBottom: 16 }}>
+        <label
+          htmlFor="inline-passcode-input"
+          style={{ display: "block", fontSize: "0.88rem", fontWeight: 700, color: "#334155", marginBottom: 6 }}
+        >
+          {t("access.field")}
+        </label>
+        <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+          <input
+            id="inline-passcode-input"
+            type={showPassword ? "text" : "password"}
+            autoComplete="off"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={t("access.placeholder")}
+            style={{
+              display: "block",
+              width: "100%",
+              padding: "10px 42px 10px 14px",
+              borderRadius: 10,
+              border: failure.message ? "1.5px solid #ef4444" : "1.5px solid #cbd5e1",
+              fontSize: "0.95rem",
+              outline: "none",
+              boxSizing: "border-box",
+            }}
+            disabled={busy}
+          />
+          <button
+            type="button"
+            aria-label={showPassword ? t("common.hidePasscode") : t("common.showPasscode")}
+            onClick={() => setShowPassword((prev) => !prev)}
+            style={{
+              position: "absolute",
+              right: 10,
+              background: "none",
+              border: "none",
+              padding: 4,
+              cursor: "pointer",
+              color: "#64748b",
+              display: "grid",
+              placeItems: "center",
+            }}
+          >
+            {showPassword ? "👁️" : "👁️‍🗨️"}
+          </button>
+        </div>
+        {failure.message ? (
+          <p role="alert" style={{ margin: "6px 0 0 0", color: "#dc2626", fontSize: "0.82rem", fontWeight: 600 }}>
+            {failure.message}
+          </p>
+        ) : null}
+      </div>
+
+      <button
+        type="submit"
+        className="view-btn view-btn-primary"
+        disabled={busy || !password.trim()}
+        style={{ width: "100%", padding: "10px", fontSize: "0.95rem", justifyContent: "center" }}
+      >
+        {busy ? t("access.unlocking") : t("access.unlock")}
+      </button>
+    </form>
+  );
+}
 
 export function ParticipationPanel({
   access,
@@ -24,6 +127,7 @@ export function ParticipationPanel({
   const { t } = useI18n();
   const guest = useGuest();
   const location = useLocation();
+  const params = useParams();
   const detail = access.detail;
   const [kept, setKept] = useState<{ pollId: number; receipt: VoteReceipt } | null>(null);
   const keptReceipt = detail && kept?.pollId === detail.id ? kept.receipt : null;
@@ -100,6 +204,8 @@ export function ParticipationPanel({
     );
   }
   if (access.phase === "password_required") {
+    const pollId = access.entry?.poll_id;
+    const shareCode = params.shareCode ?? (detail?.passcode_entry_path?.replace("/s/", "").replace("/access", "") ?? "");
     return (
       <div className="view-root view-root-narrow" style={{ paddingTop: 40 }}>
         <div className="view-card" style={{ textAlign: "center", padding: "40px 28px" }}>
@@ -107,13 +213,20 @@ export function ParticipationPanel({
             🔒
           </div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 800, margin: "0 0 10px 0", color: "#0f172a" }}>{t("access.passcodeTitle")}</h1>
-          <p className="view-subtitle" style={{ maxWidth: 460, margin: "0 auto 20px" }}>
+          <p className="view-subtitle" style={{ maxWidth: 460, margin: "0 auto 16px" }}>
             {access.grantExpired ? t("access.grantExpired") : t("access.locked")}
           </p>
           {access.entry ? (
-            <div style={{ display: "inline-flex", justifyContent: "center", marginBottom: 20 }}>
+            <div style={{ display: "inline-flex", justifyContent: "center", marginBottom: 12 }}>
               <ModeTags identity={access.entry.identity_mode} visibility={access.entry.visibility} />
             </div>
+          ) : null}
+          {pollId && shareCode ? (
+            <InlinePasscodeForm
+              pollId={pollId}
+              shareCode={shareCode}
+              onUnlocked={access.reload}
+            />
           ) : null}
         </div>
       </div>

@@ -388,7 +388,6 @@ export function PollForm({
             <label htmlFor="poll-title" className="poll-form-label">
               <span>{t("form.title")}</span>
               <span className="poll-form-label-hint">{value.title.length}/120</span>
-              <span className="sr-only">{t("form.title")}</span>
             </label>
             <input
               id="poll-title"

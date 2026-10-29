@@ -147,6 +147,7 @@ export type OptionResult = {
 
 export type PollResults = {
   poll_id: number;
+  poll_title?: string | null;
   total_votes: number;
   total_selections: number;
   selection_mode: SelectionMode;

@@ -226,6 +226,7 @@ def _results(
     leaders = [item.option_id for item in items if highest > 0 and item.count == highest]
     return PollResults(
         poll_id=poll.id,
+        poll_title=poll.title,
         total_votes=ballots,
         total_selections=total_selections,
         selection_mode=poll.selection_mode,

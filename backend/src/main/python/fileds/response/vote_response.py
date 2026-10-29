@@ -66,6 +66,7 @@ class PollResults(BaseModel):
     winner_option_ids: list[int]
     is_final: bool
     server_time: datetime
+    poll_title: str | None = None
 
 
 class MyVote(BaseModel):

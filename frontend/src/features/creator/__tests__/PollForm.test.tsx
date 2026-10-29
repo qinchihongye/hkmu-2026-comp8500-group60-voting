@@ -113,7 +113,7 @@ describe("PollForm", () => {
     );
     expect(screen.getByLabelText("Ballot limit")).toHaveValue("");
     expect(screen.getByPlaceholderText("Unlimited")).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Single Vote" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Single choice" })).toBeChecked();
     expect(screen.queryByText(/This browser is the credential/)).not.toBeInTheDocument();
 
     await fillRequired();
@@ -174,7 +174,7 @@ describe("PollForm", () => {
     expect(document.body.textContent).toContain("[🔒 Private]");
     expect(screen.getByRole("switch", { name: "Anonymous voting" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Private poll" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Multi-Vote" })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: "Multiple choice" })).toBeDisabled();
     expect(screen.queryByText("Vote Allowance")).not.toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Live results" })).not.toBeChecked();
     expect(screen.getByText("Voters only see the totals, not who chose each option.")).toBeInTheDocument();
@@ -188,13 +188,13 @@ describe("PollForm", () => {
     expect(screen.getByText("最高投票数")).toBeInTheDocument();
     expect(screen.queryByText("Vote Limit")).not.toBeInTheDocument();
     expect(screen.queryByText("Vote Allowance")).not.toBeInTheDocument();
-    expect(screen.queryByText("(Single Vote)")).not.toBeInTheDocument();
-    expect(screen.queryByText("(Multi-Vote)")).not.toBeInTheDocument();
+    expect(screen.queryByText("(Single choice)")).not.toBeInTheDocument();
+    expect(screen.queryByText("(Multiple choice)")).not.toBeInTheDocument();
     expect(screen.getByPlaceholderText("不限")).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "不记名投票" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "私密投票" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "一人一票" })).toBeChecked();
-    expect(screen.getByRole("radio", { name: "一人多投" })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: "单选" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "多选" })).toBeDisabled();
     expect(screen.queryByText("Anonymous voting")).not.toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "实时票况" })).not.toBeChecked();
     expect(screen.queryByText("Live results")).not.toBeInTheDocument();
@@ -207,24 +207,24 @@ describe("PollForm", () => {
     initial.options = ["赞成", "反对", ""];
     initial.selectionMode = "MULTIPLE";
     renderWithProviders(<PollForm initial={initial} mode="create" now={fixedNow} onSubmit={onSubmit} />);
-    expect(screen.getByRole("radio", { name: "Multi-Vote" })).toBeDisabled();
-    expect(screen.getByRole("radio", { name: "Single Vote" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Multiple choice" })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: "Single choice" })).toBeChecked();
     expect(screen.getByRole("status")).toHaveTextContent("Switched to single choice");
 
     await userEvent.type(screen.getByLabelText("Option 3"), "弃权");
-    expect(screen.getByRole("radio", { name: "Multi-Vote" })).toBeEnabled();
-    await userEvent.click(screen.getByRole("radio", { name: "Multi-Vote" }));
+    expect(screen.getByRole("radio", { name: "Multiple choice" })).toBeEnabled();
+    await userEvent.click(screen.getByRole("radio", { name: "Multiple choice" }));
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
 
     await userEvent.clear(screen.getByLabelText("Option 3"));
-    expect(screen.getByRole("radio", { name: "Single Vote" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Single choice" })).toBeChecked();
     expect(screen.getAllByText("Switched to single choice")).toHaveLength(1);
-    expect(screen.getByRole("radio", { name: "Multi-Vote" })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: "Multiple choice" })).toBeDisabled();
 
     await userEvent.type(screen.getByLabelText("Option 3"), "弃权");
-    await userEvent.click(screen.getByRole("radio", { name: "Multi-Vote" }));
+    await userEvent.click(screen.getByRole("radio", { name: "Multiple choice" }));
     await userEvent.click(screen.getByRole("button", { name: "Remove option 3" }));
-    expect(screen.getByRole("radio", { name: "Single Vote" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Single choice" })).toBeChecked();
     expect(screen.getAllByText("Switched to single choice")).toHaveLength(1);
 
     await userEvent.clear(screen.getByLabelText("Option 2"));
