@@ -23,22 +23,8 @@ class OptionPublic(BaseModel):
     position: int
 
 
-class PollSummary(BaseModel):
-    """广场和列表上的投票摘要。不含个性化参与状态。
-
-    Attributes:
-        id: 投票主键。
-        title: 标题。
-        identity_mode: NAMED 或 ANONYMOUS。
-        visibility: PUBLIC 或 PRIVATE。
-        vote_limit: 整场选票份数上限。为空表示不限。
-        selection_mode: SINGLE 或 MULTIPLE。
-        allow_live_results: 进行中是否允许参与者查看汇总。
-        starts_at: 开始时间，UTC。
-        ends_at: 结束时间，UTC。
-        effective_status: 按当前时间计算出的状态。
-        created_at: 创建时间，UTC。
-    """
+class PollBase(BaseModel):
+    """投票基础公共字段。"""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -55,6 +41,25 @@ class PollSummary(BaseModel):
     created_at: datetime
     description: str | None = None
     closed_at: datetime | None = None
+
+
+class PollSummary(PollBase):
+    """广场和列表上的投票摘要。不含个性化参与状态。
+
+    Attributes:
+        id: 投票主键。
+        title: 标题。
+        identity_mode: NAMED 或 ANONYMOUS。
+        visibility: PUBLIC 或 PRIVATE。
+        vote_limit: 整场选票份数上限。为空表示不限。
+        selection_mode: SINGLE 或 MULTIPLE。
+        allow_live_results: 进行中是否允许参与者查看汇总。
+        starts_at: 开始时间，UTC。
+        ends_at: 结束时间，UTC。
+        effective_status: 按当前时间计算出的状态。
+        created_at: 创建时间，UTC。
+    """
+
     ballot_count: int = 0
     close_reason: str | None = None
 
@@ -73,7 +78,7 @@ class ManagePollSummary(PollSummary):
     creator_id: int
 
 
-class PollDetail(PollSummary):
+class PollDetail(PollBase):
     """参与者看到的投票详情。
 
     Attributes:

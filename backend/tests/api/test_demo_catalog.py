@@ -85,6 +85,10 @@ def test_logged_in_user_reads_demo_polls_in_fixed_order(auth_client: TestClient)
         "created_at",
         "fixture_key",
         "display_order",
+        "description",
+        "closed_at",
+        "ballot_count",
+        "close_reason",
     }
     first = page1["items"][0]
     assert set(first.keys()) == allowed_keys

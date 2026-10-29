@@ -161,7 +161,9 @@ def _calc_close_reason(poll: Poll, status: str, ballot_count: int) -> str | None
     return "ENDED"
 
 
-def _summary(fixture: DemoPollFixture, poll: Poll, now: datetime, ballot_count: int = 0) -> DemoPollSummary:
+def _summary(
+    fixture: DemoPollFixture, poll: Poll, now: datetime, ballot_count: int = 0
+) -> DemoPollSummary:
     """复制一条不含敏感字段的示例摘要。
 
     Args:

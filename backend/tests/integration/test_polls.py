@@ -45,6 +45,8 @@ MANAGE_FIELDS = {
     "server_time",
     "can_manage",
     "can_view_results",
+    "ballot_count",
+    "close_reason",
 }
 
 

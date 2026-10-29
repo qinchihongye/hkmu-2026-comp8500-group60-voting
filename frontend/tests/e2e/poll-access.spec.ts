@@ -36,7 +36,7 @@ test("私密记名先要密码再要登录，地址里不出现密码", async ({
   await voter.getByLabel("Password", { exact: true }).fill(accountPassword);
   await voter.getByRole("button", { name: "Log in" }).click();
   await expect(voter.getByRole("heading", { name: title })).toBeVisible();
-  await voteFor(voter, "乙");
+  await voteFor(voter, "Option B");
   await creatorContext.close();
   await voterContext.close();
 });
