@@ -118,19 +118,17 @@ export function AppLayout() {
           >
             <svg
               viewBox="0 0 24 24"
-              width="16"
-              height="16"
+              width="18"
+              height="18"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2.5"
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              style={{
-                transform: collapsed ? "rotate(180deg)" : "none",
-                transition: "transform 0.25s ease",
-              }}
+              aria-hidden="true"
             >
-              <polyline points="15 18 9 12 15 6" />
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <line x1="9" y1="3" x2="9" y2="21" />
             </svg>
           </button>
         </div>

@@ -74,6 +74,7 @@
 .sidebar.collapsed .sidebar-header {
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   gap: 12px;
   margin-bottom: 24px;
 }
@@ -116,21 +117,22 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
   border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  background: #ffffff;
   color: #64748b;
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
 .sidebar-collapse-btn:hover {
-  background: #eef4ff;
-  border-color: #bfdbfe;
-  color: #1363df;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
 }
 
 /* Navigation List */

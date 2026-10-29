@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as pollsApi from "../../features/polls/api";
@@ -112,3 +112,4 @@ describe("GlobalAnnouncementTicker", () => {
     expect(screen.getByText("Ad space available")).toBeInTheDocument();
   });
 });
+
