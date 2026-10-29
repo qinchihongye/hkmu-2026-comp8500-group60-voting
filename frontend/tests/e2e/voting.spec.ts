@@ -19,7 +19,7 @@ test("记名公开投票每账户一票，进行中结果只给创建者", async
 
   await register(voter, voterName, "参与者");
   await login(voter, voterName);
-  await voter.goto("/public-polls");
+  await voter.goto("/overview");
   await voter.getByRole("link", { name: title }).click();
   await voteFor(voter, "甲");
   await voter.reload();

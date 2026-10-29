@@ -14,7 +14,6 @@ import { NotFoundPage } from "../pages/NotFoundPage";
 import { PollAccessPage } from "../pages/PollAccessPage";
 import { PollDetailPage } from "../pages/PollDetailPage";
 import { PollEditPage } from "../pages/PollEditPage";
-import { PollListPage } from "../pages/PollListPage";
 import { PollResultPage } from "../pages/PollResultPage";
 import { PollWorkspacePage } from "../pages/PollWorkspacePage";
 import { RegisterPage } from "../pages/RegisterPage";
@@ -26,9 +25,9 @@ export function AppRouter() {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route element={<AppLayout />}>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/overview" element={<RequireAuth><DashboardPage /></RequireAuth>} />
+        <Route path="/overview" element={<DashboardPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/public-polls" element={<PollListPage />} />
+        <Route path="/public-polls" element={<Navigate to="/overview" replace />} />
         <Route path="/polls/:id" element={<PollDetailPage />} />
         <Route path="/polls/:id/results" element={<PollResultPage />} />
         <Route path="/s/:shareCode" element={<ShareEntryPage />} />

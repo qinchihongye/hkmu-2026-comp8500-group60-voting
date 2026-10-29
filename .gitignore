@@ -1,6 +1,8 @@
 /references/
 prompt.txt
 /references/*
+/frontend/test-results/
+/test-results/
 
 # 本地环境与密钥
 .env

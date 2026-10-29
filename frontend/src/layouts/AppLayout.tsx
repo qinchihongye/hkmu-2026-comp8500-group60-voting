@@ -156,23 +156,6 @@ export function AppLayout() {
             <span className="sidebar-nav-text">{t("nav.overview")}</span>
           </NavLink>
 
-          {/* Public Polls */}
-          <NavLink
-            to="/public-polls"
-            className="sidebar-nav-item"
-            aria-label={t("nav.polls")}
-            title={t("nav.polls")}
-          >
-            <span className="sidebar-nav-icon">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 20V10" />
-                <path d="M12 20V4" />
-                <path d="M6 20v-6" />
-              </svg>
-            </span>
-            <span className="sidebar-nav-text">{t("nav.polls")}</span>
-          </NavLink>
-
           {authenticated ? (
             <>
               {/* My Polls */}
@@ -461,10 +444,6 @@ export function AppLayout() {
             <NavLink to="/overview" end className="mobile-tab" aria-label={t("nav.overview")}>
               <TabIcon name="overview" />
               <span>{t("nav.overview")}</span>
-            </NavLink>
-            <NavLink to="/public-polls" className="mobile-tab" aria-label={t("nav.polls")}>
-              <TabIcon name="polls" />
-              <span>{t("nav.polls")}</span>
             </NavLink>
             {authenticated ? (
               <NavLink to="/my-polls/new" className="mobile-tab mobile-tab-create" aria-label={t("nav.create")}>

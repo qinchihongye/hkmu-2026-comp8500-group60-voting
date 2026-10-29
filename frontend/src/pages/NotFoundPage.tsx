@@ -14,7 +14,7 @@ export function NotFoundPage() {
         <p className="view-subtitle" style={{ maxWidth: 440, margin: "0 auto 24px" }}>
           {t("missing.note")}
         </p>
-        <Link to="/public-polls" className="view-btn view-btn-primary" style={{ textDecoration: "none" }}>
+        <Link to="/overview" className="view-btn view-btn-primary" style={{ textDecoration: "none" }}>
           {t("missing.action")}
         </Link>
       </section>

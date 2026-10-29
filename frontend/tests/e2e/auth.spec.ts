@@ -4,8 +4,8 @@ import { guestToken, login, logout, register, uniqueName } from "./support";
 
 test("注册登录刷新和注销不把公开页赶去登录，也不更换匿名凭据", async ({ page }) => {
   const username = uniqueName("ada");
-  await page.goto("/public-polls");
-  await expect(page.getByRole("heading", { name: "Public polls" })).toBeVisible();
+  await page.goto("/overview");
+  await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
   await expect(page).not.toHaveURL(/\/login/);
   const guest = await guestToken(page);
 
@@ -18,7 +18,7 @@ test("注册登录刷新和注销不把公开页赶去登录，也不更换匿�
   await logout(page);
   await expect(page.getByRole("heading", { name: "Log in" })).toBeVisible();
   expect(await guestToken(page)).toBe(guest);
-  await page.goto("/public-polls");
-  await expect(page.getByRole("heading", { name: "Public polls" })).toBeVisible();
+  await page.goto("/overview");
+  await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
   expect(await guestToken(page)).toBe(guest);
 });
