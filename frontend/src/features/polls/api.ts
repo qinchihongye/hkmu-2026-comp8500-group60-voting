@@ -1,8 +1,12 @@
 import { apiClient } from "../../lib/http";
-import type { MyVote, Page, PageQuery, PollDetail, PollResults, PollSummary, VoteReceipt } from "../../lib/api-types";
+import type { DemoPollSummary, MyVote, Page, PageQuery, PollDetail, PollResults, PollSummary, VoteReceipt } from "../../lib/api-types";
 
 export function getPolls(query: PageQuery = {}): Promise<Page<PollSummary>> {
   return apiClient({ path: "/api/v1/polls", query });
+}
+
+export function getDemoPolls(query: PageQuery = {}): Promise<Page<DemoPollSummary>> {
+  return apiClient({ path: "/api/v1/demo-polls", query });
 }
 
 export function getPoll(pollId: number, signal?: AbortSignal): Promise<PollDetail> {

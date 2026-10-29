@@ -475,9 +475,27 @@ export function PollForm({
               </div>
             ) : null}
 
-            <div className="poll-setting-card">
-              <span className="poll-setting-name">{t("form.voteLimit")}</span>
-              <div className="poll-limit-entry">
+            <div className="poll-setting-card poll-setting-card-limit">
+              <div className="poll-limit-card-header">
+                <span className="poll-setting-name">{t("form.voteLimit")}</span>
+                <span className={`poll-limit-status-pill ${numericLimit === null ? "is-unlimited" : "is-limited"}`}>
+                  <span className="poll-limit-status-dot" />
+                  {numericLimit === null ? t("polls.unlimitedBallots") : `${numericLimit} ${t("form.voteUnit")}`}
+                </span>
+              </div>
+
+              <div className="poll-limit-control-row">
+                <div className="poll-limit-capsule">
+                  <button
+                    type="button"
+                    className="poll-step-btn"
+                    aria-label={t("form.decreaseLimit")}
+                    disabled={numericLimit === null}
+                    onClick={() => stepLimit(-1)}
+                  >
+                    −
+                  </button>
+
                   <div className="poll-limit-input-wrap">
                     <input
                       className={limitText.length > 5 ? "poll-limit-input is-long" : "poll-limit-input"}
@@ -486,7 +504,7 @@ export function PollForm({
                       autoComplete="off"
                       aria-label={t("form.ballotLimit")}
                       value={limitText}
-                      placeholder="∞"
+                      placeholder=""
                       onChange={(event) => changeLimit(event.target.value)}
                       onBlur={blurLimit}
                       onKeyDown={onLimitKey}
@@ -495,46 +513,99 @@ export function PollForm({
                       {limitText.trim() === "" ? t("form.unlimited") : t("form.voteUnit")}
                     </span>
                   </div>
-                  <div className="poll-limit-stepper">
+
+                  <button
+                    type="button"
+                    className="poll-step-btn"
+                    aria-label={t("form.increaseLimit")}
+                    disabled={numericLimit === MAX_VOTE_LIMIT}
+                    onClick={() => stepLimit(1)}
+                  >
+                    +
+                  </button>
+                </div>
+
+                <div className="poll-limit-presets">
+                  {[10, 50, 100].map((preset) => (
                     <button
+                      key={preset}
                       type="button"
-                      className="poll-step-btn"
-                      aria-label={t("form.decreaseLimit")}
-                      disabled={numericLimit === null}
-                      onClick={() => stepLimit(-1)}
+                      className={`poll-preset-btn ${numericLimit === preset ? "is-active" : ""}`}
+                      onClick={() => applyLimit(preset)}
                     >
-                      −
+                      {preset}
                     </button>
-                    <button
-                      type="button"
-                      className="poll-step-btn"
-                      aria-label={t("form.increaseLimit")}
-                      disabled={numericLimit === MAX_VOTE_LIMIT}
-                      onClick={() => stepLimit(1)}
-                    >
-                      +
-                    </button>
-                  </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="poll-limit-track">
-                <div className="poll-limit-rail" />
-                {sliderPercent > 0 ? <div className="poll-limit-fill" style={{ width: `${sliderPercent}%` }} /> : null}
-                <span
-                  className="poll-limit-thumb"
-                  style={{ left: `clamp(9px, ${sliderPercent}%, calc(100% - 9px))` }}
-                  aria-hidden="true"
-                />
-                <input
-                  className="poll-limit-range"
-                  type="range"
-                  min={0}
-                  max={SLIDER_STEPS}
-                  step={1}
-                  value={sliderPosition}
-                  aria-label={t("form.limitSlider")}
-                  onChange={(event) => applyLimit(sliderToValue(Number(event.target.value)))}
-                />
+              <div className="poll-limit-slider-container">
+                <div className="poll-limit-track">
+                  <div className="poll-limit-rail" />
+                  {sliderPercent > 0 ? (
+                    <div className="poll-limit-fill" style={{ width: `${sliderPercent}%` }} />
+                  ) : null}
+                  <span
+                    className="poll-limit-thumb"
+                    style={{ left: `clamp(9px, ${sliderPercent}%, calc(100% - 9px))` }}
+                    aria-hidden="true"
+                  />
+                  <input
+                    className="poll-limit-range"
+                    type="range"
+                    min={0}
+                    max={SLIDER_STEPS}
+                    step={1}
+                    value={sliderPosition}
+                    aria-label={t("form.limitSlider")}
+                    onChange={(event) => applyLimit(sliderToValue(Number(event.target.value)))}
+                  />
+                </div>
+
+                <div className="poll-limit-ticks" aria-hidden="true">
+                  <span
+                    role="presentation"
+                    onClick={() => applyLimit(null)}
+                    className={numericLimit === null ? "is-active" : ""}
+                  >
+                    {t("polls.unlimitedBallots")}
+                  </span>
+                  <span
+                    role="presentation"
+                    onClick={() => applyLimit(10)}
+                    className={numericLimit === 10 ? "is-active" : ""}
+                  >
+                    10
+                  </span>
+                  <span
+                    role="presentation"
+                    onClick={() => applyLimit(50)}
+                    className={numericLimit === 50 ? "is-active" : ""}
+                  >
+                    50
+                  </span>
+                  <span
+                    role="presentation"
+                    onClick={() => applyLimit(100)}
+                    className={numericLimit === 100 ? "is-active" : ""}
+                  >
+                    100
+                  </span>
+                  <span
+                    role="presentation"
+                    onClick={() => applyLimit(1000)}
+                    className={numericLimit === 1000 ? "is-active" : ""}
+                  >
+                    1k
+                  </span>
+                  <span
+                    role="presentation"
+                    onClick={() => applyLimit(100000)}
+                    className={numericLimit === 100000 ? "is-active" : ""}
+                  >
+                    100k
+                  </span>
+                </div>
               </div>
             </div>
 

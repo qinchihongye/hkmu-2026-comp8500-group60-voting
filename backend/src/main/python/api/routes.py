@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from src.main.python.api.admin.admin_get import router as admin_router
 from src.main.python.api.auth.auth_get import router as auth_get_router
 from src.main.python.api.auth.auth_post import router as auth_post_router
+from src.main.python.api.demo.demo_get import router as demo_router
 from src.main.python.api.guest.guest_post import router as guest_router
 from src.main.python.api.health.health_get import router as health_router
 from src.main.python.api.poll.poll_get import router as poll_get_router
@@ -34,3 +35,4 @@ api_router.include_router(vote_get_router)
 api_router.include_router(result_router)
 api_router.include_router(share_router)
 api_router.include_router(admin_router)
+api_router.include_router(demo_router)

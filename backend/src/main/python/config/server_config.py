@@ -31,6 +31,7 @@ class Settings(BaseSettings):
         poll_text_parse_reasoning_effort: 思考强度。空则不传。
         poll_text_parse_stream: 是否要求模型流式返回。识别只消费一次完整 JSON。
         poll_text_parse_response_format: 模型输出格式，json_schema 或 json_object。
+        demo_polls_enabled: 是否在启动时补齐固定示例，并向登录用户开放目录接口。
     """
 
     model_config = SettingsConfigDict(
@@ -59,6 +60,7 @@ class Settings(BaseSettings):
     poll_text_parse_reasoning_effort: str = ""
     poll_text_parse_stream: bool = False
     poll_text_parse_response_format: str = "json_schema"
+    demo_polls_enabled: bool = False
 
     @field_validator("allowed_origins", mode="before")
     @classmethod

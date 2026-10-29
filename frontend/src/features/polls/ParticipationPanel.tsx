@@ -175,7 +175,7 @@ export function ParticipationPanel({
           </button>
         </div>
       ) : null}
-      {detail.passcode_entry_path && !detail.has_voted && detail.effective_status !== "CLOSED" ? (
+      {detail.passcode_entry_path && !detail.has_voted && (detail.effective_status !== "CLOSED" || !detail.can_view_results) ? (
         <div style={{ padding: "12px 18px", background: "#fef3c7", borderRadius: 12, border: "1px solid #fde68a", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
           <span style={{ color: "#92400e", fontWeight: 600 }}>{t("access.voteLocked")}</span>
           <Link to={detail.passcode_entry_path} className="view-btn view-btn-primary" style={{ padding: "8px 18px", fontSize: "0.9rem", textDecoration: "none" }}>

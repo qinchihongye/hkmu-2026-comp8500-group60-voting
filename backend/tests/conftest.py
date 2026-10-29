@@ -55,6 +55,7 @@ def build_settings(**overrides: object) -> Settings:
         "poll_text_parse_reasoning_effort": "",
         "poll_text_parse_stream": False,
         "poll_text_parse_response_format": "json_schema",
+        "demo_polls_enabled": False,
     }
     payload.update(overrides)
     return Settings(**payload)

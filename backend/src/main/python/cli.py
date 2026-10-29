@@ -11,6 +11,10 @@ from pwdlib import PasswordHash
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
+from src.main.python.algorithms.demo_module.demo_seed_service import (
+    DemoSeedError,
+    ensure_demo_polls,
+)
 from src.main.python.algorithms.poll_module.poll_service import PollService
 from src.main.python.config.database_config import create_session_factory, dispose_session_factory
 from src.main.python.config.logger_config import get_logger, setup_logging
@@ -114,6 +118,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_seed_demo()
     if args == ["new-demo-round"]:
         return _run_new_demo_round()
+    if args == ["ensure-demo-polls"]:
+        return _run_ensure_demo_polls()
     logger.error("未知命令")
     return 2
 
@@ -163,6 +169,38 @@ def _run_new_demo_round() -> int:
         )
     except SeedConflict as exc:
         logger.error("%s", exc)
+        return 1
+    finally:
+        dispose_session_factory(factory)
+    return 0
+
+
+def _run_ensure_demo_polls() -> int:
+    """补齐缺失的固定示例。关闭开关时不连接数据库。
+
+    启用后密码只从环境变量读取。空值直接失败，不在容器里询问。
+
+    Returns:
+        进程退出码。成功或开关关闭为 0，密码或种子冲突为 1。
+    """
+    settings = get_settings()
+    if not settings.demo_polls_enabled:
+        logger.info("固定示例已关闭，未写入")
+        return 0
+    try:
+        password = check_access_password(os.environ.get("DEMO_POLL_PASSWORD", ""))
+    except ValueError:
+        logger.error("启用固定示例时 DEMO_POLL_PASSWORD 不能为空")
+        return 1
+    factory = create_session_factory(settings.database_url)
+    try:
+        ensure_demo_polls(
+            factory,
+            Clock(),
+            password,
+            hmac_key=settings.anon_voter_hmac_key,
+        )
+    except DemoSeedError:
         return 1
     finally:
         dispose_session_factory(factory)

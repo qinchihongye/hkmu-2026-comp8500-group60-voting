@@ -32,6 +32,8 @@ services:
       # 容器内改走服务名 postgres，覆盖 .env 里的 127.0.0.1。
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       TEST_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${TEST_POSTGRES_DB}
+      # environment 会覆盖 env_file。未设置时本课程栈默认生成固定示例。
+      DEMO_POLLS_ENABLED: ${DEMO_POLLS_ENABLED:-true}
     depends_on:
       postgres:
         condition: service_healthy

@@ -21,6 +21,9 @@ describe("DashboardPage", () => {
       if (url.includes("/guest/context")) {
         return guestOk();
       }
+      if (url.includes("/demo-polls")) {
+        return emptyPage(0);
+      }
       if (url.includes("/me/votes")) {
         return envelope({
           items: [
@@ -66,6 +69,9 @@ describe("DashboardPage", () => {
       if (url.includes("/guest/context")) {
         return guestOk();
       }
+      if (url.includes("/demo-polls")) {
+        return emptyPage(0);
+      }
       if (url.includes("/me/votes")) {
         return emptyPage(0);
       }
@@ -99,6 +105,9 @@ describe("DashboardPage", () => {
       if (url.includes("/guest/context")) {
         return guestOk();
       }
+      if (url.includes("/demo-polls")) {
+        return emptyPage(0);
+      }
       if (url.includes("/me/votes")) {
         return emptyPage(1);
       }
@@ -122,5 +131,33 @@ describe("DashboardPage", () => {
     await user.click(screen.getByRole("button", { name: "Try again" }));
     await waitFor(() => expect(screen.getByRole("link", { name: "Recovered plaza" })).toHaveAttribute("href", "/polls/9"));
     expect(listCalls).toBeGreaterThan(failedCalls);
+  });
+
+  it("示例区失败时公开列表仍然显示", async () => {
+    installFetch((url) => {
+      if (url.includes("/auth/me")) {
+        return sessionOf("USER");
+      }
+      if (url.includes("/guest/context")) {
+        return guestOk();
+      }
+      if (url.includes("/demo-polls")) {
+        return fail(ApiCode.SERVICE_UNAVAILABLE, "demo busy", 503);
+      }
+      if (url.includes("/me/votes")) {
+        return emptyPage(0);
+      }
+      if (url.includes("/polls") && url.includes("status=OPEN")) {
+        return envelope({ items: [], page: 1, page_size: 1, total: 2 });
+      }
+      if (url.includes("/polls")) {
+        return pageOf([samplePoll({ id: 4, title: "Public still here" })]);
+      }
+      return envelope(null, 404, ApiCode.NOT_FOUND, "资源不存在");
+    });
+    renderRoute("/overview");
+    await waitFor(() => expect(screen.getByRole("link", { name: "Public still here" })).toBeInTheDocument());
+    expect(screen.getByTestId("demo-polls")).toBeInTheDocument();
+    expect(screen.getByText("The service is temporarily unavailable.")).toBeInTheDocument();
   });
 });

@@ -200,21 +200,23 @@
 .poll-card {
   flex-shrink: 0;
   min-height: max-content;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(226, 232, 240, 0.85);
-  border-radius: 18px;
+  border-radius: 20px;
   padding: 24px 26px;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 6px 18px -2px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 10px 30px -4px rgba(15, 23, 42, 0.04), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s ease;
 }
 
 .poll-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 28px -6px rgba(19, 99, 223, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 18px 40px -6px rgba(19, 99, 223, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
   border-color: rgba(19, 99, 223, 0.28);
 }
 
@@ -264,8 +266,8 @@
 
 .poll-badge-open {
   background: #ecfdf5;
-  color: #15803d;
-  border: 1px solid #bbf7d0;
+  color: #059669;
+  border: 1px solid #a7f3d0;
 }
 
 .poll-badge-private {
@@ -276,7 +278,7 @@
 
 .poll-badge-upcoming {
   background: #fffbeb;
-  color: #b45309;
+  color: #d97706;
   border: 1px solid #fde68a;
 }
 
@@ -285,6 +287,7 @@
   height: 6px;
   border-radius: 50%;
   background: currentColor;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
 }
 
 /* Time & Participant Row */
@@ -358,7 +361,7 @@
 
 .poll-progress-track {
   width: 100%;
-  height: 7px;
+  height: 8px;
   background: #edf2f7;
   border-radius: 9999px;
   overflow: hidden;
@@ -372,15 +375,18 @@
 }
 
 .poll-progress-fill-blue {
-  background: #1363df;
+  background: linear-gradient(90deg, #1363df 0%, #38bdf8 100%);
+  box-shadow: 0 0 10px rgba(19, 99, 223, 0.35);
 }
 
 .poll-progress-fill-coral {
-  background: #f43f5e;
+  background: linear-gradient(90deg, #f43f5e 0%, #fb7185 100%);
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.35);
 }
 
 .poll-progress-fill-amber {
-  background: #f59e0b;
+  background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
 }
 
 /* Description sits under the progress row and stays fully visible. */
@@ -406,15 +412,15 @@
   align-items: center;
   justify-content: center;
   padding: 8px 18px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
   background: #ffffff;
   color: #0f172a;
   font-size: 0.88rem;
   font-weight: 600;
   text-decoration: none;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .poll-card-btn:hover {
@@ -422,6 +428,7 @@
   border-color: #cbd5e1;
   color: #1363df;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(19, 99, 223, 0.12);
 }
 
 /* Decorative 3D Ribbon Accent for Card 4 */
@@ -602,4 +609,29 @@
     font-size: 0.88rem;
     justify-content: center;
   }
+}
+
+.demo-polls {
+  margin-bottom: 28px;
+}
+
+.demo-polls-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.demo-polls-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.demo-polls-search {
+  margin-bottom: 16px;
+  max-width: 360px;
 }

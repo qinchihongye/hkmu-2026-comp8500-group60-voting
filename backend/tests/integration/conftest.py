@@ -33,6 +33,8 @@ APPLICATION_TABLES = frozenset(
         "poll_options",
         "polls",
         "users",
+        "demo_fixture_users",
+        "demo_poll_fixtures",
         "vote_selections",
         "votes",
     }
@@ -160,7 +162,7 @@ def downgrade_base(test_url: str, dev_url: str) -> None:
 
 
 def truncate_application_tables(engine: Engine) -> None:
-    """清空九张业务表并重置自增序号。
+    """清空业务表并重置自增序号。
 
     Args:
         engine: 已经过守卫的测试库引擎。

@@ -27,7 +27,14 @@ export function PollCard({ poll }: { poll: PollSummary }) {
         ? t("visibility.private")
         : t("status.open");
   const action = isClosed ? t("polls.viewResults") : isScheduled ? t("polls.viewDetails") : t("polls.viewPoll");
-  const href = isClosed ? `/polls/${poll.id}/results` : `/polls/${poll.id}`;
+  const href = isPrivate || !isClosed ? `/polls/${poll.id}` : `/polls/${poll.id}/results`;
+  const choice = poll.selection_mode === "MULTIPLE" ? t("polls.multipleChoice") : t("polls.singleChoice");
+  const cap = poll.vote_limit == null ? t("polls.unlimitedBallots") : t("polls.ballotCap", { count: poll.vote_limit });
+  const results = isClosed
+    ? t("polls.finalResults")
+    : poll.allow_live_results
+      ? t("polls.liveResults")
+      : t("polls.resultsAfterClose");
 
   return (
     <article className="plaza-card" data-testid="poll-card">
@@ -44,6 +51,12 @@ export function PollCard({ poll }: { poll: PollSummary }) {
           {isOpen && !isPrivate ? <span className="plaza-badge-dot" /> : null}
           {badgeLabel}
         </span>
+      </div>
+
+      <div className="plaza-card-tags">
+        <span className="plaza-card-tag">{choice}</span>
+        <span className="plaza-card-tag">{cap}</span>
+        <span className="plaza-card-tag">{results}</span>
       </div>
 
       <div className="plaza-card-time">

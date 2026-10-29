@@ -75,7 +75,7 @@ def test_empty_database_upgrades_downgrades_and_returns_to_head(
 
 
 def _assert_schema(engine: Engine) -> None:
-    """核对九张表、外键删除规则、部分唯一索引和票表字段。
+    """核对业务表、外键删除规则、部分唯一索引和票表字段。
 
     Args:
         engine: 已迁移的测试库引擎。
@@ -94,6 +94,14 @@ def _assert_schema(engine: Engine) -> None:
         "voter_id",
     }
     assert columns["vote_selections"] == {"option_id", "poll_id", "vote_id"}
+    assert columns["demo_poll_fixtures"] == {
+        "dataset_version",
+        "display_order",
+        "fixture_key",
+        "initialized_at",
+        "poll_id",
+    }
+    assert columns["demo_fixture_users"] == {"fixture_key", "user_id"}
     assert "vote_limit" in columns["polls"]
     assert "selection_mode" in columns["polls"]
     assert "user_id" not in columns["guest_sessions"]
@@ -105,6 +113,8 @@ def _assert_schema(engine: Engine) -> None:
     assert delete_actions["fk_vote_selections_option"] == "r"
     assert delete_actions["fk_vote_selections_vote"] == "r"
     assert delete_actions["fk_votes_poll_mode"] == "r"
+    assert delete_actions["fk_demo_poll_fixtures_poll_id_polls"] == "r"
+    assert delete_actions["fk_demo_fixture_users_user_id_users"] == "r"
     assert set(delete_actions.values()) == {"r"}
 
     indexes = _index_definitions(engine)

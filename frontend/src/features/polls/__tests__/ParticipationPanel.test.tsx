@@ -317,6 +317,31 @@ describe("ParticipationPanel", () => {
     expect(screen.queryByRole("link", { name: "Enter passcode" })).not.toBeInTheDocument();
   });
 
+  it("已结束的私密场次在不能看结果时仍给出密码入口", async () => {
+    installFetch((url) => {
+      if (url.includes("/auth/me")) {
+        return fail(ApiCode.UNAUTHENTICATED, "需要登录", 401);
+      }
+      if (url.includes("/guest/context")) {
+        return guestOk();
+      }
+      return fail(ApiCode.NOT_FOUND, "资源不存在", 404);
+    });
+    const locked = samplePoll({
+      visibility: "PRIVATE",
+      effective_status: "CLOSED",
+      can_vote: false,
+      can_view_results: false,
+      needs_access_password: true,
+      passcode_entry_path: "/s/share-code/access",
+    });
+    render(panel(accessFor(locked)));
+    expect(await screen.findByRole("link", { name: "Enter passcode" })).toHaveAttribute(
+      "href",
+      "/s/share-code/access",
+    );
+  });
+
   it("访客初始化失败后可以在页内重试", async () => {
     let guests = 0;
     installFetch((url) => {

@@ -3,6 +3,7 @@ import { Alert } from "antd";
 
 import { useAuth } from "../features/auth/AuthProvider";
 import { getMyVotes, getPolls } from "../features/polls/api";
+import { DemoPollSection } from "../features/polls/DemoPollSection";
 import { PollCard } from "../features/polls/PollCard";
 import { useFailure } from "../i18n/errors";
 import { useI18n } from "../i18n/LocaleProvider";
@@ -153,6 +154,8 @@ export function DashboardPage() {
           </div>
         </div>
       </header>
+
+      {auth.status === "authenticated" ? <DemoPollSection /> : null}
 
       <div className="dashboard-board">
         <div className="dashboard-grid">

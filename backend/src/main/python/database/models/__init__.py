@@ -1,8 +1,9 @@
-"""汇总九张表，供迁移和元数据使用。"""
+"""汇总业务表，供迁移和元数据使用。"""
 
 from src.main.python.database.models.access_grant import PollAccessGrant
 from src.main.python.database.models.audit import AuditEvent
 from src.main.python.database.models.base import Base
+from src.main.python.database.models.demo_fixture import DemoFixtureUser, DemoPollFixture
 from src.main.python.database.models.guest import GuestSession
 from src.main.python.database.models.poll import Poll, PollOption
 from src.main.python.database.models.session import AuthSession
@@ -14,6 +15,8 @@ __all__ = [
     "AuditEvent",
     "AuthSession",
     "Base",
+    "DemoFixtureUser",
+    "DemoPollFixture",
     "GuestSession",
     "Poll",
     "PollAccessGrant",

@@ -3,6 +3,10 @@
 from fastapi import Query, Request
 
 from src.main.python.algorithms.auth_module.auth_service import AuthService
+from src.main.python.algorithms.demo_module.demo_catalog_service import (
+    DemoCatalogService,
+    DemoListFilters,
+)
 from src.main.python.algorithms.guest_module.guest_service import GuestService
 from src.main.python.algorithms.poll_access_module.poll_access_service import PollAccessService
 from src.main.python.algorithms.poll_import_module.poll_text_parse_service import (
@@ -250,3 +254,38 @@ def poll_list_filters(
         交给投票服务的筛选条件。
     """
     return PollListFilters(page=page, page_size=page_size, status=status, text=q)
+
+
+def demo_list_filters(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=8, ge=1, le=50),
+    q: str | None = Query(default=None, max_length=120),
+) -> DemoListFilters:
+    """读取示例目录的分页和搜索。
+
+    Args:
+        page: 页码，从 1 开始。
+        page_size: 每页条数，最大 50。
+        q: 标题或目录键。最长 120 个字符。
+
+    Returns:
+        交给目录服务的筛选条件。
+    """
+    return DemoListFilters(page=page, page_size=page_size, text=q)
+
+
+def demo_catalog_service_for(request: Request) -> DemoCatalogService:
+    """按当前配置构造示例目录服务。
+
+    Args:
+        request: 当前 HTTP 请求。
+
+    Returns:
+        使用本进程会话工厂、时钟和开关的服务。
+    """
+    settings: Settings = request.app.state.settings
+    return DemoCatalogService(
+        request.app.state.session_factory,
+        request.app.state.clock,
+        settings.demo_polls_enabled,
+    )

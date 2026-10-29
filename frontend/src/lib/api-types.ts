@@ -67,6 +67,11 @@ export type PollSummary = {
   created_at: string;
 };
 
+export type DemoPollSummary = PollSummary & {
+  fixture_key: string;
+  display_order: number;
+};
+
 export type ManagePollSummary = PollSummary & {
   lifecycle: PollLifecycle | string;
   version: number;

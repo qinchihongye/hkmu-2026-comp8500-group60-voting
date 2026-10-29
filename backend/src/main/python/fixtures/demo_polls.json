@@ -1,0 +1,1234 @@
+{
+  "dataset_version": "2026-10-29.1",
+  "fixture_users": [
+    {
+      "key": "fixture-voter-01",
+      "username": "fixture_voter_01",
+      "display_name": "Fixture voter 01"
+    },
+    {
+      "key": "fixture-voter-02",
+      "username": "fixture_voter_02",
+      "display_name": "Fixture voter 02"
+    },
+    {
+      "key": "fixture-voter-03",
+      "username": "fixture_voter_03",
+      "display_name": "Fixture voter 03"
+    }
+  ],
+  "polls": [
+    {
+      "key": "named-public-01",
+      "display_order": 1,
+      "title": "Technical sharing topics · A01",
+      "description": "Choose the topic you would like to discuss.",
+      "identity_mode": "NAMED",
+      "visibility": "PUBLIC",
+      "vote_limit": null,
+      "selection_mode": "SINGLE",
+      "allow_live_results": false,
+      "options": [
+        "React concurrency",
+        "PostgreSQL indexing",
+        "Automated testing",
+        "API design"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "named-public-02",
+      "display_order": 2,
+      "title": "Technical sharing topics · A02",
+      "description": "Choose the topic you would like to discuss.",
+      "identity_mode": "NAMED",
+      "visibility": "PUBLIC",
+      "vote_limit": null,
+      "selection_mode": "SINGLE",
+      "allow_live_results": true,
+      "options": [
+        "React concurrency",
+        "PostgreSQL indexing",
+        "Automated testing",
+        "API design"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "named-public-03",
+      "display_order": 3,
+      "title": "Technical sharing topics · A03",
+      "description": "Choose the topics you would like to discuss.",
+      "identity_mode": "NAMED",
+      "visibility": "PUBLIC",
+      "vote_limit": null,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": false,
+      "options": [
+        "React concurrency",
+        "PostgreSQL indexing",
+        "Automated testing",
+        "API design"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "named-public-04",
+      "display_order": 4,
+      "title": "Technical sharing topics · A04",
+      "description": "Choose the topics you would like to discuss.",
+      "identity_mode": "NAMED",
+      "visibility": "PUBLIC",
+      "vote_limit": null,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": true,
+      "options": [
+        "React concurrency",
+        "PostgreSQL indexing",
+        "Automated testing",
+        "API design"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "named-public-05",
+      "display_order": 5,
+      "title": "Technical sharing topics · A05",
+      "description": "Choose the topic you would like to discuss.",
+      "identity_mode": "NAMED",
+      "visibility": "PUBLIC",
+      "vote_limit": 20,
+      "selection_mode": "SINGLE",
+      "allow_live_results": false,
+      "options": [
+        "React concurrency",
+        "PostgreSQL indexing",
+        "Automated testing",
+        "API design"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "named-public-06",
+      "display_order": 6,
+      "title": "Technical sharing topics · A06",
+      "description": "Choose the topic you would like to discuss.",
+      "identity_mode": "NAMED",
+      "visibility": "PUBLIC",
+      "vote_limit": 20,
+      "selection_mode": "SINGLE",
+      "allow_live_results": true,
+      "options": [
+        "React concurrency",
+        "PostgreSQL indexing",
+        "Automated testing",
+        "API design"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "named-public-07",
+      "display_order": 7,
+      "title": "Technical sharing topics · A07",
+      "description": "Choose the topics you would like to discuss.",
+      "identity_mode": "NAMED",
+      "visibility": "PUBLIC",
+      "vote_limit": 20,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": false,
+      "options": [
+        "React concurrency",
+        "PostgreSQL indexing",
+        "Automated testing",
+        "API design"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "named-public-08",
+      "display_order": 8,
+      "title": "Technical sharing topics · A08",
+      "description": "Choose the topics you would like to discuss.",
+      "identity_mode": "NAMED",
+      "visibility": "PUBLIC",
+      "vote_limit": 20,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": true,
+      "options": [
+        "React concurrency",
+        "PostgreSQL indexing",
+        "Automated testing",
+        "API design"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "anonymous-public-01",
+      "display_order": 9,
+      "title": "Campus activity preferences · B01",
+      "description": "Choose the activity you would like to join.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PUBLIC",
+      "vote_limit": null,
+      "selection_mode": "SINGLE",
+      "allow_live_results": false,
+      "options": [
+        "Film night",
+        "Hiking",
+        "Board games",
+        "Photography"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "anonymous-public-02",
+      "display_order": 10,
+      "title": "Campus activity preferences · B02",
+      "description": "Choose the activity you would like to join.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PUBLIC",
+      "vote_limit": null,
+      "selection_mode": "SINGLE",
+      "allow_live_results": true,
+      "options": [
+        "Film night",
+        "Hiking",
+        "Board games",
+        "Photography"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "anonymous-public-03",
+      "display_order": 11,
+      "title": "Campus activity preferences · B03",
+      "description": "Choose the activities you would like to join.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PUBLIC",
+      "vote_limit": null,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": false,
+      "options": [
+        "Film night",
+        "Hiking",
+        "Board games",
+        "Photography"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "anonymous-public-04",
+      "display_order": 12,
+      "title": "Campus activity preferences · B04",
+      "description": "Choose the activities you would like to join.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PUBLIC",
+      "vote_limit": null,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": true,
+      "options": [
+        "Film night",
+        "Hiking",
+        "Board games",
+        "Photography"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "anonymous-public-05",
+      "display_order": 13,
+      "title": "Campus activity preferences · B05",
+      "description": "Choose the activity you would like to join.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PUBLIC",
+      "vote_limit": 20,
+      "selection_mode": "SINGLE",
+      "allow_live_results": false,
+      "options": [
+        "Film night",
+        "Hiking",
+        "Board games",
+        "Photography"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "anonymous-public-06",
+      "display_order": 14,
+      "title": "Campus activity preferences · B06",
+      "description": "Choose the activity you would like to join.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PUBLIC",
+      "vote_limit": 20,
+      "selection_mode": "SINGLE",
+      "allow_live_results": true,
+      "options": [
+        "Film night",
+        "Hiking",
+        "Board games",
+        "Photography"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "anonymous-public-07",
+      "display_order": 15,
+      "title": "Campus activity preferences · B07",
+      "description": "Choose the activities you would like to join.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PUBLIC",
+      "vote_limit": 20,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": false,
+      "options": [
+        "Film night",
+        "Hiking",
+        "Board games",
+        "Photography"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "anonymous-public-08",
+      "display_order": 16,
+      "title": "Campus activity preferences · B08",
+      "description": "Choose the activities you would like to join.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PUBLIC",
+      "vote_limit": 20,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": true,
+      "options": [
+        "Film night",
+        "Hiking",
+        "Board games",
+        "Photography"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "named-private-01",
+      "display_order": 17,
+      "title": "Project workshop priorities · C01",
+      "description": "Choose the priority you would like to focus on.",
+      "identity_mode": "NAMED",
+      "visibility": "PRIVATE",
+      "vote_limit": null,
+      "selection_mode": "SINGLE",
+      "allow_live_results": false,
+      "options": [
+        "Requirements",
+        "Architecture",
+        "Implementation",
+        "Testing"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "named-private-02",
+      "display_order": 18,
+      "title": "Project workshop priorities · C02",
+      "description": "Choose the priority you would like to focus on.",
+      "identity_mode": "NAMED",
+      "visibility": "PRIVATE",
+      "vote_limit": null,
+      "selection_mode": "SINGLE",
+      "allow_live_results": true,
+      "options": [
+        "Requirements",
+        "Architecture",
+        "Implementation",
+        "Testing"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "named-private-03",
+      "display_order": 19,
+      "title": "Project workshop priorities · C03",
+      "description": "Choose the priorities you would like to focus on.",
+      "identity_mode": "NAMED",
+      "visibility": "PRIVATE",
+      "vote_limit": null,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": false,
+      "options": [
+        "Requirements",
+        "Architecture",
+        "Implementation",
+        "Testing"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "named-private-04",
+      "display_order": 20,
+      "title": "Project workshop priorities · C04",
+      "description": "Choose the priorities you would like to focus on.",
+      "identity_mode": "NAMED",
+      "visibility": "PRIVATE",
+      "vote_limit": null,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": true,
+      "options": [
+        "Requirements",
+        "Architecture",
+        "Implementation",
+        "Testing"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "named-private-05",
+      "display_order": 21,
+      "title": "Project workshop priorities · C05",
+      "description": "Choose the priority you would like to focus on.",
+      "identity_mode": "NAMED",
+      "visibility": "PRIVATE",
+      "vote_limit": 20,
+      "selection_mode": "SINGLE",
+      "allow_live_results": false,
+      "options": [
+        "Requirements",
+        "Architecture",
+        "Implementation",
+        "Testing"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "named-private-06",
+      "display_order": 22,
+      "title": "Project workshop priorities · C06",
+      "description": "Choose the priority you would like to focus on.",
+      "identity_mode": "NAMED",
+      "visibility": "PRIVATE",
+      "vote_limit": 20,
+      "selection_mode": "SINGLE",
+      "allow_live_results": true,
+      "options": [
+        "Requirements",
+        "Architecture",
+        "Implementation",
+        "Testing"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "named-private-07",
+      "display_order": 23,
+      "title": "Project workshop priorities · C07",
+      "description": "Choose the priorities you would like to focus on.",
+      "identity_mode": "NAMED",
+      "visibility": "PRIVATE",
+      "vote_limit": 20,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": false,
+      "options": [
+        "Requirements",
+        "Architecture",
+        "Implementation",
+        "Testing"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "named-private-08",
+      "display_order": 24,
+      "title": "Project workshop priorities · C08",
+      "description": "Choose the priorities you would like to focus on.",
+      "identity_mode": "NAMED",
+      "visibility": "PRIVATE",
+      "vote_limit": 20,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": true,
+      "options": [
+        "Requirements",
+        "Architecture",
+        "Implementation",
+        "Testing"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "anonymous-private-01",
+      "display_order": 25,
+      "title": "Team retrospective priorities · D01",
+      "description": "Choose the retrospective item you would like to address.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PRIVATE",
+      "vote_limit": null,
+      "selection_mode": "SINGLE",
+      "allow_live_results": false,
+      "options": [
+        "Communication",
+        "Planning",
+        "Tooling",
+        "Workload"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "anonymous-private-02",
+      "display_order": 26,
+      "title": "Team retrospective priorities · D02",
+      "description": "Choose the retrospective item you would like to address.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PRIVATE",
+      "vote_limit": null,
+      "selection_mode": "SINGLE",
+      "allow_live_results": true,
+      "options": [
+        "Communication",
+        "Planning",
+        "Tooling",
+        "Workload"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "anonymous-private-03",
+      "display_order": 27,
+      "title": "Team retrospective priorities · D03",
+      "description": "Choose the retrospective items you would like to address.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PRIVATE",
+      "vote_limit": null,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": false,
+      "options": [
+        "Communication",
+        "Planning",
+        "Tooling",
+        "Workload"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "anonymous-private-04",
+      "display_order": 28,
+      "title": "Team retrospective priorities · D04",
+      "description": "Choose the retrospective items you would like to address.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PRIVATE",
+      "vote_limit": null,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": true,
+      "options": [
+        "Communication",
+        "Planning",
+        "Tooling",
+        "Workload"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "anonymous-private-05",
+      "display_order": 29,
+      "title": "Team retrospective priorities · D05",
+      "description": "Choose the retrospective item you would like to address.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PRIVATE",
+      "vote_limit": 20,
+      "selection_mode": "SINGLE",
+      "allow_live_results": false,
+      "options": [
+        "Communication",
+        "Planning",
+        "Tooling",
+        "Workload"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "anonymous-private-06",
+      "display_order": 30,
+      "title": "Team retrospective priorities · D06",
+      "description": "Choose the retrospective item you would like to address.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PRIVATE",
+      "vote_limit": 20,
+      "selection_mode": "SINGLE",
+      "allow_live_results": true,
+      "options": [
+        "Communication",
+        "Planning",
+        "Tooling",
+        "Workload"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "anonymous-private-07",
+      "display_order": 31,
+      "title": "Team retrospective priorities · D07",
+      "description": "Choose the retrospective items you would like to address.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PRIVATE",
+      "vote_limit": 20,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": false,
+      "options": [
+        "Communication",
+        "Planning",
+        "Tooling",
+        "Workload"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "anonymous-private-08",
+      "display_order": 32,
+      "title": "Team retrospective priorities · D08",
+      "description": "Choose the retrospective items you would like to address.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PRIVATE",
+      "vote_limit": 20,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": true,
+      "options": [
+        "Communication",
+        "Planning",
+        "Tooling",
+        "Workload"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "state-scheduled",
+      "display_order": 33,
+      "title": "Upcoming campus event",
+      "description": "Choose the event you would like to attend.",
+      "identity_mode": "NAMED",
+      "visibility": "PUBLIC",
+      "vote_limit": null,
+      "selection_mode": "SINGLE",
+      "allow_live_results": false,
+      "options": [
+        "Welcome fair",
+        "Club showcase",
+        "Campus tour",
+        "Opening concert"
+      ],
+      "start_offset_hours": 24,
+      "end_offset_hours": 168,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": []
+    },
+    {
+      "key": "state-closed",
+      "display_order": 34,
+      "title": "Completed workshop survey",
+      "description": "Choose the parts of the workshop you would like to rate.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PUBLIC",
+      "vote_limit": null,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": false,
+      "options": [
+        "Session length",
+        "Hands-on labs",
+        "Speaker lineup",
+        "Venue layout"
+      ],
+      "start_offset_hours": -168,
+      "end_offset_hours": -24,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "state-manually-closed",
+      "display_order": 35,
+      "title": "Completed team decision",
+      "description": "Choose the decision you would like the team to adopt.",
+      "identity_mode": "NAMED",
+      "visibility": "PRIVATE",
+      "vote_limit": null,
+      "selection_mode": "SINGLE",
+      "allow_live_results": true,
+      "options": [
+        "Keep the current scope",
+        "Split the milestone",
+        "Add a review gate",
+        "Pause new work"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "CLOSED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "state-cap-full",
+      "display_order": 36,
+      "title": "Fully booked activity",
+      "description": "Choose the sessions you would like to join.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PUBLIC",
+      "vote_limit": 3,
+      "selection_mode": "MULTIPLE",
+      "allow_live_results": true,
+      "options": [
+        "Morning workshop",
+        "Afternoon lab",
+        "Evening talk",
+        "Weekend clinic"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "CLOSED",
+      "seed_ballots": [
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    {
+      "key": "state-cap-last",
+      "display_order": 37,
+      "title": "Final workshop place",
+      "description": "Choose the lab you would like to join.",
+      "identity_mode": "NAMED",
+      "visibility": "PUBLIC",
+      "vote_limit": 4,
+      "selection_mode": "SINGLE",
+      "allow_live_results": true,
+      "options": [
+        "Frontend lab",
+        "Backend lab",
+        "Data lab",
+        "Design lab"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          2
+        ]
+      ]
+    },
+    {
+      "key": "state-empty",
+      "display_order": 38,
+      "title": "New campus suggestion",
+      "description": "Choose the campus change you would like to suggest.",
+      "identity_mode": "ANONYMOUS",
+      "visibility": "PUBLIC",
+      "vote_limit": null,
+      "selection_mode": "SINGLE",
+      "allow_live_results": true,
+      "options": [
+        "Study lounge",
+        "Bike racks",
+        "Quiet rooms",
+        "Garden seats"
+      ],
+      "start_offset_hours": -1,
+      "end_offset_hours": 720,
+      "lifecycle": "PUBLISHED",
+      "seed_ballots": []
+    }
+  ]
+}

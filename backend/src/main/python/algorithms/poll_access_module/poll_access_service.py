@@ -1,6 +1,6 @@
 """分享入口、私密授权和参与者可见的投票详情。"""
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from pwdlib import PasswordHash
 from sqlalchemy import func, select
@@ -12,7 +12,7 @@ from src.main.python.config.logger_config import get_logger
 from src.main.python.config.server_config import Settings
 from src.main.python.constants.enums import IdentityMode, PollLifecycle, PollStatus, Visibility
 from src.main.python.constants.error_codes import ApiCode
-from src.main.python.database.models import Poll, PollAccessGrant, PollOption, Vote
+from src.main.python.database.models import DemoPollFixture, Poll, PollAccessGrant, PollOption, Vote
 from src.main.python.fileds.context import GuestContext, PollAccessContext, Principal
 from src.main.python.fileds.request.poll_access_request import UnlockRequest
 from src.main.python.fileds.response.poll_access_response import AccessGrantPublic, ShareEntry
@@ -188,6 +188,8 @@ class PollAccessService:
                 creator = principal is not None and principal.user_id == poll.creator_id
                 admin = principal is not None and principal.role == "ADMIN"
                 if poll.visibility == Visibility.PRIVATE and not (creator or admin or grant_ok):
+                    if principal is not None and _is_registered_demo(session, poll.id):
+                        return _locked_demo_detail(poll, now)
                     raise _missing()
                 if poll.identity_mode == IdentityMode.NAMED and principal is None:
                     raise AppError(
@@ -275,6 +277,58 @@ def _can_unlock(poll: Poll | None) -> bool:
     if poll is None or not poll.share_code:
         return False
     return poll.lifecycle in {PollLifecycle.PUBLISHED, PollLifecycle.CLOSED}
+
+
+def _is_registered_demo(session: Session, poll_id: int) -> bool:
+    """判断这场投票是否属于固定示例目录。
+
+    Args:
+        session: 当前事务。
+        poll_id: 投票主键。
+
+    Returns:
+        已登记时为 True。真实私密投票保持不存在。
+    """
+    found = session.scalar(
+        select(DemoPollFixture.poll_id).where(DemoPollFixture.poll_id == poll_id)
+    )
+    return found is not None
+
+
+def _locked_demo_detail(poll: Poll, now: datetime) -> PollDetail:
+    """返回固定私密示例的密码入口，不带选项和结果。
+
+    Args:
+        poll: 已登记的私密示例。
+        now: 当前时间。
+
+    Returns:
+        只含规则摘要和密码页路径的详情。
+    """
+    return PollDetail(
+        id=poll.id,
+        title=poll.title,
+        identity_mode=poll.identity_mode,
+        visibility=poll.visibility,
+        vote_limit=poll.vote_limit,
+        selection_mode=poll.selection_mode,
+        allow_live_results=poll.allow_live_results,
+        starts_at=poll.starts_at,
+        ends_at=poll.ends_at,
+        effective_status=effective_status(poll, now),
+        created_at=poll.created_at,
+        description=None,
+        options=[],
+        has_voted=False,
+        receipt=None,
+        server_time=now,
+        can_vote=False,
+        can_manage=False,
+        can_view_results=False,
+        results_access_reason="unavailable",
+        needs_access_password=True,
+        passcode_entry_path=_passcode_entry_path(poll.share_code, True),
+    )
 
 
 def _passcode_entry_path(share_code: str | None, needs_access_password: bool) -> str | None:
