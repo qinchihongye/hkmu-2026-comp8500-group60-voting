@@ -110,4 +110,54 @@ describe("PollTextImport", () => {
 
     expect(screen.getByText(/Successfully parsed and auto-filled|已成功识别并自动填入表单/)).toBeInTheDocument();
   });
+
+  it("点击预览 JSON，弹出 JSON 预览弹窗并支持应用到表单", async () => {
+    vi.mocked(api.getPollTextImportCapabilities).mockResolvedValueOnce({
+      enabled: true,
+      max_text_length: 10000,
+      timezone: "Asia/Hong_Kong",
+    });
+    vi.mocked(api.parsePollText).mockResolvedValueOnce({
+      fields: {
+        title: "团队午餐投票",
+        description: "周五一起吃什么",
+        options: [{ label: "火锅" }, { label: "烤肉" }],
+        selection_mode: "SINGLE",
+      },
+      issues: [],
+      reference_time: "2026-10-28T21:00:00+08:00",
+      timezone: "Asia/Hong_Kong",
+    });
+
+    const onApply = vi.fn();
+    renderWithI18n(<PollTextImport onApply={onApply} />);
+
+    await userEvent.click(await screen.findByText(/Smart-Fast Fill|智能识别导入/i));
+    const textarea = screen.getByRole("textbox");
+    await userEvent.type(textarea, "周五团队午餐：1. 火锅 2. 烤肉");
+
+    // Click Preview JSON button
+    const previewBtn = screen.getByTestId("poll-import-btn-preview");
+    expect(previewBtn).toBeInTheDocument();
+    await userEvent.click(previewBtn);
+
+    // Modal should be visible
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByTestId("json-preview-code")).toHaveTextContent("团队午餐投票");
+
+    // Click Apply to Form inside modal
+    const applyBtn = screen.getByRole("button", { name: /Apply to form|应用到表单/ });
+    await userEvent.click(applyBtn);
+
+    expect(onApply).toHaveBeenCalledWith(
+      {
+        title: "团队午餐投票",
+        description: "周五一起吃什么",
+        options: [{ label: "火锅" }, { label: "烤肉" }],
+        selection_mode: "SINGLE",
+      },
+      [],
+    );
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
 });
