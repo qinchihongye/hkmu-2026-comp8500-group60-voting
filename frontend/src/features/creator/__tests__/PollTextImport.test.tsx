@@ -41,11 +41,11 @@ describe("PollTextImport", () => {
     const onApply = vi.fn();
     renderWithI18n(<PollTextImport onApply={onApply} />);
 
-    expect(await screen.findByText(/Import from text|智能文本识别导入/)).toBeInTheDocument();
+    expect(await screen.findByText(/Smart-Fast Fill|智能识别导入/i)).toBeInTheDocument();
     expect(screen.getByText(/Expand ▼|展开 ▼/)).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).toBeNull();
 
-    await userEvent.click(screen.getByText(/Import from text|智能文本识别导入/));
+    await userEvent.click(screen.getByText(/Smart-Fast Fill|智能识别导入/i));
     expect(screen.getByText(/Collapse ▲|收起 ▲/)).toBeInTheDocument();
     expect(screen.getByRole("textbox")).toBeInTheDocument();
   });
@@ -60,7 +60,7 @@ describe("PollTextImport", () => {
     const onApply = vi.fn();
     renderWithI18n(<PollTextImport onApply={onApply} />);
 
-    await userEvent.click(await screen.findByText(/Import from text|智能文本识别导入/));
+    await userEvent.click(await screen.findByText(/Smart-Fast Fill|智能识别导入/i));
     const textarea = screen.getByRole("textbox");
     await userEvent.type(textarea, "周五技术分享：\n1. React\n2. Vue");
     expect(textarea).toHaveValue("周五技术分享：\n1. React\n2. Vue");
@@ -90,7 +90,7 @@ describe("PollTextImport", () => {
     const onApply = vi.fn();
     renderWithI18n(<PollTextImport onApply={onApply} />);
 
-    await userEvent.click(await screen.findByText(/Import from text|智能文本识别导入/));
+    await userEvent.click(await screen.findByText(/Smart-Fast Fill|智能识别导入/i));
     const textarea = screen.getByRole("textbox");
     await userEvent.type(textarea, "周五技术分享：\n1. React\n2. Vue\n3. Angular");
 

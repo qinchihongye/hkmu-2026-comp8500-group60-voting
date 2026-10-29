@@ -4,8 +4,8 @@
 
 FROM python:3.12-slim
 
-# 安装 uv（版本与 backend/uv.lock 对应）
-COPY --from=ghcr.io/astral-sh/uv:0.13.5 /uv /uvx /bin/
+# 安装 uv（通过 pip 安装，配置国内镜像源与官方源兜底，避免从 ghcr.io 拉取镜像时的 401 权限及网络超时问题）
+RUN pip install --no-cache-dir "uv==0.13.5" -i https://pypi.tuna.tsinghua.edu.cn/simple --extra-index-url https://pypi.org/simple
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1

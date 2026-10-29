@@ -3,13 +3,13 @@ import { Alert } from "antd";
 
 import { useAuth } from "../features/auth/AuthProvider";
 import { getMyVotes, getPolls } from "../features/polls/api";
-import { DemoPollSection } from "../features/polls/DemoPollSection";
 import { PollCard } from "../features/polls/PollCard";
+import { PollSortDropdown } from "../features/polls/PollSortDropdown";
 import { useFailure } from "../i18n/errors";
 import { useI18n } from "../i18n/LocaleProvider";
-import type { PollSummary } from "../lib/api-types";
-import "../styles/dashboard.css";
+import type { PollSortBy, PollSummary } from "../lib/api-types";
 import "../styles/polls.css";
+import "../styles/dashboard.css";
 
 const pageSize = 8;
 
@@ -18,15 +18,23 @@ export function DashboardPage() {
   const auth = useAuth();
   const failure = useFailure("error.pollsLoad");
   const { setCause, clear } = failure;
+  const statusTabs = [
+    { value: "", label: t("status.all") },
+    { value: "OPEN", label: t("status.open"), dot: true },
+    { value: "SCHEDULED", label: t("status.scheduled") },
+    { value: "CLOSED", label: t("status.closed") },
+  ];
   const [openTotal, setOpenTotal] = useState<number | null>(null);
   const [namedTotal, setNamedTotal] = useState<number | null>(null);
   const [q, setQ] = useState("");
+  const [status, setStatus] = useState("");
+  const [sortBy, setSortBy] = useState<PollSortBy>("created_at");
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<PollSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
-  const queryKey = `${page}:${q}:${attempt}`;
+  const queryKey = `${page}:${q}:${status}:${sortBy}:${attempt}`;
   const [seenKey, setSeenKey] = useState(queryKey);
   if (seenKey !== queryKey) {
     setSeenKey(queryKey);
@@ -74,7 +82,13 @@ export function DashboardPage() {
 
   useEffect(() => {
     let cancelled = false;
-    void getPolls({ page, page_size: pageSize, q })
+    void getPolls({
+      page,
+      page_size: pageSize,
+      q,
+      status: status || undefined,
+      sort_by: sortBy,
+    })
       .then((result) => {
         if (cancelled) {
           return;
@@ -98,12 +112,12 @@ export function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [page, q, attempt, setCause, clear]);
+  }, [page, q, status, sortBy, attempt, setCause, clear]);
 
   const pages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <div className="dashboard-root" data-testid="dashboard">
+    <div className="polls-page-root dashboard-root" data-testid="dashboard">
       <header className="dashboard-header">
         <div className="dashboard-title-area">
           <h1 className="dashboard-heading">{t("dashboard.title")}</h1>
@@ -126,10 +140,15 @@ export function DashboardPage() {
               </div>
             ) : null}
           </div>
+        </div>
+      </header>
 
-          <div className="dashboard-search-wrap">
+      {/* Filter & Search Bar - matching Public Polls page */}
+      <div className="polls-filter-card">
+        <div className="polls-filter-main-row">
+          <div className="polls-search-wrap">
             <svg
-              className="dashboard-search-icon"
+              className="polls-search-icon"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -143,52 +162,89 @@ export function DashboardPage() {
             </svg>
             <input
               type="text"
+              className="polls-search-input"
               placeholder={t("dashboard.search")}
               value={q}
               onChange={(event) => {
                 setPage(1);
                 setQ(event.target.value);
               }}
-              className="dashboard-search-input"
             />
           </div>
-        </div>
-      </header>
 
-      {auth.status === "authenticated" ? <DemoPollSection /> : null}
-
-      <div className="dashboard-board">
-        <div className="dashboard-grid">
-          {loading ? (
-            <div className="dashboard-span" role="status">
-              {t("common.loading")}
-            </div>
-          ) : failure.message ? (
-            <div className="dashboard-span">
-              <Alert type="error" showIcon title={failure.message} />
-              <button type="button" className="polls-page-btn" onClick={() => setAttempt((value) => value + 1)}>
-                {t("access.retry")}
-              </button>
-            </div>
-          ) : items.length === 0 ? (
-            <div className="polls-empty-card dashboard-span">
-              <span className="polls-empty-icon">🗳️</span>
-              <p className="polls-empty-text">{t("polls.emptyPublic")}</p>
-              <span style={{ fontSize: "0.88rem", color: "#94a3b8" }}>{t("polls.emptyPublicHint")}</span>
-            </div>
-          ) : (
-            items.map((poll) => <PollCard key={poll.id} poll={poll} />)
-          )}
+          {/* Sort Dropdown */}
+          <PollSortDropdown
+            value={sortBy}
+            onChange={(newSort) => {
+              setPage(1);
+              setSortBy(newSort);
+            }}
+          />
         </div>
+
+        <div className="polls-status-tabs">
+          {statusTabs.map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              className={`polls-tab-btn ${status === tab.value ? "active" : ""}`}
+              onClick={() => {
+                setPage(1);
+                setStatus(tab.value);
+              }}
+            >
+              {tab.dot ? <span className="polls-tab-dot" /> : null}
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Content Area: Independent Scroll Frame */}
+      <div className="polls-scroll-frame">
+        {loading ? (
+          <div className="dashboard-span" role="status">
+            {t("common.loading")}
+          </div>
+        ) : failure.message ? (
+          <div className="dashboard-span">
+            <Alert type="error" showIcon title={failure.message} />
+            <button type="button" className="polls-page-btn" onClick={() => setAttempt((value) => value + 1)}>
+              {t("access.retry")}
+            </button>
+          </div>
+        ) : items.length === 0 ? (
+          <div className="polls-empty-card dashboard-span">
+            <span className="polls-empty-icon">🗳️</span>
+            <p className="polls-empty-text">{t("polls.emptyPublic")}</p>
+            <span style={{ fontSize: "0.88rem", color: "#94a3b8" }}>{t("polls.emptyPublicHint")}</span>
+          </div>
+        ) : (
+          <div className="polls-grid">
+            {items.map((poll) => (
+              <PollCard key={poll.id} poll={poll} />
+            ))}
+          </div>
+        )}
 
         {!loading && !failure.message && total > pageSize ? (
           <div className="polls-pagination-bar">
             <span>{t("common.pageOf", { page, pages, total })}</span>
             <div className="polls-page-btn-group">
-              <button type="button" className="polls-page-btn" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>
+              <button
+                type="button"
+                className="polls-page-btn"
+                disabled={page <= 1}
+                onClick={() => setPage((value) => value - 1)}
+              >
                 {t("common.previous")}
               </button>
-              <button type="button" className="polls-page-btn" disabled={page >= pages} onClick={() => setPage((value) => value + 1)}>
+              <button
+                type="button"
+                className="polls-page-btn"
+                disabled={page >= pages}
+                onClick={() => setPage((value) => value + 1)}
+              >
                 {t("common.next")}
               </button>
             </div>

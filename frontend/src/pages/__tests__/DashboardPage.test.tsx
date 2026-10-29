@@ -133,7 +133,9 @@ describe("DashboardPage", () => {
     expect(listCalls).toBeGreaterThan(failedCalls);
   });
 
-  it("示例区失败时公开列表仍然显示", async () => {
+  it("概览按正常公开列表展示，支持状态筛选且不包含独立示例区", async () => {
+    const user = userEvent.setup();
+    let requestedStatus: string | undefined;
     installFetch((url) => {
       if (url.includes("/auth/me")) {
         return sessionOf("USER");
@@ -141,23 +143,33 @@ describe("DashboardPage", () => {
       if (url.includes("/guest/context")) {
         return guestOk();
       }
-      if (url.includes("/demo-polls")) {
-        return fail(ApiCode.SERVICE_UNAVAILABLE, "demo busy", 503);
-      }
       if (url.includes("/me/votes")) {
         return emptyPage(0);
       }
-      if (url.includes("/polls") && url.includes("status=OPEN")) {
+      if (url.includes("/polls") && url.includes("status=OPEN") && url.includes("page_size=1")) {
         return envelope({ items: [], page: 1, page_size: 1, total: 2 });
       }
       if (url.includes("/polls")) {
+        const parsed = new URL(url, "http://localhost");
+        requestedStatus = parsed.searchParams.get("status") ?? undefined;
+        if (requestedStatus === "SCHEDULED") {
+          return pageOf([samplePoll({ id: 5, title: "Upcoming poll", effective_status: "SCHEDULED" })]);
+        }
         return pageOf([samplePoll({ id: 4, title: "Public still here" })]);
       }
       return envelope(null, 404, ApiCode.NOT_FOUND, "资源不存在");
     });
     renderRoute("/overview");
     await waitFor(() => expect(screen.getByRole("link", { name: "Public still here" })).toBeInTheDocument());
-    expect(screen.getByTestId("demo-polls")).toBeInTheDocument();
-    expect(screen.getByText("The service is temporarily unavailable.")).toBeInTheDocument();
+    expect(screen.queryByTestId("demo-polls")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Scheduled" }));
+    await waitFor(() => expect(screen.getByRole("link", { name: "Upcoming poll" })).toBeInTheDocument());
+    expect(requestedStatus).toBe("SCHEDULED");
+
+    // 测试下拉排序
+    await user.click(screen.getByRole("button", { name: /Sort by: Recently created/i }));
+    await user.click(screen.getByRole("menuitemradio", { name: /Most popular/i }));
+    expect(screen.getByText("Most popular")).toBeInTheDocument();
   });
 });

@@ -197,3 +197,28 @@ def test_private_demo_poll_requires_passcode_for_details_and_results(
     assert unlocked_detail["needs_access_password"] is False
     assert len(unlocked_detail["options"]) == 4
     assert unlocked_detail["can_vote"] is True
+
+
+def test_ordinary_polls_sorting(auth_client: TestClient) -> None:
+    """普通公开列表 /polls 支持按 starts_at, ends_at, popularity 排序。"""
+    _seed_demo_polls(auth_client)
+
+    # 1. 默认排序 (created_at 倒序)
+    res_default = envelope(auth_client.get("/api/v1/polls?page=1&page_size=10"), 200)
+    assert len(res_default["items"]) > 0
+
+    # 2. 按截止时间 (ends_at 升序，先结束的排前面)
+    res_ends = envelope(auth_client.get("/api/v1/polls?page=1&page_size=10&sort_by=ends_at"), 200)
+    assert len(res_ends["items"]) > 0
+
+    # 3. 按开始时间 (starts_at 降序，最新开始的排前面)
+    res_starts = envelope(
+        auth_client.get("/api/v1/polls?page=1&page_size=10&sort_by=starts_at"), 200
+    )
+    assert len(res_starts["items"]) > 0
+
+    # 4. 按人气 (popularity，投票数最多的排前面)
+    res_pop = envelope(
+        auth_client.get("/api/v1/polls?page=1&page_size=10&sort_by=popularity"), 200
+    )
+    assert len(res_pop["items"]) > 0

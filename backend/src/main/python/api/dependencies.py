@@ -241,19 +241,25 @@ def poll_list_filters(
     page_size: int = Query(default=12, ge=1, le=50),
     status: PollStatus | None = None,
     q: str | None = Query(default=None, max_length=120),
+    sort_by: str | None = Query(default=None),
 ) -> PollListFilters:
-    """读取列表的分页、状态和标题搜索。
+    """读取列表的分页、状态、标题搜索和排序方式。
 
     Args:
         page: 页码，从 1 开始。
         page_size: 每页条数，最大 50。
         status: 有效状态。不传则不过滤。
         q: 标题搜索。最长 120 个字符。
+        sort_by: 排序方式（created_at、starts_at、ends_at、popularity）。
 
     Returns:
         交给投票服务的筛选条件。
     """
-    return PollListFilters(page=page, page_size=page_size, status=status, text=q)
+    valid_sorts = {"created_at", "starts_at", "ends_at", "popularity"}
+    normalized_sort = sort_by if sort_by in valid_sorts else None
+    return PollListFilters(
+        page=page, page_size=page_size, status=status, text=q, sort_by=normalized_sort
+    )
 
 
 def demo_list_filters(

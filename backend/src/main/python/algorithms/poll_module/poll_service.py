@@ -18,7 +18,7 @@ from src.main.python.constants.enums import (
     Visibility,
 )
 from src.main.python.constants.error_codes import ApiCode
-from src.main.python.database.models import Poll, PollOption
+from src.main.python.database.models import Poll, PollOption, Vote
 from src.main.python.fileds.context import Principal
 from src.main.python.fileds.request.poll_request import PollCreate, PollUpdate
 from src.main.python.fileds.response.poll_access_response import ShareLink
@@ -45,12 +45,14 @@ class PollListFilters:
         page_size: 每页条数。
         status: 有效状态。为空表示不过滤。
         text: 标题搜索原文。空白视为不搜索。
+        sort_by: 排序方式：created_at、starts_at、ends_at、popularity。
     """
 
     page: int
     page_size: int
     status: PollStatus | None = None
     text: str | None = None
+    sort_by: str | None = None
 
 
 def effective_status(poll: Poll, now: datetime) -> PollStatus:
@@ -784,16 +786,38 @@ def _count(clauses: list[object]) -> Select[tuple[int]]:
 
 
 def _ordered(clauses: list[object], filters: PollListFilters) -> Select[tuple[Poll]]:
-    """按创建时间和主键倒序取一页。
+    """按指定排序方式和主键倒序取一页。
 
     Args:
         clauses: WHERE 条件。
-        filters: 分页参数。
+        filters: 分页和排序参数。
 
     Returns:
         当前页的查询。
     """
-    statement = select(Poll).order_by(Poll.created_at.desc(), Poll.id.desc())
+    sort = filters.sort_by or "created_at"
+    if sort == "popularity":
+        vote_subq = (
+            select(Vote.poll_id, func.count(Vote.id).label("vote_count"))
+            .group_by(Vote.poll_id)
+            .subquery()
+        )
+        statement = (
+            select(Poll)
+            .outerjoin(vote_subq, Poll.id == vote_subq.c.poll_id)
+            .order_by(
+                func.coalesce(vote_subq.c.vote_count, 0).desc(),
+                Poll.created_at.desc(),
+                Poll.id.desc(),
+            )
+        )
+    elif sort == "ends_at":
+        statement = select(Poll).order_by(Poll.ends_at.asc(), Poll.id.desc())
+    elif sort == "starts_at":
+        statement = select(Poll).order_by(Poll.starts_at.desc(), Poll.id.desc())
+    else:
+        statement = select(Poll).order_by(Poll.created_at.desc(), Poll.id.desc())
+
     if clauses:
         statement = statement.where(*clauses)
     offset = (filters.page - 1) * filters.page_size

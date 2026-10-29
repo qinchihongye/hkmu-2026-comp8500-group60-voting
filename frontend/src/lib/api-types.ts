@@ -4,6 +4,7 @@ export type Visibility = "PUBLIC" | "PRIVATE";
 export type SelectionMode = "SINGLE" | "MULTIPLE";
 export type PollLifecycle = "DRAFT" | "PUBLISHED" | "CLOSED";
 export type EffectiveStatus = "DRAFT" | "SCHEDULED" | "OPEN" | "CLOSED";
+export type PollSortBy = "created_at" | "starts_at" | "ends_at" | "popularity";
 export type ResultsAccessReason = "creator" | "admin" | "closed" | "live" | "unavailable";
 
 export type UserPublic = {
@@ -236,6 +237,7 @@ export type PageQuery = {
   page_size?: number;
   status?: string;
   q?: string;
+  sort_by?: PollSortBy | string;
   poll_id?: number;
   action?: string;
 };

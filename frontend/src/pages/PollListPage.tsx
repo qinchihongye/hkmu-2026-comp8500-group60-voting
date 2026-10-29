@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import { PageState } from "../components/PageState";
 import { getPolls } from "../features/polls/api";
 import { PollCard } from "../features/polls/PollCard";
+import { PollSortDropdown } from "../features/polls/PollSortDropdown";
 import { useFailure } from "../i18n/errors";
 import { useI18n } from "../i18n/LocaleProvider";
-import type { PollSummary } from "../lib/api-types";
+import type { PollSortBy, PollSummary } from "../lib/api-types";
 import "../styles/polls.css";
 
 export function PollListPage() {
@@ -20,12 +21,13 @@ export function PollListPage() {
   ];
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
+  const [sortBy, setSortBy] = useState<PollSortBy>("created_at");
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<PollSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const pageSize = 12;
-  const queryKey = `${page}:${q}:${status}`;
+  const queryKey = `${page}:${q}:${status}:${sortBy}`;
   const [seenKey, setSeenKey] = useState(queryKey);
   if (seenKey !== queryKey) {
     setSeenKey(queryKey);
@@ -34,7 +36,13 @@ export function PollListPage() {
 
   useEffect(() => {
     let cancelled = false;
-    void getPolls({ page, page_size: pageSize, q, status: status || undefined })
+    void getPolls({
+      page,
+      page_size: pageSize,
+      q,
+      status: status || undefined,
+      sort_by: sortBy,
+    })
       .then((result) => {
         if (cancelled) {
           return;
@@ -56,7 +64,7 @@ export function PollListPage() {
     return () => {
       cancelled = true;
     };
-  }, [page, q, status, setCause, clear]);
+  }, [page, q, status, sortBy, setCause, clear]);
 
   const pages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -73,28 +81,39 @@ export function PollListPage() {
 
       {/* Filter & Search Bar */}
       <div className="polls-filter-card">
-        {/* Search Input */}
-        <div className="polls-search-wrap">
-          <svg
-            className="polls-search-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            type="text"
-            className="polls-search-input"
-            placeholder={t("polls.searchPublic")}
-            value={q}
-            onChange={(event) => {
+        <div className="polls-filter-main-row">
+          {/* Search Input */}
+          <div className="polls-search-wrap">
+            <svg
+              className="polls-search-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              className="polls-search-input"
+              placeholder={t("polls.searchPublic")}
+              value={q}
+              onChange={(event) => {
+                setPage(1);
+                setQ(event.target.value);
+              }}
+            />
+          </div>
+
+          {/* Sort Dropdown */}
+          <PollSortDropdown
+            value={sortBy}
+            onChange={(newSort) => {
               setPage(1);
-              setQ(event.target.value);
+              setSortBy(newSort);
             }}
           />
         </div>

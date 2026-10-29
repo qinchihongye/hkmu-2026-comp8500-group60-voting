@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Public Polls 排序控件设计方案对比 - VoteMaster</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1363df;
+      --primary-light: #eff6ff;
+      --primary-border: #bfdbfe;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --bg-surface: #ffffff;
+      --bg-page: #f8fafc;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', 'Plus Jakarta Sans', -apple-system, sans-serif;
+      background: #f1f5f9;
+      color: var(--text-main);
+      padding: 36px 24px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      margin-bottom: 32px;
+      text-align: center;
+    }
+
+    .page-title {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .page-subtitle {
+      color: #64748b;
+      font-size: 1.05rem;
+    }
+
+    .comparison-section {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .proposal-card {
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 30px;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: 0 10px 30px -4px rgba(15, 23, 42, 0.05);
+      transition: all 0.25s ease;
+    }
+
+    .proposal-card:hover {
+      box-shadow: 0 18px 40px -6px rgba(19, 99, 223, 0.1);
+      border-color: rgba(19, 99, 223, 0.25);
+    }
+
+    .proposal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .proposal-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge-recommend {
+      background: #eff6ff;
+      color: #1363df;
+      border: 1px solid #bfdbfe;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .proposal-name {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .proposal-desc {
+      color: #64748b;
+      font-size: 0.95rem;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    /* Live Preview Filter Card */
+    .filter-card-preview {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* Search Input */
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 240px;
+      max-width: 420px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 17px;
+      height: 17px;
+      color: #94a3b8;
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 44px;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 9999px;
+      padding: 0 16px 0 42px;
+      font-size: 0.92rem;
+      color: #0f172a;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+      background: #ffffff;
+      border-color: #1363df;
+      box-shadow: 0 0 0 3px rgba(19, 99, 223, 0.12);
+    }
+
+    /* Right Status Tabs */
+    .status-tabs {
+      display: flex;
+      align-items: center;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 12px;
+      gap: 4px;
+    }
+
+    .tab-btn {
+      padding: 6px 14px;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      color: #475569;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tab-btn.active {
+      background: #ffffff;
+      color: #1363df;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+    }
+
+    .tab-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+    }
+
+    /* ========================================================
+       方案 A: 胶囊下拉选择器 (Capsule Dropdown)
+       ======================================================== */
+    .sort-dropdown-wrap {
+      position: relative;
+    }
+
+    .sort-capsule-btn {
+      height: 44px;
+      padding: 0 16px;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 9999px;
+      color: #334155;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .sort-capsule-btn:hover {
+      background: #ffffff;
+      border-color: #cbd5e1;
+      color: #0f172a;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+    }
+
+    .sort-capsule-btn.open {
+      border-color: #1363df;
+      background: #ffffff;
+      color: #1363df;
+      box-shadow: 0 0 0 3px rgba(19, 99, 223, 0.12);
+    }
+
+    .sort-current-val {
+      color: #1363df;
+      font-weight: 700;
+    }
+
+    .sort-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      min-width: 210px;
+      background: #ffffff;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      border-radius: 16px;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+      padding: 6px;
+      z-index: 50;
+      display: none;
+      animation: fadeInDown 0.2s ease-out forwards;
+    }
+
+    .sort-menu.show {
+      display: block;
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .sort-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-radius: 10px;
+      color: #334155;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .sort-item:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .sort-item.selected {
+      background: #eff6ff;
+      color: #1363df;
+      font-weight: 700;
+    }
+
+    .sort-item-icon {
+      margin-right: 8px;
+      font-size: 1rem;
+    }
+
+    /* ========================================================
+       方案 B: 扁平分段胶囊组 (Segmented Sort Buttons)
+       ======================================================== */
+    .sort-segmented-tabs {
+      display: flex;
+      align-items: center;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 12px;
+      gap: 3px;
+    }
+
+    .sort-tab-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: #475569;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .sort-tab-btn:hover:not(.active) {
+      color: #0f172a;
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .sort-tab-btn.active {
+      background: #ffffff;
+      color: #1363df;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+    }
+
+    /* ========================================================
+       方案 C: 升降序双向胶囊 (Sort with Direction Toggle)
+       ======================================================== */
+    .sort-direction-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .direction-toggle-btn {
+      height: 44px;
+      width: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 50%;
+      cursor: pointer;
+      color: #475569;
+      transition: all 0.2s ease;
+    }
+
+    .direction-toggle-btn:hover {
+      background: #ffffff;
+      border-color: #cbd5e1;
+      color: #1363df;
+    }
+
+    /* Features List */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .feature-item {
+      background: #f8fafc;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 0.86rem;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+    }
+
+    .feature-item strong {
+      color: #0f172a;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    @media (max-width: 900px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+      .filter-card-preview {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .search-wrap {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="page-header">
+      <h1 class="page-title">Public Polls 排序选项设计方案</h1>
+      <p class="page-subtitle">针对用户需求：“按开始时间，按截止时间，按人气”在 Public polls 筛选栏中的三种视觉与交互形态</p>
+    </header>
+
+    <div class="comparison-section">
+
+      <!-- 方案 A -->
+      <section class="proposal-card">
+        <div class="proposal-head">
+          <div class="proposal-title-wrap">
+            <span class="badge-recommend">方案 A · 强烈推荐</span>
+            <h2 class="proposal-name">高保真胶囊式下拉选择器 (Capsule Dropdown)</h2>
+          </div>
+          <span style="font-size: 0.85rem; color: #10b981; font-weight: 700;">★ 兼顾空间与扩展性</span>
+        </div>
+        <p class="proposal-desc">
+          在红框区域嵌入优雅的微光胶囊按钮，默认显示当前排序规则。点击展开平滑毛玻璃浮层，直接点选排序方式。不挤占左右两侧控件，移动端与窄屏适配极佳。
+        </p>
+
+        <!-- 互动演示 -->
+        <div class="filter-card-preview">
+          <!-- 搜索框 -->
+          <div class="search-wrap">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" class="search-input" placeholder="Search by title..." value="Campus">
+          </div>
+
+          <!-- 方案 A 控件 (红框位置) -->
+          <div class="sort-dropdown-wrap">
+            <button type="button" class="sort-capsule-btn" id="sortBtnA" onclick="toggleMenuA()">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18M6 12h12m-9 6h6"></path>
+              </svg>
+              <span>排序: <span class="sort-current-val" id="currentSortLabelA">即将截止</span></span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+
+            <!-- 浮层菜单 -->
+            <div class="sort-menu" id="sortMenuA">
+              <div class="sort-item" onclick="selectSortA('popularity', '🔥 最高人气')">
+                <span><span class="sort-item-icon">🔥</span>最高人气 (最多票数)</span>
+                <span id="check-pop" style="display:none; color:#1363df;">✓</span>
+              </div>
+              <div class="sort-item selected" onclick="selectSortA('ends_at', '⏳ 即将截止')">
+                <span><span class="sort-item-icon">⏳</span>即将截止 (截止时间)</span>
+                <span id="check-ends" style="color:#1363df;">✓</span>
+              </div>
+              <div class="sort-item" onclick="selectSortA('starts_at', '🚀 最新开始')">
+                <span><span class="sort-item-icon">🚀</span>最新开始 (开始时间)</span>
+                <span id="check-starts" style="display:none; color:#1363df;">✓</span>
+              </div>
+              <div class="sort-item" onclick="selectSortA('created_at', '🆕 最新发布')">
+                <span><span class="sort-item-icon">🆕</span>最新发布 (默认排序)</span>
+                <span id="check-created" style="display:none; color:#1363df;">✓</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 状态 Tabs -->
+          <div class="status-tabs">
+            <button class="tab-btn"><span class="tab-dot"></span><span>Open</span></button>
+            <button class="tab-btn active"><span>All</span></button>
+            <button class="tab-btn"><span>Scheduled</span></button>
+            <button class="tab-btn"><span>Closed</span></button>
+          </div>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-item">
+            <strong>🎯 空间占用最克制</strong>
+            单一行内胶囊宽度约 160px，即使在 1024px 分辨率下也不会发生换行折叠。
+          </div>
+          <div class="feature-item">
+            <strong>✨ 状态指示明确</strong>
+            胶囊上常驻当前激活的排序标签（如“最高人气”），用户一眼即知当前视图顺序。
+          </div>
+          <div class="feature-item">
+            <strong>🛠️ 易于扩展多语言</strong>
+            中英文名称切换自由（"Most popular", "Closing soon", "Start time"）。
+          </div>
+        </div>
+      </section>
+
+      <!-- 方案 B -->
+      <section class="proposal-card">
+        <div class="proposal-head">
+          <div class="proposal-title-wrap">
+            <h2 class="proposal-name">方案 B：分段双轨标签组 (Segmented Pill Tabs)</h2>
+          </div>
+          <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">平铺直选 · 零下拉操作</span>
+        </div>
+        <p class="proposal-desc">
+          将四种排序方式做成与右侧状态 Tabs 风格完全一致的分段药丸组，平铺在搜索框右侧。
+        </p>
+
+        <!-- 互动演示 -->
+        <div class="filter-card-preview">
+          <div class="search-wrap">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" class="search-input" placeholder="Search by title...">
+          </div>
+
+          <!-- 方案 B 控件 (红框位置) -->
+          <div class="sort-segmented-tabs">
+            <button class="sort-tab-btn active"><span>🔥 人气</span></button>
+            <button class="sort-tab-btn"><span>⏳ 截止</span></button>
+            <button class="sort-tab-btn"><span>🚀 开始</span></button>
+            <button class="sort-tab-btn"><span>🆕 最新</span></button>
+          </div>
+
+          <!-- 状态 Tabs -->
+          <div class="status-tabs">
+            <button class="tab-btn active"><span>All</span></button>
+            <button class="tab-btn"><span class="tab-dot"></span><span>Open</span></button>
+            <button class="tab-btn"><span>Scheduled</span></button>
+            <button class="tab-btn"><span>Closed</span></button>
+          </div>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-item">
+            <strong>⚡ 单击直达</strong>
+            无需展开下拉，直接点击任意标签即刻排序。
+          </div>
+          <div class="feature-item">
+            <strong>⚠️ 横向宽度敏感</strong>
+            平铺标签约需 280px-320px 宽度，在窄屏或笔记本上容易挤压搜索框宽度。
+          </div>
+          <div class="feature-item">
+            <strong>🎨 视觉同质化</strong>
+            与右侧的 Status Tabs 并列出现两个 Segmented Control，视觉上有一定重复感。
+          </div>
+        </div>
+      </section>
+
+      <!-- 方案 C -->
+      <section class="proposal-card">
+        <div class="proposal-head">
+          <div class="proposal-title-wrap">
+            <h2 class="proposal-name">方案 C：胶囊下拉 + 升降序切换钮 (Direction Toggle Capsule)</h2>
+          </div>
+          <span style="font-size: 0.85rem; color: #475569; font-weight: 600;">精细化排序控制</span>
+        </div>
+        <p class="proposal-desc">
+          在下拉胶囊旁附带一个独立的升降序切换图标按钮（`↓ 降序` / `↑ 升序`），满足部分用户希望按“最早截止”或“最晚截止”自由倒序的深度需求。
+        </p>
+
+        <!-- 互动演示 -->
+        <div class="filter-card-preview">
+          <div class="search-wrap">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" class="search-input" placeholder="Search by title...">
+          </div>
+
+          <!-- 方案 C 控件 (红框位置) -->
+          <div class="sort-direction-group">
+            <button type="button" class="sort-capsule-btn">
+              <span>排序: <span class="sort-current-val">开始时间</span></span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <button type="button" class="direction-toggle-btn" title="切换降序/升序" onclick="toggleDir(this)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14m0 0l-5-5m5 5l5-5"></path>
+              </svg>
+            </button>
+          </div>
+
+          <!-- 状态 Tabs -->
+          <div class="status-tabs">
+            <button class="tab-btn active"><span>All</span></button>
+            <button class="tab-btn"><span class="tab-dot"></span><span>Open</span></button>
+            <button class="tab-btn"><span>Scheduled</span></button>
+            <button class="tab-btn"><span>Closed</span></button>
+          </div>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-item">
+            <strong>🔄 双向调节</strong>
+            支持正序（从远到近/从少到多）与倒序。
+          </div>
+          <div class="feature-item">
+            <strong>🤔 认知成本略高</strong>
+            对普通投票广场用户而言，一般只看“即将截止”或“最热”，切换正逆序频率相对较低。
+          </div>
+          <div class="feature-item">
+            <strong>📐 布局规整</strong>
+            比方案 B 更节省水平宽度，圆钮与胶囊搭配优雅。
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script>
+    function toggleMenuA() {
+      const menu = document.getElementById('sortMenuA');
+      const btn = document.getElementById('sortBtnA');
+      menu.classList.toggle('show');
+      btn.classList.toggle('open');
+    }
+
+    function selectSortA(key, label) {
+      document.getElementById('currentSortLabelA').innerText = label.split(' ')[1];
+      const items = document.querySelectorAll('#sortMenuA .sort-item');
+      items.forEach(el => el.classList.remove('selected'));
+      ['check-pop', 'check-ends', 'check-starts', 'check-created'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+      });
+
+      if (key === 'popularity') {
+        document.getElementById('check-pop').style.display = 'inline';
+      } else if (key === 'ends_at') {
+        document.getElementById('check-ends').style.display = 'inline';
+      } else if (key === 'starts_at') {
+        document.getElementById('check-starts').style.display = 'inline';
+      } else {
+        document.getElementById('check-created').style.display = 'inline';
+      }
+
+      toggleMenuA();
+    }
+
+    function toggleDir(btn) {
+      const isDesc = btn.dataset.desc !== 'false';
+      btn.dataset.desc = isDesc ? 'false' : 'true';
+      btn.innerHTML = isDesc 
+        ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m0 0l-5 5m5-5l5 5"></path></svg>'
+        : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m0 0l-5-5m5 5l5-5"></path></svg>';
+    }
+
+    document.addEventListener('click', (e) => {
+      const wrap = document.querySelector('.sort-dropdown-wrap');
+      if (wrap && !wrap.contains(e.target)) {
+        document.getElementById('sortMenuA')?.classList.remove('show');
+        document.getElementById('sortBtnA')?.classList.remove('open');
+      }
+    });
+  </script>
+</body>
+</html>
+
