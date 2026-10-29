@@ -462,3 +462,226 @@ def test_invalid_model_output_is_not_reported_as_no_poll(caplog: pytest.LogCaptu
         asyncio.run(disabled.parse("SECRET-POLL-TEXT"))
     assert caught.value.code == ApiCode.POLL_PARSE_DISABLED
     assert quiet.calls == ["SECRET-POLL-TEXT"]
+
+
+def test_who_is_more_handsome_minimal_comparison() -> None:
+    """验证'我和他谁帅'这类极简对比问句的识别：标题为原问句，选项为我和他，模式为单选。"""
+    raw_text = "我和他谁帅"
+    extraction = ModelPollExtraction.model_validate({
+        "title": "我和他谁帅",
+        "description": None,
+        "options": ["我", "他"],
+        "starts_hint": None,
+        "ends_hint": None,
+        "selection_mode": "SINGLE",
+        "content_category": "single_poll",
+    })
+    result = _parse(extraction, text=raw_text)
+    assert result.fields.title == "我和他谁帅"
+    assert [opt.label for opt in result.fields.options] == ["我", "他"]
+    assert result.fields.selection_mode == "SINGLE"
+    assert result.fields.description is None
+    assert result.issues == []
+
+
+def test_ten_diverse_poll_styles_extraction() -> None:
+    """验证 10 种不同风格（口语、符号分隔、决议表态、英文、多选通知等）均能正确解析出表单字段。"""
+    # 风格 1：极简口语二选一（颜值对比）
+    s1 = _parse(
+        ModelPollExtraction.model_validate({
+            "title": "我和他谁帅",
+            "description": None,
+            "options": ["我", "他"],
+            "starts_hint": None,
+            "ends_hint": None,
+            "selection_mode": "SINGLE",
+            "content_category": "single_poll",
+        }),
+        text="我和他谁帅",
+    )
+    assert s1.fields.title == "我和他谁帅" and [o.label for o in s1.fields.options] == ["我", "他"]
+
+    # 风格 2：生活决策疑问句（A 还是 B）
+    s2 = _parse(
+        ModelPollExtraction.model_validate({
+            "title": "明天中午吃火锅还是烤肉？",
+            "description": None,
+            "options": ["火锅", "烤肉"],
+            "starts_hint": None,
+            "ends_hint": None,
+            "selection_mode": "SINGLE",
+            "content_category": "single_poll",
+        }),
+        text="明天中午吃火锅还是烤肉？",
+    )
+    assert s2.fields.title == "明天中午吃火锅还是烤肉？"
+    assert [o.label for o in s2.fields.options] == ["火锅", "烤肉"]
+    assert s2.fields.selection_mode == "SINGLE"
+
+    # 风格 3：社交聚会活动投票（带截止时间与多选要求）
+    s3 = _parse(
+        ModelPollExtraction.model_validate({
+            "title": "周末大家想去露营、剧本杀还是密室逃脱？",
+            "description": "周五下午5点截止，支持多选",
+            "options": ["露营", "剧本杀", "密室逃脱"],
+            "starts_hint": None,
+            "ends_hint": _hint(
+                kind="weekday",
+                source_text="周五下午5点截止",
+                time="17:00",
+                weekday=5,
+                week_scope="unqualified",
+            ),
+            "selection_mode": "MULTIPLE",
+            "content_category": "single_poll",
+        }),
+        text="周末大家想去露营、剧本杀还是密室逃脱？周五下午5点截止，支持多选",
+    )
+    assert [o.label for o in s3.fields.options] == ["露营", "剧本杀", "密室逃脱"]
+    assert s3.fields.selection_mode == "MULTIPLE"
+    assert s3.model_dump(mode="json")["fields"]["ends_at"] == "2026-10-30T17:00:00+08:00"
+
+    # 风格 4：技术选型与全英文双语对比
+    s4 = _parse(
+        ModelPollExtraction.model_validate({
+            "title": "Should we choose TypeScript or Rust for our new CLI tool?",
+            "description": None,
+            "options": ["TypeScript", "Rust"],
+            "starts_hint": None,
+            "ends_hint": _hint(
+                kind="day_offset",
+                source_text="tomorrow at 18:00",
+                time="18:00",
+                day_offset=1,
+            ),
+            "selection_mode": "SINGLE",
+            "content_category": "single_poll",
+        }),
+        text="Should we choose TypeScript or Rust for our new CLI tool? Voting ends tomorrow at 18:00.",
+    )
+    assert s4.fields.title == "Should we choose TypeScript or Rust for our new CLI tool?"
+    assert [o.label for o in s4.fields.options] == ["TypeScript", "Rust"]
+    assert s4.model_dump(mode="json")["fields"]["ends_at"] == "2026-10-29T18:00:00+08:00"
+
+    # 风格 5：工程/敏捷团队表决决议
+    s5 = _parse(
+        ModelPollExtraction.model_validate({
+            "title": "关于下周迭代是否合并重构分支",
+            "description": None,
+            "options": ["同意", "反对", "弃权"],
+            "starts_hint": None,
+            "ends_hint": _hint(
+                kind="weekday",
+                source_text="截止周四18:00",
+                time="18:00",
+                weekday=4,
+                week_scope="unqualified",
+            ),
+            "selection_mode": "SINGLE",
+            "content_category": "single_poll",
+        }),
+        text="关于下周迭代是否合并重构分支：同意、反对、弃权，单选，截止周四18:00",
+    )
+    assert [o.label for o in s5.fields.options] == ["同意", "反对", "弃权"]
+    assert s5.fields.selection_mode == "SINGLE"
+
+    # 风格 6：紧凑符号分隔型（斜杠/方括号）
+    s6 = _parse(
+        ModelPollExtraction.model_validate({
+            "title": "公司下午茶投票",
+            "description": None,
+            "options": ["奈雪", "喜茶", "霸王茶姬", "星巴克"],
+            "starts_hint": None,
+            "ends_hint": _hint(
+                kind="day_offset",
+                source_text="今天下午3点截止",
+                time="15:00",
+                day_offset=0,
+            ),
+            "selection_mode": None,
+            "content_category": "single_poll",
+        }),
+        text="公司下午茶投票【奈雪/喜茶/霸王茶姬/星巴克】，今天下午3点截止",
+    )
+    assert s6.fields.title == "公司下午茶投票"
+    assert [o.label for o in s6.fields.options] == ["奈雪", "喜茶", "霸王茶姬", "星巴克"]
+    assert s6.model_dump(mode="json")["fields"]["ends_at"] == "2026-10-28T15:00:00+08:00"
+
+    # 风格 7：组织/社团/班级推选（常规列表）
+    s7 = _parse(
+        ModelPollExtraction.model_validate({
+            "title": "2026届学生会主席候选人推选",
+            "description": None,
+            "options": ["艾利克斯", "陈晓婷", "王大维"],
+            "starts_hint": None,
+            "ends_hint": None,
+            "selection_mode": None,
+            "content_category": "single_poll",
+        }),
+        text="2026届学生会主席候选人推选：\n1. 艾利克斯\n2. 陈晓婷\n3. 王大维",
+    )
+    assert s7.fields.title == "2026届学生会主席候选人推选"
+    assert [o.label for o in s7.fields.options] == ["艾利克斯", "陈晓婷", "王大维"]
+
+    # 风格 8：满意度与量化评级问卷
+    s8 = _parse(
+        ModelPollExtraction.model_validate({
+            "title": "您对新版系统的整体使用体验评价",
+            "description": None,
+            "options": ["非常满意", "满意", "一般", "不满意"],
+            "starts_hint": None,
+            "ends_hint": None,
+            "selection_mode": "SINGLE",
+            "content_category": "single_poll",
+        }),
+        text="您对新版系统的整体使用体验评价（非常满意/满意/一般/不满意）",
+    )
+    assert [o.label for o in s8.fields.options] == ["非常满意", "满意", "一般", "不满意"]
+    assert s8.fields.selection_mode == "SINGLE"
+
+    # 风格 9：长文本通知段落（带背景与多项安排）
+    s9 = _parse(
+        ModelPollExtraction.model_validate({
+            "title": "羽毛球友谊赛参与意向统计",
+            "description": "各位同事好：本周五下午公司将举办羽毛球友谊赛，现统计大家参与意向。",
+            "options": ["参加男子单打", "参加女子单打", "参加混合双打", "只当观众加油"],
+            "starts_hint": None,
+            "ends_hint": _hint(
+                kind="weekday",
+                source_text="周四中午12点前",
+                time="12:00",
+                weekday=4,
+                week_scope="unqualified",
+            ),
+            "selection_mode": None,
+            "content_category": "single_poll",
+        }),
+        text="各位同事好：本周五下午公司将举办羽毛球友谊赛，现统计大家参与意向。\n选项如下：\n- 参加男子单打\n- 参加女子单打\n- 参加混合双打\n- 只当观众加油\n请于周四中午12点前提交。",
+    )
+    assert s9.fields.title == "羽毛球友谊赛参与意向统计"
+    assert s9.fields.description == "各位同事好：本周五下午公司将举办羽毛球友谊赛，现统计大家参与意向。"
+    assert len(s9.fields.options) == 4
+    assert s9.model_dump(mode="json")["fields"]["ends_at"] == "2026-10-29T12:00:00+08:00"
+
+    # 风格 10：带多选项与限选规则的方案征集
+    s10 = _parse(
+        ModelPollExtraction.model_validate({
+            "title": "下季度部门技术分享主题",
+            "description": "请大家选出最想听的2个方向（多选）",
+            "options": [
+                "WebAssembly核心实践",
+                "大模型微调与部署",
+                "高性能分布式缓存架构",
+                "前端工程化与脚手架",
+            ],
+            "starts_hint": None,
+            "ends_hint": None,
+            "selection_mode": "MULTIPLE",
+            "content_category": "single_poll",
+        }),
+        text="下季度部门技术分享主题，请大家选出最想听的2个方向（多选）：\n1. WebAssembly核心实践\n2. 大模型微调与部署\n3. 高性能分布式缓存架构\n4. 前端工程化与脚手架",
+    )
+    assert s10.fields.title == "下季度部门技术分享主题"
+    assert s10.fields.selection_mode == "MULTIPLE"
+    assert len(s10.fields.options) == 4
+
