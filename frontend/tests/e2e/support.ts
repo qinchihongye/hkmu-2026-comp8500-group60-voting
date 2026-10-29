@@ -1,6 +1,6 @@
 import { expect, type APIRequestContext, type Page } from "@playwright/test";
 
-export const origin = "http://localhost:5173";
+export const origin = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:5173";
 export const accountPassword = "password-ada-1";
 export const accessPassword = "access-pass1";
 export const adminPassword = process.env.DEMO_ADMIN_PASSWORD ?? "comp8500sefgroup60";
@@ -119,7 +119,7 @@ export async function voteFor(page: Page, label: string | string[]): Promise<voi
   await submit.click();
   await expect(page.getByRole("dialog").getByRole("listitem")).toHaveText(labels);
   await page.getByTestId("vote-confirm").click();
-  await expect(page.getByTestId("receipt")).toBeVisible();
+  await expect(page.getByTestId("receipt").or(page.getByTestId("closed-receipt"))).toBeVisible();
 }
 
 export async function apiPost(

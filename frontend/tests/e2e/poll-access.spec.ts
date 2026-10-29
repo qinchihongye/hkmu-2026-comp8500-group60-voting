@@ -20,7 +20,6 @@ test("私密记名先要密码再要登录，地址里不出现密码", async ({
   await voter.goto(shareUrl.pathname);
   await expect(voter.getByRole("heading", { name: "Passcode required" })).toBeVisible();
   await expect(voter.getByText(title)).toHaveCount(0);
-  await voter.getByRole("link", { name: "Enter passcode" }).click();
   await voter.getByLabel("Passcode", { exact: true }).fill("wrong-pass-1");
   await voter.getByRole("button", { name: "Unlock" }).click();
   await expect(voter.getByRole("alert")).toContainText("The passcode is incorrect");

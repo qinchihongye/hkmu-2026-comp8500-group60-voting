@@ -9,7 +9,6 @@ async function openShare(page: Page, shareUrl: string): Promise<void> {
 }
 
 async function unlock(page: Page): Promise<void> {
-  await page.getByRole("link", { name: "Enter passcode" }).click();
   await page.getByLabel("Passcode", { exact: true }).fill(accessPassword);
   await page.getByRole("button", { name: "Unlock" }).click();
 }

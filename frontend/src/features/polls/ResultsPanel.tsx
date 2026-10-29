@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 
 import { useI18n } from "../../i18n/LocaleProvider";
 import type { OptionResult, PollResults } from "../../lib/api-types";
@@ -169,6 +169,38 @@ function ResultsPie({ options }: { options: OptionResult[] }) {
   const summary = options.map((option) => `${option.label} ${option.percentage.toFixed(2)}%`).join(t("results.separator"));
   const fullSlice = slices.find((slice) => slice.sweep >= Math.PI * 2 - 1e-6);
 
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [pinnedIndex, setPinnedIndex] = useState<number | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const activeIndex = hoveredIndex ?? pinnedIndex;
+  const activeSlice = activeIndex !== null ? slices[activeIndex] ?? (fullSlice?.index === activeIndex ? fullSlice : null) : null;
+
+  useEffect(() => {
+    if (pinnedIndex === null) {
+      return undefined;
+    }
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setPinnedIndex(null);
+      }
+    }
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => document.removeEventListener("pointerdown", handleClickOutside);
+  }, [pinnedIndex]);
+
+  function updateTooltipPosition(event: React.MouseEvent<SVGElement>) {
+    if (!containerRef.current) {
+      return;
+    }
+    const rect = containerRef.current.getBoundingClientRect();
+    setTooltipPos({
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    });
+  }
+
   return (
     <div className="results-pie-card">
       <div className="results-pie-heading">
@@ -180,48 +212,158 @@ function ResultsPie({ options }: { options: OptionResult[] }) {
           <circle cx={PIE_CENTER} cy={PIE_CENTER} r={PIE_RADIUS} fill="#f8fafc" stroke="#e2e8f0" strokeWidth="2" />
         </svg>
       ) : (
-        <svg className="results-pie" viewBox="0 0 200 200" role="img" aria-label={summary}>
-          {fullSlice ? (
-            <circle cx={PIE_CENTER} cy={PIE_CENTER} r={PIE_RADIUS} fill={sliceColor(fullSlice.index)} />
-          ) : (
-            slices.map((slice) => {
-              const path = slicePath(slice.start, slice.end);
-              if (path === "") {
+        <div
+          ref={containerRef}
+          className="results-pie-wrap"
+          style={{ position: "relative", display: "inline-block", width: "min(100%, 220px)", margin: "0 auto" }}
+          onMouseLeave={() => {
+            setHoveredIndex(null);
+            setTooltipPos(null);
+          }}
+        >
+          <svg
+            className="results-pie"
+            viewBox="0 0 200 200"
+            role="img"
+            aria-label={summary}
+            style={{ overflow: "visible", width: "100%", height: "auto", display: "block" }}
+          >
+            {fullSlice ? (
+              <circle
+                cx={PIE_CENTER}
+                cy={PIE_CENTER}
+                r={PIE_RADIUS}
+                fill={sliceColor(fullSlice.index)}
+                style={{
+                  cursor: "pointer",
+                  transition: "opacity 0.2s ease, stroke-width 0.2s ease",
+                  stroke: activeIndex === fullSlice.index ? "#ffffff" : "none",
+                  strokeWidth: activeIndex === fullSlice.index ? 3 : 0,
+                }}
+                onMouseEnter={(e) => {
+                  setHoveredIndex(fullSlice.index);
+                  updateTooltipPosition(e);
+                }}
+                onMouseMove={updateTooltipPosition}
+                onClick={(e) => {
+                  updateTooltipPosition(e);
+                  setPinnedIndex((prev) => (prev === fullSlice.index ? null : fullSlice.index));
+                }}
+              />
+            ) : (
+              slices.map((slice) => {
+                const path = slicePath(slice.start, slice.end);
+                if (path === "") {
+                  return null;
+                }
+                const isHovered = activeIndex === slice.index;
+                const midAngle = (slice.start + slice.end) / 2;
+                const offset = isHovered ? 4 : 0;
+                const tx = Math.cos(midAngle) * offset;
+                const ty = Math.sin(midAngle) * offset;
+
+                return (
+                  <path
+                    key={slice.option.option_id}
+                    d={path}
+                    fill={sliceColor(slice.index)}
+                    stroke={isHovered ? "#ffffff" : "none"}
+                    strokeWidth={isHovered ? 2.5 : 0}
+                    style={{
+                      cursor: "pointer",
+                      transform: `translate(${tx}px, ${ty}px)`,
+                      transition: "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.18s ease, stroke-width 0.18s ease",
+                      opacity: activeIndex === null || isHovered ? 1 : 0.65,
+                      filter: isHovered ? "drop-shadow(0 3px 6px rgba(0,0,0,0.18))" : "none",
+                    }}
+                    onMouseEnter={(e) => {
+                      setHoveredIndex(slice.index);
+                      updateTooltipPosition(e);
+                    }}
+                    onMouseMove={updateTooltipPosition}
+                    onClick={(e) => {
+                      updateTooltipPosition(e);
+                      setPinnedIndex((prev) => (prev === slice.index ? null : slice.index));
+                    }}
+                  />
+                );
+              })
+            )}
+            {slices.map((slice) => {
+              if (slice.sweep < Math.PI * 2 * 0.12) {
                 return null;
               }
-              return <path key={slice.option.option_id} d={path} fill={sliceColor(slice.index)} />;
-            })
-          )}
-          {slices.map((slice) => {
-            if (slice.sweep < Math.PI * 2 * 0.12) {
-              return null;
-            }
-            const labelRadius = slice.sweep >= Math.PI * 2 - 1e-6 ? 0 : PIE_RADIUS * 0.62;
-            const point = piePoint((slice.start + slice.end) / 2, labelRadius);
-            return (
-              <text
-                key={`label-${slice.option.option_id}`}
-                x={point.x}
-                y={point.y}
-                textAnchor="middle"
-                dominantBaseline="central"
-                className="results-pie-label"
-              >
-                {slice.option.percentage.toFixed(2)}%
-              </text>
-            );
-          })}
-        </svg>
+              const isHovered = activeIndex === slice.index;
+              const midAngle = (slice.start + slice.end) / 2;
+              const offset = isHovered ? 4 : 0;
+              const labelRadius = slice.sweep >= Math.PI * 2 - 1e-6 ? 0 : PIE_RADIUS * 0.62;
+              const point = piePoint(midAngle, labelRadius);
+              return (
+                <text
+                  key={`label-${slice.option.option_id}`}
+                  x={point.x + Math.cos(midAngle) * offset}
+                  y={point.y + Math.sin(midAngle) * offset}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  className="results-pie-label"
+                  style={{
+                    pointerEvents: "none",
+                    transition: "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
+                  }}
+                >
+                  {slice.option.percentage.toFixed(2)}%
+                </text>
+              );
+            })}
+          </svg>
+
+          {/* Floating Tooltip */}
+          {activeSlice ? (
+            <div
+              className="results-pie-tooltip"
+              data-testid="pie-tooltip"
+              style={{
+                position: "absolute",
+                left: tooltipPos ? `${tooltipPos.x}px` : "50%",
+                top: tooltipPos ? `${tooltipPos.y - 12}px` : "50%",
+                transform: tooltipPos ? "translate(-50%, -100%)" : "translate(-50%, -50%)",
+                background: "rgba(15, 23, 42, 0.94)",
+                backdropFilter: "blur(4px)",
+                color: "#ffffff",
+                padding: "8px 12px",
+                borderRadius: "8px",
+                fontSize: "0.82rem",
+                boxShadow: "0 4px 14px rgba(15, 23, 42, 0.25)",
+                pointerEvents: "none",
+                whiteSpace: "nowrap",
+                zIndex: 10,
+                lineHeight: 1.35,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700 }}>
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: sliceColor(activeSlice.index),
+                    display: "inline-block",
+                    flexShrink: 0,
+                  }}
+                />
+                <span>{activeSlice.option.label}</span>
+              </div>
+              <div style={{ color: "#cbd5e1", marginTop: 3, fontSize: "0.78rem" }}>
+                <strong style={{ color: "#ffffff", fontSize: "0.85rem" }}>
+                  {activeSlice.option.percentage.toFixed(2)}%
+                </strong>
+                {" · "}
+                {activeSlice.option.count} {t("results.votes").toLowerCase()}
+              </div>
+            </div>
+          ) : null}
+        </div>
       )}
-      <ul className="results-pie-legend">
-        {options.map((option, index) => (
-          <li key={option.option_id}>
-            <span className="results-swatch" style={{ background: sliceColor(index) }} aria-hidden="true" />
-            <span>{option.label}</span>
-            <strong>{option.percentage.toFixed(2)}%</strong>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
@@ -258,7 +400,8 @@ export function ResultsPanel({ results }: { results: PollResults }) {
             <thead>
               <tr>
                 <th>{t("results.option")}</th>
-                <th>{t("results.votes")}</th>
+                <th style={{ textAlign: "right" }}>{t("results.votes")}</th>
+                <th style={{ textAlign: "right" }}>{t("results.percentageCol")}</th>
               </tr>
             </thead>
             <tbody>
@@ -287,7 +430,10 @@ export function ResultsPanel({ results }: { results: PollResults }) {
                       </span>
                     ) : null}
                   </td>
-                  <td style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{option.count}</td>
+                  <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{option.count}</td>
+                  <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "#475569" }}>
+                    {option.percentage.toFixed(2)}%
+                  </td>
                 </tr>
               ))}
             </tbody>

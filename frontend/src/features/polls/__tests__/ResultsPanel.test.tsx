@@ -34,18 +34,27 @@ function results(overrides: Partial<PollResults> = {}): PollResults {
 }
 
 describe("ResultsPanel", () => {
-  it("左边只显示选项和票数，右边饼图显示百分比", () => {
+  it("左边表格显示选项、票数与百分比三列，悬浮饼图显示提示", async () => {
+    const user = userEvent.setup();
     const { container } = renderPanel(<ResultsPanel results={results()} />);
 
     expect(screen.getByRole("columnheader", { name: "Option" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Votes" })).toBeInTheDocument();
-    expect(screen.queryByRole("columnheader", { name: /Percentage/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Percentage" })).toBeInTheDocument();
     expect(screen.getByRole("cell", { name: /111/ })).toHaveTextContent("(leading)");
     expect(screen.getByRole("cell", { name: "1" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "100.00%" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "0.00%" })).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "111 100.00%, 222 0.00%" })).toBeInTheDocument();
-    expect(container.querySelector(".results-pie circle")).not.toBeNull();
-    expect(screen.getAllByText("100.00%").length).toBeGreaterThan(0);
-    expect(screen.getByText("0.00%")).toBeInTheDocument();
+
+    const circle = container.querySelector(".results-pie circle");
+    expect(circle).not.toBeNull();
+    if (circle) {
+      await user.click(circle);
+      expect(screen.getByTestId("pie-tooltip")).toBeInTheDocument();
+      expect(screen.getByTestId("pie-tooltip")).toHaveTextContent("111");
+      expect(screen.getByTestId("pie-tooltip")).toHaveTextContent("100.00%");
+    }
   });
 
   it("多选项按百分比切分，没有有效票时不画扇区", () => {

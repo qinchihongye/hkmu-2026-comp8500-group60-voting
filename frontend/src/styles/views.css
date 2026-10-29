@@ -424,27 +424,19 @@
   font-weight: 700;
 }
 
-.results-pie-legend {
-  list-style: none;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+@keyframes pieTooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -90%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1);
+  }
 }
 
-.results-pie-legend li {
-  display: grid;
-  grid-template-columns: 12px minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: center;
-  color: #1e293b;
-  font-size: 0.9rem;
-}
-
-.results-pie-legend strong {
-  color: #0f172a;
+.results-pie-tooltip {
+  animation: pieTooltipFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @media (max-width: 960px) {

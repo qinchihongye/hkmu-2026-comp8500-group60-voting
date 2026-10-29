@@ -92,6 +92,8 @@ export function usePollAccess(options: { pollId?: number; shareCode?: string }):
           }
           setEntry(nextEntry);
           setDetail(nextDetail);
+          setGrantExpired(false);
+          setNeedsLogin(false);
           setSubmissionUnknown((current) => (nextDetail.has_voted ? false : current));
         } catch (error) {
           if (ticket !== ticketRef.current || controller.signal.aborted) {
@@ -100,6 +102,7 @@ export function usePollAccess(options: { pollId?: number; shareCode?: string }):
           setEntry(nextEntry);
           if (isApiClientError(error) && error.code === ApiCode.UNAUTHENTICATED) {
             setNeedsLogin(true);
+            setGrantExpired(false);
             setAccountExpired(auth.status === "authenticated");
             setDetail(null);
           } else if (

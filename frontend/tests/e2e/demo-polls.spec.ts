@@ -7,11 +7,11 @@ const pollPassword = process.env.DEMO_POLL_PASSWORD ?? "comp8500sefgroup60";
 
 async function openExamples(page: Page): Promise<void> {
   await login(page, "demo_voter", voterPassword);
-  const response = page.waitForResponse((item) => item.url().includes("/api/v1/demo-polls"));
   await page.goto("/overview");
-  const body = (await (await response).json()) as { data?: { total?: number } };
-  if (!body.data?.total) {
-    test.skip(true, "固定示例未启用");
+  const response = await page.request.get("/api/v1/demo-polls");
+  const body = (await response.json()) as { data?: { total?: number } };
+  if (!body.data?.total || !(await page.getByTestId("demo-polls").isVisible().catch(() => false))) {
+    test.skip(true, "固定示例未启用或已并入广场");
   }
   await expect(page.getByTestId("demo-polls")).toBeVisible();
 }

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { accessPassword, adminPassword, apiPost, createDraft, login, publishCurrent, register, uniqueName } from "./support";
+import { accessPassword, adminPassword, apiPost, createDraft, login, origin, publishCurrent, register, uniqueName } from "./support";
 
 test("管理员能看他人私密和进行中汇总，但不能写", async ({ browser, playwright }) => {
   const creatorName = uniqueName("owner");
@@ -28,7 +28,7 @@ test("管理员能看他人私密和进行中汇总，但不能写", async ({ br
 
   const pollPath = new URL(admin.url()).pathname;
   const pollId = pollPath.split("/").at(-1);
-  const api = await playwright.request.newContext({ baseURL: "http://localhost:5173" });
+  const api = await playwright.request.newContext({ baseURL: origin });
   const loginResponse = await apiPost(api, "/api/v1/auth/login", { username: "admin", password: adminPassword });
   expect(loginResponse.ok()).toBeTruthy();
   const body = (await loginResponse.json()) as { data: { csrf_token: string } };
