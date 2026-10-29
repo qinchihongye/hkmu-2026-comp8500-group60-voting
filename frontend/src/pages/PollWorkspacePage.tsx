@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { ModeTags, StatusTag } from "../components/StatusTag";
 import {
   closePoll,
   getOwnedPoll,
@@ -10,12 +9,12 @@ import {
 } from "../features/creator/api";
 import { SharePanel } from "../features/creator/SharePanel";
 import { getResults } from "../features/polls/api";
+import { PollHeroHeader } from "../features/polls/PollHeroHeader";
 import { ResultsPanel } from "../features/polls/ResultsPanel";
 import { I18nError, useFailure } from "../i18n/errors";
 import { useI18n } from "../i18n/LocaleProvider";
 import { ApiCode } from "../lib/api-codes";
 import { isApiClientError } from "../lib/api-error";
-import { formatHongKong } from "../lib/time";
 import type { ManagePollDetail, PollResults, ShareLink } from "../lib/api-types";
 
 export function PollWorkspacePage() {
@@ -98,19 +97,18 @@ export function PollWorkspacePage() {
   }
   return (
     <div className="view-root">
-      <header className="view-header">
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, marginBottom: 12 }}>
-          <StatusTag status={poll.effective_status} />
-          <ModeTags identity={poll.identity_mode} visibility={poll.visibility} />
-        </div>
-        <h1 className="view-title">{poll.title}</h1>
-        {poll.description ? <p className="view-subtitle">{poll.description}</p> : null}
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14, marginTop: 12, fontSize: "0.88rem", color: "#64748b" }}>
-          <span>{formatHongKong(poll.starts_at)} {t("common.to")} {formatHongKong(poll.ends_at)}</span>
-          <span>{t("workspace.version", { version: poll.version })}</span>
-          {poll.has_access_password ? <span>{t("workspace.passcodeSet")}</span> : null}
-        </div>
-      </header>
+      <PollHeroHeader
+        title={poll.title}
+        description={poll.description}
+        status={poll.effective_status}
+        identityMode={poll.identity_mode}
+        visibility={poll.visibility}
+        startsAt={poll.starts_at}
+        endsAt={poll.ends_at}
+        version={poll.version}
+        hasAccessPassword={poll.has_access_password}
+        closeReason={poll.close_reason}
+      />
 
       <div className="view-card">
         <div className="view-card-header">

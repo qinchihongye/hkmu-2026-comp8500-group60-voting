@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 
-import { ModeTags, StatusTag } from "../../components/StatusTag";
+import { ModeTags } from "../../components/StatusTag";
 import { useFailure } from "../../i18n/errors";
 import { useI18n } from "../../i18n/LocaleProvider";
 import { ApiCode } from "../../lib/api-codes";
@@ -13,6 +13,7 @@ import { useGuest } from "../poll-access/GuestProvider";
 import type { PollAccessView } from "../poll-access/usePollAccess";
 import { castVote, getPoll, getResults } from "./api";
 import { BallotForm } from "./BallotForm";
+import { PollHeroHeader } from "./PollHeroHeader";
 import { ResultsPanel } from "./ResultsPanel";
 
 function InlinePasscodeForm({
@@ -247,25 +248,22 @@ export function ParticipationPanel({
       : undefined;
   return (
     <div className="view-root">
-      <header className="view-header">
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, marginBottom: 12 }}>
-          <StatusTag status={detail.effective_status} />
-          <ModeTags identity={detail.identity_mode} visibility={detail.visibility} />
-        </div>
-        <h1 className="view-title">{detail.title}</h1>
-        {detail.description ? <p className="view-subtitle">{detail.description}</p> : null}
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14, marginTop: 12 }}>
-          <span style={{ fontSize: "0.88rem", color: "#64748b", display: "flex", alignItems: "center", gap: 6 }}>
-            {formatHongKong(detail.starts_at)} {t("common.to")} {formatHongKong(detail.ends_at)} ({t("common.hkt")})
-          </span>
-          {detail.effective_status === "SCHEDULED" ? (
-            <span style={{ fontSize: "0.88rem", color: "#d97706", fontWeight: 600 }}>{t("access.notStarted")}</span>
-          ) : null}
-          {detail.effective_status === "CLOSED" ? (
-            <span style={{ fontSize: "0.88rem", color: "#dc2626", fontWeight: 600 }}>{t("access.ended")}</span>
-          ) : null}
-        </div>
-      </header>
+      <PollHeroHeader
+        title={detail.title}
+        description={detail.description}
+        status={detail.effective_status}
+        identityMode={detail.identity_mode}
+        visibility={detail.visibility}
+        startsAt={detail.starts_at}
+        endsAt={detail.ends_at}
+        statusNotice={
+          detail.effective_status === "SCHEDULED" ? (
+            <span className="poll-hero-status-alert scheduled">{t("access.notStarted")}</span>
+          ) : detail.effective_status === "CLOSED" ? (
+            <span className="poll-hero-status-alert closed">{t("access.ended")}</span>
+          ) : null
+        }
+      />
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
         {detail.effective_status !== "CLOSED" && detail.can_view_results ? (

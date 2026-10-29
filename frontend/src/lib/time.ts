@@ -63,3 +63,45 @@ export function defaultPollWindow(now = new Date()): {
     endsTime: ends.time,
   };
 }
+
+export function formatHongKongDateTimeParts(iso: string, locale: "en" | "zh"): { date: string; time: string } {
+  const d = new Date(iso);
+  const formatter = new Intl.DateTimeFormat(locale === "zh" ? "zh-HK" : "en-GB", {
+    timeZone: hongKong,
+    year: "numeric",
+    month: locale === "zh" ? "2-digit" : "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+  const parts = Object.fromEntries(formatter.formatToParts(d).map((p) => [p.type, p.value]));
+  const dateStr = locale === "zh"
+    ? `${parts.year}-${parts.month}-${parts.day}`
+    : `${parts.day} ${parts.month} ${parts.year}`;
+  const timeStr = `${parts.hour}:${parts.minute}`;
+  return { date: dateStr, time: timeStr };
+}
+
+export function formatDuration(startIso: string, endIso: string, locale: "en" | "zh"): string {
+  const diffMs = Math.max(0, new Date(endIso).getTime() - new Date(startIso).getTime());
+  const totalMinutes = Math.round(diffMs / 60000);
+  const days = Math.floor(totalMinutes / (60 * 24));
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const minutes = totalMinutes % 60;
+
+  if (locale === "zh") {
+    if (days > 0 && hours > 0) return `${days}天${hours}小时`;
+    if (days > 0) return `${days}天`;
+    if (hours > 0 && minutes > 0) return `${hours}小时${minutes}分`;
+    if (hours > 0) return `${hours}小时`;
+    return `${minutes}分钟`;
+  } else {
+    if (days > 0 && hours > 0) return `${days}d ${hours}h`;
+    if (days > 0) return `${days}d`;
+    if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`;
+    if (hours > 0) return `${hours}h`;
+    return `${minutes}m`;
+  }
+}
+
