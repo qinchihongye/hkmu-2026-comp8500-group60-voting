@@ -112,7 +112,7 @@ describe("PollForm", () => {
       <PollForm initial={emptyPollForm(fixedNow)} mode="create" now={fixedNow} onSubmit={onSubmit} />,
     );
     expect(screen.getByLabelText("Ballot limit")).toHaveValue("");
-    expect(screen.getByText("Unlimited")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Unlimited")).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Single Vote" })).toBeChecked();
     expect(screen.queryByText(/This browser is the credential/)).not.toBeInTheDocument();
 
@@ -169,7 +169,7 @@ describe("PollForm", () => {
     expect(screen.getByText("Vote Limit")).toBeInTheDocument();
     expect(screen.queryByText("最高投票数")).not.toBeInTheDocument();
     expect(screen.queryByText("是否可以一人多投")).not.toBeInTheDocument();
-    expect(screen.getByText("Unlimited")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Unlimited")).toBeInTheDocument();
     expect(document.body.textContent).toContain("[👤 Named]");
     expect(document.body.textContent).toContain("[🔒 Private]");
     expect(screen.getByRole("switch", { name: "Anonymous voting" })).toBeInTheDocument();
@@ -190,7 +190,7 @@ describe("PollForm", () => {
     expect(screen.queryByText("Vote Allowance")).not.toBeInTheDocument();
     expect(screen.queryByText("(Single Vote)")).not.toBeInTheDocument();
     expect(screen.queryByText("(Multi-Vote)")).not.toBeInTheDocument();
-    expect(screen.getByText("不限")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("不限")).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "不记名投票" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "私密投票" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "一人一票" })).toBeChecked();

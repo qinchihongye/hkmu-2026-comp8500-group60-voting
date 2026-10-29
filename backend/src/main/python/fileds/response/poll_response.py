@@ -107,24 +107,20 @@ class ManagePollDetail(PollSummary):
     """创建者和管理员看到的管理详情。不含参与状态和密码。
 
     Attributes:
-        description: 说明。
         options: 按位置排列的选项。
         lifecycle: 库存生命周期。
         version: 乐观锁版本。
         creator_id: 创建者账户。
-        closed_at: 显式关闭时间。自然结束时为空。
         has_access_password: 是否配置了访问密码。不返回密码本身。
         server_time: 服务端当前时间，UTC。
         can_manage: 调用者是否为创建者。
         can_view_results: 管理读取始终可以看汇总。
     """
 
-    description: str | None
     options: list[OptionPublic]
     lifecycle: str
     version: int
     creator_id: int
-    closed_at: datetime | None
     has_access_password: bool
     server_time: datetime
     can_manage: bool

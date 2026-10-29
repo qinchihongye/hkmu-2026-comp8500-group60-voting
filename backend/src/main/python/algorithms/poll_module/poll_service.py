@@ -924,12 +924,10 @@ def _manage_detail(
     base = _summary(poll, now)
     return ManagePollDetail(
         **base.model_dump(),
-        description=poll.description,
         options=_option_public(session, poll.id),
         lifecycle=poll.lifecycle,
         version=poll.version,
         creator_id=poll.creator_id,
-        closed_at=poll.closed_at,
         has_access_password=(
             poll.private_password is not None or poll.private_password_hash is not None
         ),

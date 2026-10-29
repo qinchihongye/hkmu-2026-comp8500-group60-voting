@@ -17,17 +17,47 @@ function valueToSlider(value: number | null): number {
   if (value === null || value < 1) {
     return 0;
   }
-  const ratio = Math.log(value) / Math.log(MAX_VOTE_LIMIT);
-  return Math.round(1 + Math.min(1, Math.max(0, ratio)) * (SLIDER_STEPS - 1));
+  if (value <= 10) {
+    return Math.round(20 + ((value - 1) / 9) * 180);
+  }
+  if (value <= 50) {
+    return Math.round(200 + ((value - 10) / 40) * 200);
+  }
+  if (value <= 100) {
+    return Math.round(400 + ((value - 50) / 50) * 200);
+  }
+  if (value <= 1000) {
+    const ratio = Math.log10(value / 100);
+    return Math.round(600 + ratio * 200);
+  }
+  const ratio = Math.min(2, Math.max(0, Math.log10(value / 1000))) / 2;
+  return Math.round(800 + ratio * 200);
 }
 
 function sliderToValue(position: number): number | null {
-  if (position <= 0) {
+  if (position <= 10) {
     return null;
   }
-  const ratio = (position - 1) / (SLIDER_STEPS - 1);
-  const raw = Math.round(Math.exp(ratio * Math.log(MAX_VOTE_LIMIT)));
-  return Math.min(MAX_VOTE_LIMIT, Math.max(1, raw));
+  if (position <= 200) {
+    const ratio = (position - 20) / 180;
+    return Math.min(10, Math.max(1, Math.round(1 + ratio * 9)));
+  }
+  if (position <= 400) {
+    const ratio = (position - 200) / 200;
+    return Math.min(50, Math.max(10, Math.round(10 + ratio * 40)));
+  }
+  if (position <= 600) {
+    const ratio = (position - 400) / 200;
+    return Math.min(100, Math.max(50, Math.round(50 + ratio * 50)));
+  }
+  if (position <= 800) {
+    const ratio = (position - 600) / 200;
+    const raw = Math.round(100 * Math.pow(10, ratio));
+    return Math.min(1000, Math.max(100, raw));
+  }
+  const ratio = (position - 800) / 200;
+  const raw = Math.round(1000 * Math.pow(100, ratio));
+  return Math.min(MAX_VOTE_LIMIT, Math.max(1000, raw));
 }
 
 function limitFromText(text: string): number | null {
@@ -498,20 +528,20 @@ export function PollForm({
 
                   <div className="poll-limit-input-wrap">
                     <input
-                      className={limitText.length > 5 ? "poll-limit-input is-long" : "poll-limit-input"}
+                      className={`poll-limit-input ${limitText.length > 5 ? "is-long" : ""} ${limitText.trim() === "" ? "is-empty" : ""}`}
                       type="text"
                       inputMode="numeric"
                       autoComplete="off"
                       aria-label={t("form.ballotLimit")}
                       value={limitText}
-                      placeholder=""
+                      placeholder={t("form.unlimited")}
                       onChange={(event) => changeLimit(event.target.value)}
                       onBlur={blurLimit}
                       onKeyDown={onLimitKey}
                     />
-                    <span className="poll-limit-unit">
-                      {limitText.trim() === "" ? t("form.unlimited") : t("form.voteUnit")}
-                    </span>
+                    {limitText.trim() !== "" ? (
+                      <span className="poll-limit-unit">{t("form.voteUnit")}</span>
+                    ) : null}
                   </div>
 
                   <button
@@ -566,42 +596,48 @@ export function PollForm({
                   <span
                     role="presentation"
                     onClick={() => applyLimit(null)}
-                    className={numericLimit === null ? "is-active" : ""}
+                    className={`poll-limit-tick-label ${numericLimit === null ? "is-active" : ""}`}
+                    style={{ left: "0%" }}
                   >
                     {t("polls.unlimitedBallots")}
                   </span>
                   <span
                     role="presentation"
                     onClick={() => applyLimit(10)}
-                    className={numericLimit === 10 ? "is-active" : ""}
+                    className={`poll-limit-tick-label ${numericLimit === 10 ? "is-active" : ""}`}
+                    style={{ left: "20%" }}
                   >
                     10
                   </span>
                   <span
                     role="presentation"
                     onClick={() => applyLimit(50)}
-                    className={numericLimit === 50 ? "is-active" : ""}
+                    className={`poll-limit-tick-label ${numericLimit === 50 ? "is-active" : ""}`}
+                    style={{ left: "40%" }}
                   >
                     50
                   </span>
                   <span
                     role="presentation"
                     onClick={() => applyLimit(100)}
-                    className={numericLimit === 100 ? "is-active" : ""}
+                    className={`poll-limit-tick-label ${numericLimit === 100 ? "is-active" : ""}`}
+                    style={{ left: "60%" }}
                   >
                     100
                   </span>
                   <span
                     role="presentation"
                     onClick={() => applyLimit(1000)}
-                    className={numericLimit === 1000 ? "is-active" : ""}
+                    className={`poll-limit-tick-label ${numericLimit === 1000 ? "is-active" : ""}`}
+                    style={{ left: "80%" }}
                   >
                     1k
                   </span>
                   <span
                     role="presentation"
                     onClick={() => applyLimit(100000)}
-                    className={numericLimit === 100000 ? "is-active" : ""}
+                    className={`poll-limit-tick-label ${numericLimit === 100000 ? "is-active" : ""}`}
+                    style={{ left: "100%" }}
                   >
                     100k
                   </span>

@@ -672,6 +672,12 @@
   outline: none;
 }
 
+.poll-limit-input.is-empty {
+  width: 78px;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
 .poll-limit-input.is-long {
   width: 66px;
   font-size: 0.85rem;
@@ -799,27 +805,39 @@
 }
 
 .poll-limit-ticks {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  position: relative;
+  width: 100%;
+  height: 20px;
   font-size: 0.72rem;
   font-weight: 600;
   color: #94a3b8;
   font-variant-numeric: tabular-nums;
-  padding: 0 2px;
   user-select: none;
+  margin-top: 6px;
 }
 
-.poll-limit-ticks span {
+.poll-limit-tick-label {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
   cursor: pointer;
+  white-space: nowrap;
   transition: color 0.15s ease;
 }
 
-.poll-limit-ticks span:hover {
+.poll-limit-tick-label:first-child {
+  transform: translateX(0);
+}
+
+.poll-limit-tick-label:last-child {
+  transform: translateX(-100%);
+}
+
+.poll-limit-tick-label:hover {
   color: #1363df;
 }
 
-.poll-limit-ticks span.is-active {
+.poll-limit-tick-label.is-active {
   color: #1363df;
   font-weight: 800;
 }
