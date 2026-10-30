@@ -112,37 +112,56 @@ export function NotificationDropdown({
   }
 
   return (
-    <div
-      className="notif-dropdown-panel"
-      role="region"
-      aria-label={t("notifications.title") || "Notifications"}
-      onClick={(e) => e.stopPropagation()}
-    >
-      {/* Header */}
-      <div className="notif-dropdown-header">
-        <div className="notif-header-title-row">
-          <div className="notif-title-wrap">
-            <span className="notif-header-title">{t("notifications.title")}</span>
-            {unreadCount > 0 ? (
-              <span className="notif-unread-badge" data-testid="notif-unread-count">
-                {unreadCount}
-              </span>
-            ) : null}
+    <>
+      {/* Mobile Backdrop Overlay for tap-to-dismiss */}
+      <div
+        className="notif-mobile-backdrop"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      <div
+        className="notif-dropdown-panel"
+        role="region"
+        aria-label={t("notifications.title") || "Notifications"}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="notif-dropdown-header">
+          <div className="notif-header-title-row">
+            <div className="notif-title-wrap">
+              <span className="notif-header-title">{t("notifications.title")}</span>
+              {unreadCount > 0 ? (
+                <span className="notif-unread-badge" data-testid="notif-unread-count">
+                  {unreadCount}
+                </span>
+              ) : null}
+            </div>
+            <div className="notif-header-actions">
+              {unreadCount > 0 ? (
+                <button
+                  type="button"
+                  className="notif-mark-all-btn"
+                  onClick={onMarkAllAsRead}
+                  title={t("notifications.markAllRead")}
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>{t("notifications.markAllRead")}</span>
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="notif-close-btn"
+                onClick={onClose}
+                aria-label={t("common.close")}
+                title={t("common.close")}
+              >
+                ×
+              </button>
+            </div>
           </div>
-          {unreadCount > 0 ? (
-            <button
-              type="button"
-              className="notif-mark-all-btn"
-              onClick={onMarkAllAsRead}
-              title={t("notifications.markAllRead")}
-            >
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              <span>{t("notifications.markAllRead")}</span>
-            </button>
-          ) : null}
-        </div>
 
         {/* Filter Tabs */}
         <div className="notif-tabs-row">
@@ -229,7 +248,8 @@ export function NotificationDropdown({
           </button>
         </div>
       ) : null}
-    </div>
+      </div>
+    </>
   );
 }
 

@@ -470,9 +470,9 @@ export function ResultsPanel({ results }: { results: PollResults }) {
           <table className="saas-table">
             <thead>
               <tr>
-                <th style={{ width: "52%" }}>{t("results.option")}</th>
-                <th style={{ textAlign: "right", width: "18%", whiteSpace: "nowrap" }}>{t("results.votes")}</th>
-                <th style={{ textAlign: "right", width: "30%", whiteSpace: "nowrap" }}>{t("results.percentageCol")}</th>
+                <th style={{ width: "46%" }}>{t("results.option")}</th>
+                <th style={{ textAlign: "right", width: "20%", whiteSpace: "nowrap" }}>{t("results.votes")}</th>
+                <th style={{ textAlign: "right", width: "34%", whiteSpace: "nowrap" }}>{t("results.percentageCol")}</th>
               </tr>
             </thead>
             <tbody>
@@ -491,35 +491,21 @@ export function ResultsPanel({ results }: { results: PollResults }) {
                     onClick={() => setPinnedIndex((prev) => (prev === index ? null : index))}
                   >
                     <td>
-                      <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}>
-                        <span className="results-swatch" style={{ background: sliceColor(index), flexShrink: 0 }} aria-hidden="true" />
-                        <strong
-                          className="results-option-text"
-                          title={option.label}
-                        >
-                          {option.label}
-                        </strong>
-                        {leaders.has(option.option_id) ? (
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              fontSize: "0.72rem",
-                              fontWeight: 700,
-                              padding: "2px 8px",
-                              borderRadius: 9999,
-                              background: "#eff6ff",
-                              color: "#1363df",
-                              border: "1px solid #bfdbfe",
-                              marginLeft: 8,
-                              letterSpacing: "0.03em",
-                              flexShrink: 0,
-                              whiteSpace: "nowrap",
-                            }}
+                      <div className="results-option-cell">
+                        <span className="results-swatch" style={{ background: sliceColor(index) }} aria-hidden="true" />
+                        <div className="results-option-main">
+                          <strong
+                            className="results-option-text"
+                            title={option.label}
                           >
-                            {results.is_final ? t("results.winner") : t("results.leading")}
-                          </span>
-                        ) : null}
+                            {option.label}
+                          </strong>
+                          {leaders.has(option.option_id) ? (
+                            <span className="results-winner-badge">
+                              {results.is_final ? t("results.winner") : t("results.leading")}
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                     </td>
                     <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{option.count}</td>
@@ -528,7 +514,7 @@ export function ResultsPanel({ results }: { results: PollResults }) {
                       <div
                         style={{
                           width: "100%",
-                          minWidth: 54,
+                          minWidth: 36,
                           height: 4,
                           background: "#f1f5f9",
                           borderRadius: 9999,
