@@ -681,6 +681,30 @@
   border: 1.5px solid #ffffff;
 }
 
+.topbar-bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+  box-sizing: border-box;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.35);
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
 .topbar-auth-links {
   display: flex;
   align-items: center;
