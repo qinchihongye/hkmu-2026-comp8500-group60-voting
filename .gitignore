@@ -3,6 +3,8 @@ prompt.txt
 /references/*
 /frontend/test-results/
 /test-results/
+/docs/ppt_sample/
+/docs/ppt-gpt
 
 # 本地环境与密钥
 .env
