@@ -6,19 +6,38 @@
 
   Registered users can create polls. Guests can participate directly in public anonymous polls, while private polls require a share link and an access password. The project supports Docker Compose deployment and separate frontend and backend development.
 
-## Screenshots
+## System Showcase & UI Previews
 
-* Overview: browse poll status, remaining time, and ballot progress.
+* Full-stack modern online voting platform architecture & core views showcase:
 
-  ![Poll overview](docs/images/overview.jpg)
+  ![VoteNow Product Showcase](docs/images/product-showcase.png)
 
-* Create poll: configure the topic, options, schedule, and participation rules, with optional text-assisted form filling.
+* Core UI carousel showcase (dynamic smooth slide transition):
 
-  ![Create poll](docs/images/create-poll.jpg)
+  ![Core UI Carousel Showcase](docs/images/preview-carousel.gif)
 
-* Results: view ballot and selection counts separately, together with option totals and percentages.
+* Step-by-step static views & details:
 
-  ![Poll results](docs/images/poll-results.jpg)
+  <details open>
+    <summary><b>📊 1. Poll Overview Plaza</b> - Browse poll status, remaining time, and ballot progress</summary>
+    <br/>
+
+    ![Poll overview](docs/images/overview.jpg)
+  </details>
+
+  <details>
+    <summary><b>✍️ 2. Create Poll & Smart Fill</b> - Configure topic, options, schedule, and rules with LLM text recognition</summary>
+    <br/>
+
+    ![Create poll](docs/images/create-poll.jpg)
+  </details>
+
+  <details>
+    <summary><b>📈 3. Results & Donut Chart</b> - View ballot and selection counts, Donut chart, and winner status</summary>
+    <br/>
+
+    ![Poll results](docs/images/poll-results.jpg)
+  </details>
 
   Screenshots captured on October 30, 2026, using local demo data.
 
@@ -107,13 +126,27 @@
 
 * For detailed steps, role permissions, result exports, and troubleshooting, see the [User Guide (Chinese)](docs/technical/user-guide.md).
 
+* End-to-End System Workflow Diagram
+
+  ![VoteNow System Workflow](docs/images/system-workflow.png)
+
 * Basic workflow
 
-  1. Register or log in, then enter the title, options, and schedule in Create poll.
-  2. Choose named or anonymous voting, public or private visibility, a ballot limit, and result visibility. Set an access password for private polls.
-  3. Save a draft, review it, and publish it from the creator workspace.
-  4. Share the link. For private polls, also provide participants with the access password.
-  5. Participants submit ballots during the voting window. Creators can view results or close a poll early.
+  ```mermaid
+  flowchart LR
+    A[01. Identity Access<br/>Guest/User/Admin] --> B[02. Poll Creation<br/>Manual Form / ✨Smart Fill]
+    B --> C[03. Policy & Schedule<br/>Named/Anon · Public/Private · Cap]
+    C --> D[04. Multi-Channel Share<br/>Link / Text / QR Code]
+    D --> E[05. Ballot Submission<br/>Left-aligned UI · Atomic Lock]
+    E --> F[06. Analytics & Audit<br/>Donut Chart · Excel · Audit Trail]
+  ```
+
+  1. **Register or log in**: Enter title, options, and schedule in Create poll, or use Smart-Fast Fill to parse raw text and preview JSON before applying.
+  2. **Configure policies**: Choose named or anonymous voting, public or private visibility, ballot limit, and result visibility. Set an access password for private polls.
+  3. **Save and publish**: Save a draft, review it, and publish it from the creator workspace (polls starting in the future are scheduled automatically).
+  4. **Share across channels**: Share the dedicated link, invitation text, or QR code. For private polls, provide the access password.
+  5. **Participate safely**: Participants vote with single/multiple selection during the window; transactions enforce concurrency and auto-closure on ballot cap.
+  6. **Analyze and govern**: Review results via Donut chart and micro-bars, export Excel or PNG share cards, close early with confirmation, or audit as admin.
 
 * Key rules
 
