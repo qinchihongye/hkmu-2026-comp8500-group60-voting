@@ -1,6 +1,6 @@
 # VoteNow 后端接口文档
 
-* **版本**：v1；核对日期 2026-10-29；覆盖当前注册的全部 **27 个应用操作**。依据路由生成的 OpenAPI、请求／响应模型、校验器及服务代码，按 `http-api-doc-writer` 模板整理。请求／响应字段集中定义，避免每个接口重复相同表格。
+* **版本**：v1；核对日期 2026-10-30；覆盖当前注册的全部 **27 个应用操作**。依据路由生成的 OpenAPI、请求／响应模型、校验器及服务代码，按 `http-api-doc-writer` 模板整理。请求／响应字段集中定义，避免每个接口重复相同表格。
 
   [后端设计](backend-design.md) · [数据库设计](database-design.md) · [详细使用](user-guide.md)
 
@@ -22,6 +22,33 @@
 
   | 方法 | 路径 | 权限／防护 | 成功 data 类型 | HTTP |
   | --- | --- | --- | --- | --- |
+  | GET | /api/v1/health/live | 无 | HealthStatus | 200 |
+  | GET | /api/v1/health/ready | 无 | HealthStatus | 200 |
+  | GET | /api/v1/auth/me | 账户 Cookie | SessionPublic | 200 |
+  | POST | /api/v1/auth/register | Origin | UserPublic | 201 |
+  | POST | /api/v1/auth/login | Origin | SessionPublic | 200 |
+  | POST | /api/v1/auth/logout | Origin + 有效会话时账户 CSRF | null | 200 |
+  | POST | /api/v1/guest/context | Origin | GuestPublic | 200 |
+  | GET | /api/v1/polls | 无 | Page_PollSummary_ | 200 |
+  | POST | /api/v1/polls | Origin + 账户 CSRF | ManagePollDetail | 201 |
+  | GET | /api/v1/polls/{poll_id} | 按投票规则 | PollDetail | 200 |
+  | PATCH | /api/v1/polls/{poll_id} | Origin + 账户 CSRF + 创建者 | ManagePollDetail | 200 |
+  | GET | /api/v1/me/polls | 账户 Cookie | Page_ManagePollSummary_ | 200 |
+  | GET | /api/v1/me/polls/{poll_id} | 账户 Cookie + 创建者 | ManagePollDetail | 200 |
+  | GET | /api/v1/me/polls/{poll_id}/share | 账户 Cookie + 创建者 | ShareLink | 200 |
+  | POST | /api/v1/polls/{poll_id}/publish | Origin + 账户 CSRF + 创建者 | ManagePollDetail | 200 |
+  | POST | /api/v1/polls/{poll_id}/close | Origin + 账户 CSRF + 创建者 | ManagePollDetail | 200 |
+  | POST | /api/v1/polls/{poll_id}/unlock | Origin + 访客 CSRF | AccessGrantPublic | 200 |
+  | GET | /api/v1/poll-import/capabilities | 账户 Cookie | PollImportCapabilities | 200 |
+  | POST | /api/v1/poll-import/parse | Origin + 账户 CSRF | PollTextParseResult | 200 |
+  | POST | /api/v1/polls/{poll_id}/votes | Origin + 访客 CSRF；记名另需账户 Cookie | VoteReceipt | 201 |
+  | GET | /api/v1/me/votes | 账户 Cookie | Page_MyVote_ | 200 |
+  | GET | /api/v1/polls/{poll_id}/results | 按投票规则 | PollResults | 200 |
+  | GET | /api/v1/shares/{share_code} | 无 | ShareEntry | 200 |
+  | GET | /api/v1/admin/polls | 账户 Cookie + ADMIN | Page_ManagePollSummary_ | 200 |
+  | GET | /api/v1/admin/polls/{poll_id} | 账户 Cookie + ADMIN | ManagePollDetail | 200 |
+  | GET | /api/v1/admin/audit-events | 账户 Cookie + ADMIN | Page_AuditEventPublic_ | 200 |
+  | GET | /api/v1/demo-polls | 账户 Cookie | Page_DemoPollSummary_ | 200 |
 
 ## 请求与响应公共约定
 
@@ -47,7 +74,7 @@
   | ResponseModel.code | 成功 0；失败为数值业务码，不能当作 HTTP 状态码 |
   | ResponseModel.msg | 给人阅读；前端业务分支应以 code 判断 |
   | ResponseModel.data | 成功数据或错误附加信息；注销成功为 null |
-  | ResponseModel.request_id | 服务端生成；匿名参与链路可能为空字符串，见响应工具的去关联处理 |
+  | ResponseModel.request_id | 请求中间件生成；响应包含该标识，但匿名参与链路的日志不记录该标识 |
   | 分页 | items 是当前页；total 是符合筛选条件的总条数 |
   | 空值与省略 | `null` 不等于字段省略；识别结果有明确的省略规则，见 PollTextFields |
   | 时间 | ISO 8601 带时区；一般响应为 UTC，文字识别参考时区为 Asia/Hong_Kong |
@@ -93,6 +120,416 @@
 ## 各接口使用说明
 
 * 各节参数表只列路径和查询参数；JSON body 的完整结构、默认值和示例见后续对应模型。统一错误表为全局协议，不表示每个端点都会触发所有错误；下列“主要业务错误”另列重点分支，鉴权、参数错误和数据库故障仍可能出现。
+
+### GET /api/v1/health/live
+
+* 只报告进程存活，不访问数据库。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 无 |
+  | 请求 body | 无 |
+  | 成功响应 | HTTP 200；ResponseModel.data = HealthStatus / null；对应模型示例加统一信封 |
+  | 主要业务错误 | — |
+  | 实现 | backend/src/main/python/api/health/health_get.py |
+
+### GET /api/v1/health/ready
+
+* 执行 SELECT 1；失败返回 50301，Retry-After: 5。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 无 |
+  | 请求 body | 无 |
+  | 成功响应 | HTTP 200；ResponseModel.data = HealthStatus / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 50301 |
+  | 实现 | backend/src/main/python/api/health/health_get.py |
+
+### GET /api/v1/auth/me
+
+* 恢复账户身份和账户 CSRF，不返回原令牌。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 账户 Cookie |
+  | 请求 body | 无 |
+  | 成功响应 | HTTP 200；ResponseModel.data = SessionPublic / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40101 |
+  | 实现 | backend/src/main/python/api/auth/auth_get.py |
+
+### POST /api/v1/auth/register
+
+* 注册 USER；不自动登录，不能指定 role。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin |
+  | 请求 body | RequestModel<RegisterRequest>；完整示例见 RegisterRequest |
+  | 成功响应 | HTTP 201；ResponseModel.data = UserPublic / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40905、42201 |
+  | 实现 | backend/src/main/python/api/auth/auth_post.py |
+
+### POST /api/v1/auth/login
+
+* 成功写入 voting_session Cookie。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin |
+  | 请求 body | RequestModel<LoginRequest>；完整示例见 LoginRequest |
+  | 成功响应 | HTTP 200；ResponseModel.data = SessionPublic / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40102、42201 |
+  | 实现 | backend/src/main/python/api/auth/auth_post.py |
+
+### POST /api/v1/auth/logout
+
+* 移除账户会话和 Cookie；过期会话无需旧 CSRF；访客 Cookie 不变。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin + 有效会话时账户 CSRF |
+  | 请求 body | RequestModel<EmptyRequestData>；完整示例见 EmptyRequestData |
+  | 成功响应 | HTTP 200；ResponseModel.data = null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40302 |
+  | 实现 | backend/src/main/python/api/auth/auth_post.py |
+
+### POST /api/v1/guest/context
+
+* 恢复或建立访客上下文；有效凭据不会被替换。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin |
+  | 请求 body | RequestModel<EmptyRequestData>；完整示例见 EmptyRequestData |
+  | 成功响应 | HTTP 200；ResponseModel.data = GuestPublic / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40302 |
+  | 实现 | backend/src/main/python/api/guest/guest_post.py |
+
+### GET /api/v1/polls
+
+* 只返回公开且非草稿投票；status=DRAFT 无公开结果。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 无 |
+  | 请求 body | 无 |
+  | 成功响应 | HTTP 200；ResponseModel.data = Page_PollSummary_ / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 42201 |
+  | 实现 | backend/src/main/python/api/poll/poll_get.py |
+
+  | 参数 | 位置 | 类型 | 必填 | 默认／范围 |
+  | --- | --- | --- | --- | --- |
+  | page | query | integer | 否 | {"minimum": 1, "default": 1} |
+  | page_size | query | integer | 否 | {"maximum": 50, "minimum": 1, "default": 12} |
+  | status | query | PollStatus / null | 否 | {} |
+  | q | query | string / null | 否 | {} |
+  | sort_by | query | string / null | 否 | {} |
+
+### POST /api/v1/polls
+
+* 创建 DRAFT；创建者从会话取得。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin + 账户 CSRF |
+  | 请求 body | RequestModel<PollCreate>；完整示例见 PollCreate |
+  | 成功响应 | HTTP 201；ResponseModel.data = ManagePollDetail / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40101、40302、42201 |
+  | 实现 | backend/src/main/python/api/poll/poll_post.py |
+
+### GET /api/v1/polls/{poll_id}
+
+* 草稿不可见；记名需登录；私有需创建者／管理员或有效授权。普通私有未授权返回 40401；登记示例对已登录用户可返回锁定摘要（无选项）。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 按投票规则 |
+  | 请求 body | 无 |
+  | 成功响应 | HTTP 200；ResponseModel.data = PollDetail / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40101、40401 |
+  | 实现 | backend/src/main/python/api/poll/poll_get.py |
+
+  | 参数 | 位置 | 类型 | 必填 | 默认／范围 |
+  | --- | --- | --- | --- | --- |
+  | poll_id | path | integer | 是 | {} |
+
+### PATCH /api/v1/polls/{poll_id}
+
+* PATCH 实际是完整替换草稿；不是局部合并。未提供新密码可保留现有明文；公开转私有或旧密码无法保留时需新密码。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin + 账户 CSRF + 创建者 |
+  | 请求 body | RequestModel<PollUpdate>；完整示例见 PollUpdate |
+  | 成功响应 | HTTP 200；ResponseModel.data = ManagePollDetail / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40301、40903、40904、42201 |
+  | 实现 | backend/src/main/python/api/poll/poll_patch.py |
+
+  | 参数 | 位置 | 类型 | 必填 | 默认／范围 |
+  | --- | --- | --- | --- | --- |
+  | poll_id | path | integer | 是 | {} |
+
+### GET /api/v1/me/polls
+
+* 仅自己的场次，包含草稿、私有投票。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 账户 Cookie |
+  | 请求 body | 无 |
+  | 成功响应 | HTTP 200；ResponseModel.data = Page_ManagePollSummary_ / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40101 |
+  | 实现 | backend/src/main/python/api/poll/poll_get.py |
+
+  | 参数 | 位置 | 类型 | 必填 | 默认／范围 |
+  | --- | --- | --- | --- | --- |
+  | page | query | integer | 否 | {"minimum": 1, "default": 1} |
+  | page_size | query | integer | 否 | {"maximum": 50, "minimum": 1, "default": 12} |
+  | status | query | PollStatus / null | 否 | {} |
+  | q | query | string / null | 否 | {} |
+  | sort_by | query | string / null | 否 | {} |
+
+### GET /api/v1/me/polls/{poll_id}
+
+* 自己的管理详情，不包含访问密码；他人投票按不存在处理。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 账户 Cookie + 创建者 |
+  | 请求 body | 无 |
+  | 成功响应 | HTTP 200；ResponseModel.data = ManagePollDetail / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40101、40401 |
+  | 实现 | backend/src/main/python/api/poll/poll_get.py |
+
+  | 参数 | 位置 | 类型 | 必填 | 默认／范围 |
+  | --- | --- | --- | --- | --- |
+  | poll_id | path | integer | 是 | {} |
+
+### GET /api/v1/me/polls/{poll_id}/share
+
+* 仅已发布／关闭投票；链接不含密码，access_password 为独立可空字段。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 账户 Cookie + 创建者 |
+  | 请求 body | 无 |
+  | 成功响应 | HTTP 200；ResponseModel.data = ShareLink / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40101、40401、40902 |
+  | 实现 | backend/src/main/python/api/poll/poll_get.py |
+
+  | 参数 | 位置 | 类型 | 必填 | 默认／范围 |
+  | --- | --- | --- | --- | --- |
+  | poll_id | path | integer | 是 | {} |
+
+### POST /api/v1/polls/{poll_id}/publish
+
+* 检查 expected_version 后发布草稿；按时间进入 SCHEDULED 或 OPEN，结束时间须仍在未来。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin + 账户 CSRF + 创建者 |
+  | 请求 body | RequestModel<VersionRequest>；完整示例见 VersionRequest |
+  | 成功响应 | HTTP 200；ResponseModel.data = ManagePollDetail / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40301、40903、40904、42201 |
+  | 实现 | backend/src/main/python/api/poll/poll_post.py |
+
+  | 参数 | 位置 | 类型 | 必填 | 默认／范围 |
+  | --- | --- | --- | --- | --- |
+  | poll_id | path | integer | 是 | {} |
+
+### POST /api/v1/polls/{poll_id}/close
+
+* 显式关闭已发布投票；重复关闭返回现状，具体版本检查以当前状态为准。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin + 账户 CSRF + 创建者 |
+  | 请求 body | RequestModel<VersionRequest>；完整示例见 VersionRequest |
+  | 成功响应 | HTTP 200；ResponseModel.data = ManagePollDetail / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40301、40902、40904 |
+  | 实现 | backend/src/main/python/api/poll/poll_post.py |
+
+  | 参数 | 位置 | 类型 | 必填 | 默认／范围 |
+  | --- | --- | --- | --- | --- |
+  | poll_id | path | integer | 是 | {} |
+
+### POST /api/v1/polls/{poll_id}/unlock
+
+* 核对 poll_id、share_code、password，创建或延长当前浏览器授权。解锁不等于记名登录。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin + 访客 CSRF |
+  | 请求 body | RequestModel<UnlockRequest>；完整示例见 UnlockRequest |
+  | 成功响应 | HTTP 200；ResponseModel.data = AccessGrantPublic / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40304、40401、40902、42901 |
+  | 实现 | backend/src/main/python/api/poll_access/poll_access_post.py |
+
+  | 参数 | 位置 | 类型 | 必填 | 默认／范围 |
+  | --- | --- | --- | --- | --- |
+  | poll_id | path | integer | 是 | {} |
+
+### GET /api/v1/poll-import/capabilities
+
+* 只检查配置，不调用模型；enabled 不保证上游可达。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 账户 Cookie |
+  | 请求 body | 无 |
+  | 成功响应 | HTTP 200；ResponseModel.data = PollImportCapabilities / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40101 |
+  | 实现 | backend/src/main/python/api/poll_import/poll_import_get.py |
+
+### POST /api/v1/poll-import/parse
+
+* 只返回候选字段，不创建或发布投票。每账号每60秒5次、并发1次；全进程并发4次。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin + 账户 CSRF |
+  | 请求 body | RequestModel<PollTextParseRequest>；完整示例见 PollTextParseRequest |
+  | 成功响应 | HTTP 200；ResponseModel.data = PollTextParseResult / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 42901、50201、50303、50304、50401 |
+  | 实现 | backend/src/main/python/api/poll_import/poll_import_post.py |
+
+### POST /api/v1/polls/{poll_id}/votes
+
+* 单选与多选都传 option_ids；私有场次需参与授权；创建者／管理员身份不替代投票所需的私有授权。满额关闭与提交同事务。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin + 访客 CSRF；记名另需账户 Cookie |
+  | 请求 body | RequestModel<VoteRequest>；完整示例见 VoteRequest |
+  | 成功响应 | HTTP 201；ResponseModel.data = VoteReceipt / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40101、40305、40901、40902、40906、42202、42203、50302 |
+  | 实现 | backend/src/main/python/api/vote/vote_post.py |
+
+  | 参数 | 位置 | 类型 | 必填 | 默认／范围 |
+  | --- | --- | --- | --- | --- |
+  | poll_id | path | integer | 是 | {} |
+
+### GET /api/v1/me/votes
+
+* 仅可访问的记名记录；匿名票及未解锁的私有记录不返回。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 账户 Cookie |
+  | 请求 body | 无 |
+  | 成功响应 | HTTP 200；ResponseModel.data = Page_MyVote_ / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40101 |
+  | 实现 | backend/src/main/python/api/vote/vote_get.py |
+
+  | 参数 | 位置 | 类型 | 必填 | 默认／范围 |
+  | --- | --- | --- | --- | --- |
+  | page | query | integer | 否 | {"minimum": 1, "default": 1} |
+  | page_size | query | integer | 否 | {"maximum": 50, "minimum": 1, "default": 12} |
+
+### GET /api/v1/polls/{poll_id}/results
+
+* 非草稿；创建者／管理员可读；普通参与者结束后或 OPEN 且 allow_live_results 时可读，同时仍检查记名登录与私有授权。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 按投票规则 |
+  | 请求 body | 无 |
+  | 成功响应 | HTTP 200；ResponseModel.data = PollResults / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40101、40303、40401 |
+  | 实现 | backend/src/main/python/api/result/result_get.py |
+
+  | 参数 | 位置 | 类型 | 必填 | 默认／范围 |
+  | --- | --- | --- | --- | --- |
+  | poll_id | path | integer | 是 | {} |
+
+### GET /api/v1/shares/{share_code}
+
+* 仅解析非草稿入口；不返回标题、选项、密码或结果。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 无 |
+  | 请求 body | 无 |
+  | 成功响应 | HTTP 200；ResponseModel.data = ShareEntry / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40401 |
+  | 实现 | backend/src/main/python/api/share/share_get.py |
+
+  | 参数 | 位置 | 类型 | 必填 | 默认／范围 |
+  | --- | --- | --- | --- | --- |
+  | share_code | path | string | 是 | {} |
+
+### GET /api/v1/admin/polls
+
+* 全量管理列表；不获得修改他人投票的权限。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 账户 Cookie + ADMIN |
+  | 请求 body | 无 |
+  | 成功响应 | HTTP 200；ResponseModel.data = Page_ManagePollSummary_ / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40101、40301 |
+  | 实现 | backend/src/main/python/api/admin/admin_get.py |
+
+  | 参数 | 位置 | 类型 | 必填 | 默认／范围 |
+  | --- | --- | --- | --- | --- |
+  | page | query | integer | 否 | {"minimum": 1, "default": 1} |
+  | page_size | query | integer | 否 | {"maximum": 50, "minimum": 1, "default": 12} |
+  | status | query | PollStatus / null | 否 | {} |
+  | q | query | string / null | 否 | {} |
+  | sort_by | query | string / null | 否 | {} |
+
+### GET /api/v1/admin/polls/{poll_id}
+
+* 任意场次管理详情；can_manage 仍取决于是否创建者。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 账户 Cookie + ADMIN |
+  | 请求 body | 无 |
+  | 成功响应 | HTTP 200；ResponseModel.data = ManagePollDetail / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40101、40301、40401 |
+  | 实现 | backend/src/main/python/api/admin/admin_get.py |
+
+  | 参数 | 位置 | 类型 | 必填 | 默认／范围 |
+  | --- | --- | --- | --- | --- |
+  | poll_id | path | integer | 是 | {} |
+
+### GET /api/v1/admin/audit-events
+
+* 按投票、动作分页；不含个人选项与匿名逐票记录。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 账户 Cookie + ADMIN |
+  | 请求 body | 无 |
+  | 成功响应 | HTTP 200；ResponseModel.data = Page_AuditEventPublic_ / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40101、40301、42201 |
+  | 实现 | backend/src/main/python/api/admin/admin_get.py |
+
+  | 参数 | 位置 | 类型 | 必填 | 默认／范围 |
+  | --- | --- | --- | --- | --- |
+  | page | query | integer | 否 | {"minimum": 1, "default": 1} |
+  | page_size | query | integer | 否 | {"maximum": 50, "minimum": 1, "default": 12} |
+  | poll_id | query | integer / null | 否 | {} |
+  | action | query | AuditAction / null | 否 | {} |
+
+### GET /api/v1/demo-polls
+
+* 登记目录仍保留后端接口；开关关闭返回空页，不删除场次。当前 Overview 不单设该分区。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 账户 Cookie |
+  | 请求 body | 无 |
+  | 成功响应 | HTTP 200；ResponseModel.data = Page_DemoPollSummary_ / null；对应模型示例加统一信封 |
+  | 主要业务错误 | 40101、42201 |
+  | 实现 | backend/src/main/python/api/demo/demo_get.py |
+
+  | 参数 | 位置 | 类型 | 必填 | 默认／范围 |
+  | --- | --- | --- | --- | --- |
+  | page | query | integer | 否 | {"minimum": 1, "default": 1} |
+  | page_size | query | integer | 否 | {"maximum": 50, "minimum": 1, "default": 8} |
+  | q | query | string / null | 否 | {} |
 
 ## 字段校验补充
 
@@ -236,7 +673,7 @@
   | description | string / null | 否 | — | 投票说明，可空 |
   | closed_at | string:date-time / null | 否 | — | 显式或满额关闭时间，可空 |
   | ballot_count | integer | 否 | {"default": 0} | 当前父选票数量 |
-  | close_reason | string / null | 否 | — | cap_reached / manual / ended 或 null（以计算结果为准） |
+  | close_reason | string / null | 否 | — | BALLOT_CAP_REACHED / CLOSED_EARLY / ENDED 或 null（以计算结果为准） |
   | fixture_key | string | 是 | — | 目录键。 |
   | display_order | integer | 是 | — | 固定展示顺序。 |
 
@@ -433,7 +870,7 @@
   | description | string / null | 否 | — | 投票说明，可空 |
   | closed_at | string:date-time / null | 否 | — | 显式或满额关闭时间，可空 |
   | ballot_count | integer | 否 | {"default": 0} | 当前父选票数量 |
-  | close_reason | string / null | 否 | — | cap_reached / manual / ended 或 null（以计算结果为准） |
+  | close_reason | string / null | 否 | — | BALLOT_CAP_REACHED / CLOSED_EARLY / ENDED 或 null（以计算结果为准） |
   | options | array<OptionPublic> | 是 | — | 按位置排列的选项。 |
   | lifecycle | string | 是 | — | 库存生命周期。 |
   | version | integer | 是 | — | 乐观锁版本。 |
@@ -521,7 +958,7 @@
   | description | string / null | 否 | — | 投票说明，可空 |
   | closed_at | string:date-time / null | 否 | — | 显式或满额关闭时间，可空 |
   | ballot_count | integer | 否 | {"default": 0} | 当前父选票数量 |
-  | close_reason | string / null | 否 | — | cap_reached / manual / ended 或 null（以计算结果为准） |
+  | close_reason | string / null | 否 | — | BALLOT_CAP_REACHED / CLOSED_EARLY / ENDED 或 null（以计算结果为准） |
   | lifecycle | string | 是 | — | 库存生命周期。 |
   | version | integer | 是 | — | 乐观锁版本。 |
   | creator_id | integer | 是 | — | 创建者账户。 |
@@ -988,8 +1425,6 @@
   ├── created_at: string:date-time
   ├── description: string / null
   ├── closed_at: string:date-time / null
-  ├── ballot_count: integer
-  ├── close_reason: string / null
   ├── options: array<OptionPublic>
   ├── has_voted: boolean
   ├── receipt: VoteReceipt / null
@@ -1017,8 +1452,6 @@
   | created_at | string:date-time | 是 | — | 创建时间，UTC。 |
   | description | string / null | 是 | — | 说明。 |
   | closed_at | string:date-time / null | 否 | — | 显式或满额关闭时间，可空 |
-  | ballot_count | integer | 否 | {"default": 0} | 当前父选票数量 |
-  | close_reason | string / null | 否 | — | cap_reached / manual / ended 或 null（以计算结果为准） |
   | options | array<OptionPublic> | 是 | — | 按位置排列的选项。 |
   | has_voted | boolean | 是 | — | 当前身份是否已投。 |
   | receipt | VoteReceipt / null | 否 | — | 已投时的回执。未投时为空。 |
@@ -1047,8 +1480,6 @@
     "created_at": "2026-11-01T02:00:00Z",
     "description": null,
     "closed_at": null,
-    "ballot_count": 1,
-    "close_reason": null,
     "options": [
       {
         "id": 1,
@@ -1242,7 +1673,7 @@
   | description | string / null | 否 | — | 投票说明，可空 |
   | closed_at | string:date-time / null | 否 | — | 显式或满额关闭时间，可空 |
   | ballot_count | integer | 否 | {"default": 0} | 当前父选票数量 |
-  | close_reason | string / null | 否 | — | cap_reached / manual / ended 或 null（以计算结果为准） |
+  | close_reason | string / null | 否 | — | BALLOT_CAP_REACHED / CLOSED_EARLY / ENDED 或 null（以计算结果为准） |
 
   **业务数据示例**
 

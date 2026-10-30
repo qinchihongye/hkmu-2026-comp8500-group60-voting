@@ -669,7 +669,7 @@ def _ensure_locked(
             raise DemoSeedError("linked poll is missing", row.fixture_key)
     creator_id = _creator_id(session)
     user_ids = _ensure_users(session, catalog.users, passwords)
-    present = {row.fixture_key for row in existing}
+    present = {row.fixture_key: row for row in existing}
     created = 0
     for spec in catalog.polls:
         if spec.key in present:

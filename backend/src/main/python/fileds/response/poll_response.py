@@ -23,27 +23,7 @@ class OptionPublic(BaseModel):
     position: int
 
 
-class PollBase(BaseModel):
-    """投票基础公共字段。"""
-
-    model_config = ConfigDict(extra="forbid")
-
-    id: int
-    title: str
-    identity_mode: str
-    visibility: str
-    vote_limit: int | None
-    selection_mode: str
-    allow_live_results: bool
-    starts_at: datetime
-    ends_at: datetime
-    effective_status: str
-    created_at: datetime
-    description: str | None = None
-    closed_at: datetime | None = None
-
-
-class PollSummary(PollBase):
+class PollSummary(BaseModel):
     """广场和列表上的投票摘要。不含个性化参与状态。
 
     Attributes:
@@ -60,6 +40,21 @@ class PollSummary(PollBase):
         created_at: 创建时间，UTC。
     """
 
+    model_config = ConfigDict(extra="forbid")
+
+    id: int
+    title: str
+    identity_mode: str
+    visibility: str
+    vote_limit: int | None
+    selection_mode: str
+    allow_live_results: bool
+    starts_at: datetime
+    ends_at: datetime
+    effective_status: str
+    created_at: datetime
+    description: str | None = None
+    closed_at: datetime | None = None
     ballot_count: int = 0
     close_reason: str | None = None
 
@@ -78,7 +73,7 @@ class ManagePollSummary(PollSummary):
     creator_id: int
 
 
-class PollDetail(PollBase):
+class PollDetail(PollSummary):
     """参与者看到的投票详情。
 
     Attributes:

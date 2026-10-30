@@ -103,6 +103,8 @@
 
 ## 使用流程与投票规则
 
+* 详细的操作步骤、角色权限、结果导出和常见问题请看 [详细使用文档](docs/technical/user-guide.md)。
+
 * 基本流程
 
   1. 注册或登录，在 Create poll 中填写标题、选项和时间。
@@ -127,6 +129,8 @@
   | 时间 | 创建页面按香港时间填写，发布后按时间窗口和关闭状态决定是否可投票 |
 
 ## 初始化投票与数据保存
+
+* 详细的数据表用途、字段、完整建表语句和 ER 图请看 [数据库设计文档](docs/technical/database-design.md)。
 
 * 默认 Compose 配置启用固定投票初始化，共 38 场，覆盖身份方式、可见性、选票限额、单／多选、结果可见性和不同生命周期状态。
 
@@ -164,6 +168,8 @@
   | 部署 | Docker Compose、Nginx |
   | 可选文字识别 | OpenAI Python SDK，支持配置兼容服务地址 |
   | 测试与检查 | Pytest、Ruff、Vitest、Testing Library、ESLint、TypeScript |
+
+  前端的路由、组件和状态设计请看 [前端设计文档](docs/technical/frontend-design.md)；后端的模块、鉴权和事务设计请看 [后端设计文档](docs/technical/backend-design.md)。
 
 * 主要目录
 
@@ -235,6 +241,8 @@
 
   访问 [http://localhost:5173](http://localhost:5173)。前端通过 Vite 将 `/api` 请求代理到后端。接口交互文档可在本机后端运行时访问 [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)；全栈 Compose 默认未向宿主机开放后端 8000 端口。
 
+  全部后端接口、请求响应字段、鉴权方式和错误码请看 [后端接口文档](docs/technical/backend-api.md)。
+
 ## 可选智能填写与配置
 
 * 智能填写默认关闭，不配置模型服务也可以使用普通创建和投票功能。启用时，在根目录 `.env` 中设置：
@@ -294,15 +302,17 @@
 
 ## 项目文档
 
-* 进一步了解实现
+* 详细技术文档统一存放在 `docs/technical/`，以表格、架构图和代码示例说明当前实现。
 
   | 文档 | 内容 |
   | --- | --- |
-  | [接口快照](docs/coordination/interface-snapshot.md) | 请求响应格式、接口与页面路由 |
-  | [数据库快照](docs/coordination/schema-snapshot.md) | 数据表、关系与约束 |
-  | [实现快照](docs/coordination/implementation-snapshot.md) | 功能实现与协作参考 |
+  | [数据库设计](docs/technical/database-design.md) | 全部表用途、字段、DDL、索引、ER 图与迁移 |
+  | [前端设计](docs/technical/frontend-design.md) | 页面路由、组件、状态、请求与导出流程 |
+  | [后端设计](docs/technical/backend-design.md) | 架构、业务模块、身份权限、生命周期与事务 |
+  | [后端接口](docs/technical/backend-api.md) | 全部应用接口合并于一份文件，含字段、示例与错误码 |
+  | [详细使用](docs/technical/user-guide.md) | 安装、创建、分享、参与、结果导出、管理与维护 |
 
-  快照文档可能随代码演进而滞后，接口行为以当前实现及测试为准。开发计划与审查记录分别保存在 `docs/superpowers/plans/` 和 `docs/reviews/`，不作为已完成功能清单。
+  旧协作快照保留在 `docs/coordination/`。开发计划与审查记录分别保存在 `docs/superpowers/plans/` 和 `docs/reviews/`，不作为已完成功能清单；代码修改后也应同步维护上述技术文档。
 
 ## 团队与使用范围
 
