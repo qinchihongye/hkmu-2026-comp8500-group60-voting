@@ -116,7 +116,8 @@ const SLICE_COLORS = [
 ];
 
 const PIE_CENTER = 100;
-const PIE_RADIUS = 78;
+const PIE_RADIUS = 76;
+const INNER_RADIUS = 46;
 
 function sliceColor(index: number): string {
   return SLICE_COLORS[index % SLICE_COLORS.length] ?? SLICE_COLORS[0]!;
@@ -142,10 +143,12 @@ function slicePath(start: number, end: number): string {
   if (sweep <= 0 || sweep >= Math.PI * 2 - 1e-6) {
     return "";
   }
-  const from = piePoint(start, PIE_RADIUS);
-  const to = piePoint(end, PIE_RADIUS);
+  const outerFrom = piePoint(start, PIE_RADIUS);
+  const outerTo = piePoint(end, PIE_RADIUS);
+  const innerFrom = piePoint(end, INNER_RADIUS);
+  const innerTo = piePoint(start, INNER_RADIUS);
   const large = sweep > Math.PI ? 1 : 0;
-  return `M ${PIE_CENTER} ${PIE_CENTER} L ${from.x} ${from.y} A ${PIE_RADIUS} ${PIE_RADIUS} 0 ${large} 1 ${to.x} ${to.y} Z`;
+  return `M ${outerFrom.x} ${outerFrom.y} A ${PIE_RADIUS} ${PIE_RADIUS} 0 ${large} 1 ${outerTo.x} ${outerTo.y} L ${innerFrom.x} ${innerFrom.y} A ${INNER_RADIUS} ${INNER_RADIUS} 0 ${large} 0 ${innerTo.x} ${innerTo.y} Z`;
 }
 
 function buildSlices(options: OptionResult[]) {
@@ -238,13 +241,14 @@ function ResultsPie({ options }: { options: OptionResult[] }) {
               <circle
                 cx={PIE_CENTER}
                 cy={PIE_CENTER}
-                r={PIE_RADIUS}
-                fill={sliceColor(fullSlice.index)}
+                r={(PIE_RADIUS + INNER_RADIUS) / 2}
+                fill="none"
+                stroke={sliceColor(fullSlice.index)}
+                strokeWidth={PIE_RADIUS - INNER_RADIUS}
                 style={{
                   cursor: "pointer",
                   transition: "opacity 0.2s ease, stroke-width 0.2s ease",
-                  stroke: activeIndex === fullSlice.index ? "#ffffff" : "none",
-                  strokeWidth: activeIndex === fullSlice.index ? 3 : 0,
+                  filter: activeIndex === fullSlice.index ? "drop-shadow(0 2px 8px rgba(0,0,0,0.18))" : "none",
                 }}
                 onMouseEnter={(e) => {
                   setHoveredIndex(fullSlice.index);
@@ -321,6 +325,34 @@ function ResultsPie({ options }: { options: OptionResult[] }) {
                 </text>
               );
             })}
+            {/* Center Label for Donut Chart */}
+            <g className="results-donut-center" pointerEvents="none">
+              <text
+                x={PIE_CENTER}
+                y={PIE_CENTER - 3}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fill="#0f172a"
+                fontSize="18"
+                fontWeight="800"
+                fontFamily="system-ui, -apple-system, sans-serif"
+              >
+                {options.reduce((sum, o) => sum + o.count, 0)}
+              </text>
+              <text
+                x={PIE_CENTER}
+                y={PIE_CENTER + 15}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fill="#64748b"
+                fontSize="10"
+                fontWeight="700"
+                letterSpacing="0.06em"
+                fontFamily="system-ui, -apple-system, sans-serif"
+              >
+                {t("results.votes").toUpperCase()}
+              </text>
+            </g>
           </svg>
 
           {/* Floating Tooltip */}
@@ -438,7 +470,29 @@ export function ResultsPanel({ results }: { results: PollResults }) {
                   </td>
                   <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{option.count}</td>
                   <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "#475569" }}>
-                    {option.percentage.toFixed(2)}%
+                    <div>{option.percentage.toFixed(2)}%</div>
+                    <div
+                      style={{
+                        width: "100%",
+                        minWidth: 54,
+                        height: 4,
+                        background: "#f1f5f9",
+                        borderRadius: 9999,
+                        marginTop: 4,
+                        overflow: "hidden",
+                      }}
+                      aria-hidden="true"
+                    >
+                      <div
+                        style={{
+                          width: `${Math.min(100, Math.max(0, option.percentage))}%`,
+                          height: "100%",
+                          background: sliceColor(index),
+                          borderRadius: 9999,
+                          transition: "width 0.4s ease",
+                        }}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}

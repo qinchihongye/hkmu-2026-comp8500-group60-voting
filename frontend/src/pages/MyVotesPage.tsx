@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { getMyVotes } from "../features/polls/api";
 import { useFailure } from "../i18n/errors";
@@ -50,64 +51,120 @@ export function MyVotesPage() {
         </div>
       ) : null}
 
-      {/* Independent Scrolling Frame (The Red Box Scroll Frame) */}
+      {/* Independent Scrolling Frame */}
       <div className="view-scroll-frame">
-        <div className="saas-table-card">
-          <table className="saas-table">
-            <thead>
-              <tr>
-                <th>{t("votes.poll")}</th>
-                <th>{t("votes.receipt")}</th>
-                <th>{t("votes.submitted")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.length === 0 ? (
-                <tr>
-                  <td colSpan={3} style={{ textAlign: "center", padding: "40px 20px", color: "#64748b" }}>
-                    {t("votes.empty")}
-                  </td>
-                </tr>
-              ) : (
-                items.map((item) => (
-                  <tr key={item.receipt_id}>
-                    <td>
-                      <strong style={{ color: "#0f172a" }}>{item.poll_title}</strong>
-                    </td>
-                    <td>
-                      <span className="receipt-id-box" style={{ margin: 0 }}>{item.receipt_id}</span>
-                    </td>
-                    <td style={{ color: "#64748b", fontSize: "0.88rem" }}>
-                      {formatHongKong(item.submitted_at)}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
-          <p style={{ margin: 0, color: "#64748b", fontSize: "0.9rem" }}>{t("common.records", { total })}</p>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              type="button"
-              className="view-btn view-btn-secondary"
-              disabled={page <= 1}
-              onClick={() => setPage((value) => value - 1)}
+        {total === 0 && items.length === 0 ? (
+          <div
+            className="saas-table-card my-votes-empty"
+            style={{
+              padding: "54px 24px",
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <div
+              style={{
+                width: 68,
+                height: 68,
+                borderRadius: "50%",
+                background: "#f0f7ff",
+                border: "1px solid #dbeafe",
+                display: "grid",
+                placeItems: "center",
+                marginBottom: 16,
+                color: "#2563eb",
+              }}
+              aria-hidden="true"
             >
-              {t("common.previous")}
-            </button>
-            <button
-              type="button"
-              className="view-btn view-btn-secondary"
-              disabled={page * pageSize >= total}
-              onClick={() => setPage((value) => value + 1)}
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m9 12 2 2 4-4"/>
+                <path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7Z"/>
+                <path d="M22 19H2"/>
+              </svg>
+            </div>
+            <h3 style={{ margin: "0 0 8px 0", fontSize: "1.1rem", fontWeight: 700, color: "#0f172a" }}>
+              {t("votes.empty")}
+            </h3>
+            <p style={{ margin: "0 0 22px 0", maxWidth: 440, color: "#64748b", fontSize: "0.9rem", lineHeight: 1.5 }}>
+              Participate in open polls across the overview plaza to track your verified ballots and audit receipts here.
+            </p>
+            <Link
+              to="/overview"
+              className="view-btn view-btn-primary"
+              style={{
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "9px 18px",
+                borderRadius: 9999,
+                fontWeight: 600,
+              }}
             >
-              {t("common.next")}
-            </button>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect width="7" height="7" x="3" y="3" rx="1"/>
+                <rect width="7" height="7" x="14" y="3" rx="1"/>
+                <rect width="7" height="7" x="14" y="14" rx="1"/>
+                <rect width="7" height="7" x="3" y="14" rx="1"/>
+              </svg>
+              {t("nav.overview")}
+            </Link>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="saas-table-card">
+              <table className="saas-table">
+                <thead>
+                  <tr>
+                    <th>{t("votes.poll")}</th>
+                    <th>{t("votes.receipt")}</th>
+                    <th>{t("votes.submitted")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item) => (
+                    <tr key={item.receipt_id}>
+                      <td>
+                        <strong style={{ color: "#0f172a" }}>{item.poll_title}</strong>
+                      </td>
+                      <td>
+                        <span className="receipt-id-box" style={{ margin: 0 }}>{item.receipt_id}</span>
+                      </td>
+                      <td style={{ color: "#64748b", fontSize: "0.88rem" }}>
+                        {formatHongKong(item.submitted_at)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
+              <p style={{ margin: 0, color: "#64748b", fontSize: "0.9rem" }}>{t("common.records", { total })}</p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  className="view-btn view-btn-secondary"
+                  disabled={page <= 1}
+                  onClick={() => setPage((value) => value - 1)}
+                >
+                  {t("common.previous")}
+                </button>
+                <button
+                  type="button"
+                  className="view-btn view-btn-secondary"
+                  disabled={page * pageSize >= total}
+                  onClick={() => setPage((value) => value + 1)}
+                >
+                  {t("common.next")}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

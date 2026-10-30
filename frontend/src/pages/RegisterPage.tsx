@@ -3,14 +3,34 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { AuthLocaleMenu } from "../components/AuthLocaleMenu";
 import { ComingSoonModal } from "../components/ComingSoonModal";
+import { PolicyModal } from "../components/PolicyModal";
 import { registerAccount } from "../features/auth/api";
 import { I18nError, useFailure } from "../i18n/errors";
 import { useI18n } from "../i18n/LocaleProvider";
 import { safeNextPath } from "../lib/navigation";
 import "../styles/auth.css";
 
+function getPasswordStrength(pwd: string, isZh: boolean) {
+  if (!pwd) return { score: 0, label: "", color: "" };
+  let score = 0;
+  if (pwd.length >= 6) score++;
+  if (pwd.length >= 10) score++;
+  if (/[A-Z]/.test(pwd) && /[a-z]/.test(pwd)) score++;
+  if (/\d/.test(pwd)) score++;
+  if (/[^A-Za-z0-9]/.test(pwd)) score++;
+  const finalScore = Math.min(4, Math.max(1, score <= 1 ? 1 : score <= 2 ? 2 : score <= 3 ? 3 : 4));
+  const labelsZh = ["", "弱", "中等", "良好", "极强"];
+  const labelsEn = ["", "Weak", "Fair", "Good", "Strong"];
+  const colors = ["", "#f43f5e", "#f59e0b", "#3b82f6", "#10b981"];
+  return {
+    score: finalScore,
+    label: isZh ? labelsZh[finalScore] : labelsEn[finalScore],
+    color: colors[finalScore],
+  };
+}
+
 export function RegisterPage() {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const failure = useFailure("error.registerFailed");
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -23,6 +43,8 @@ export function RegisterPage() {
   const [showSocialModal, setShowSocialModal] = useState(false);
   const [agree, setAgree] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [policyModal, setPolicyModal] = useState<{ open: boolean; title: string }>({ open: false, title: "" });
+  const strength = getPasswordStrength(password, locale === "zh-CN");
 
   async function submit() {
     if (!agree) {
@@ -103,11 +125,9 @@ export function RegisterPage() {
             />
           </svg>
 
-          {/* Top text */}
-          <div className="auth-hero-top">{t("auth.welcome")}</div>
-
           {/* Center Brand Badge & Description */}
           <div className="auth-hero-center">
+            <div className="auth-hero-top">{t("auth.welcome")}</div>
             <div className="auth-brand-badge">
               <img className="auth-brand-icon" src="/favicon.png" alt="" />
             </div>
@@ -194,17 +214,87 @@ export function RegisterPage() {
                     )}
                   </button>
                 </div>
+                {password.length > 0 && (
+                  <div className="auth-password-strength" aria-live="polite">
+                    <div className="auth-strength-bars">
+                      <div className={`auth-strength-bar ${strength.score >= 1 ? `active level-${strength.score}` : ""}`} />
+                      <div className={`auth-strength-bar ${strength.score >= 2 ? `active level-${strength.score}` : ""}`} />
+                      <div className={`auth-strength-bar ${strength.score >= 3 ? `active level-${strength.score}` : ""}`} />
+                      <div className={`auth-strength-bar ${strength.score >= 4 ? `active level-${strength.score}` : ""}`} />
+                    </div>
+                    <span className="auth-strength-label" style={{ color: strength.color }}>
+                      {strength.label}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Checkbox: Terms and Conditions */}
-              <label className="auth-checkbox-row">
+              <div className="auth-checkbox-row">
                 <input
+                  id="reg-agree"
                   type="checkbox"
                   checked={agree}
                   onChange={(e) => setAgree(e.target.checked)}
                 />
-                <span>{t("auth.agree")}</span>
-              </label>
+                <label htmlFor="reg-agree" className="auth-checkbox-label">
+                  {locale === "zh-CN" ? (
+                    <>
+                      我已阅读并同意
+                      <button
+                        type="button"
+                        className="auth-policy-link"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setPolicyModal({ open: true, title: "服务协议" });
+                        }}
+                      >
+                        《服务协议》
+                      </button>
+                      与
+                      <button
+                        type="button"
+                        className="auth-policy-link"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setPolicyModal({ open: true, title: "隐私政策" });
+                        }}
+                      >
+                        《隐私政策》
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      I agree to the{" "}
+                      <button
+                        type="button"
+                        className="auth-policy-link"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setPolicyModal({ open: true, title: "Terms of Service" });
+                        }}
+                      >
+                        Terms of Service
+                      </button>{" "}
+                      and{" "}
+                      <button
+                        type="button"
+                        className="auth-policy-link"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setPolicyModal({ open: true, title: "Privacy Policy" });
+                        }}
+                      >
+                        Privacy Policy
+                      </button>
+                    </>
+                  )}
+                </label>
+              </div>
 
               {failure.message ? (
                 <div
@@ -314,6 +404,13 @@ export function RegisterPage() {
       <ComingSoonModal
         open={showSocialModal}
         onClose={() => setShowSocialModal(false)}
+      />
+
+      {/* Terms of Service & Privacy Policy Modal */}
+      <PolicyModal
+        open={policyModal.open}
+        title={policyModal.title}
+        onClose={() => setPolicyModal({ open: false, title: "" })}
       />
     </div>
   );

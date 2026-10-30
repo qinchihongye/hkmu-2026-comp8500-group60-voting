@@ -100,11 +100,9 @@ export function LoginPage() {
             />
           </svg>
 
-          {/* Top text */}
-          <div className="auth-hero-top">{t("auth.welcome")}</div>
-
           {/* Center Brand Badge & Description */}
           <div className="auth-hero-center">
+            <div className="auth-hero-top" style={{ marginBottom: 18 }}>{t("auth.welcome")}</div>
             <div className="auth-brand-badge">
               <img className="auth-brand-icon" src="/favicon.png" alt="" />
             </div>

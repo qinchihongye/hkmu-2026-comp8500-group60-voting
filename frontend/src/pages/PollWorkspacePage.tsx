@@ -27,6 +27,7 @@ export function PollWorkspacePage() {
   const [share, setShare] = useState<ShareLink | null>(null);
   const [results, setResults] = useState<PollResults | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
   const load = useCallback((id: number) => {
     return getOwnedPoll(id).then(async (next) => {
@@ -188,7 +189,7 @@ export function PollWorkspacePage() {
               style={{ borderColor: "#fecaca", color: "#dc2626" }}
               data-testid="close"
               disabled={busy}
-              onClick={() => void act("close")}
+              onClick={() => setShowCloseConfirm(true)}
             >
               {t("workspace.close")}
             </button>
@@ -207,6 +208,70 @@ export function PollWorkspacePage() {
           </p>
         ) : null}
       </div>
+
+      {showCloseConfirm ? (
+        <div
+          className="coming-soon-backdrop"
+          onClick={() => setShowCloseConfirm(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="coming-soon-card"
+            style={{ maxWidth: 460 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  background: "#fef2f2",
+                  color: "#dc2626",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </div>
+              <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700, color: "#0f172a" }}>
+                提前结束投票确认
+              </h3>
+            </div>
+            <p style={{ margin: "0 0 20px 0", color: "#64748b", fontSize: "0.92rem", lineHeight: 1.5 }}>
+              结束后该投票将停止接收新的选票，并计算最终结果。该操作不可撤销。
+            </p>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button
+                type="button"
+                className="view-btn view-btn-secondary"
+                onClick={() => setShowCloseConfirm(false)}
+                disabled={busy}
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                type="button"
+                className="view-btn view-btn-primary"
+                style={{ background: "#dc2626", borderColor: "#dc2626" }}
+                disabled={busy}
+                onClick={async () => {
+                  setShowCloseConfirm(false);
+                  await act("close");
+                }}
+              >
+                {busy ? t("common.processing") : t("workspace.close")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {share ? (
         <SharePanel

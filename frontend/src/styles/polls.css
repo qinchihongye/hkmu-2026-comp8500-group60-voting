@@ -332,7 +332,7 @@
 }
 
 @media (min-width: 1200px) {
-  .polls-grid-3col {
+  .polls-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
@@ -567,11 +567,11 @@
 }
 
 .plaza-progress-fill-blue {
-  background: #2563eb;
+  background: linear-gradient(90deg, #2563eb, #3b82f6);
 }
 
 .plaza-progress-fill-purple {
-  background: #a855f7;
+  background: linear-gradient(90deg, #6366f1, #818cf8);
 }
 
 /* Description */
