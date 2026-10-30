@@ -186,7 +186,6 @@ function ResultsPie({
   const summary = options.map((option) => `${option.label} ${option.percentage.toFixed(2)}%`).join(t("results.separator"));
   const fullSlice = slices.find((slice) => slice.sweep >= Math.PI * 2 - 1e-6);
 
-  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const activeSlice = activeIndex !== null ? slices[activeIndex] ?? (fullSlice?.index === activeIndex ? fullSlice : null) : null;
@@ -204,17 +203,6 @@ function ResultsPie({
     return () => document.removeEventListener("pointerdown", handleClickOutside);
   }, [pinnedIndex, onPinIndex]);
 
-  function updateTooltipPosition(event: React.MouseEvent<SVGElement>) {
-    if (!containerRef.current) {
-      return;
-    }
-    const rect = containerRef.current.getBoundingClientRect();
-    setTooltipPos({
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-    });
-  }
-
   return (
     <div className="results-pie-card">
       <div className="results-pie-heading">
@@ -222,38 +210,116 @@ function ResultsPie({
         <RoundingNote />
       </div>
       {total <= 0 ? (
-        <svg
-          className="results-pie"
-          viewBox="0 0 200 200"
-          role="img"
-          aria-label={t("results.empty")}
-          style={{ margin: "auto", display: "block" }}
-        >
-          <circle cx={PIE_CENTER} cy={PIE_CENTER} r={PIE_RADIUS} fill="#f8fafc" stroke="#e2e8f0" strokeWidth="2" />
-        </svg>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 280 }}>
+          <svg
+            className="results-pie"
+            viewBox="0 0 200 200"
+            role="img"
+            aria-label={t("results.empty")}
+            style={{ margin: "auto", display: "block" }}
+          >
+            <circle cx={PIE_CENTER} cy={PIE_CENTER} r={PIE_RADIUS} fill="#f8fafc" stroke="#e2e8f0" strokeWidth="2" />
+          </svg>
+        </div>
       ) : (
-        <>
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: 280,
+            padding: "16px 0",
+          }}
+        >
           <div
             ref={containerRef}
             className="results-pie-wrap"
             style={{
               position: "relative",
-              display: "block",
-              width: "min(100%, 210px)",
-              margin: "12px auto 0",
-              flexShrink: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+              margin: "auto",
             }}
-            onMouseLeave={() => {
-              onHoverIndex(null);
-              setTooltipPos(null);
-            }}
+            onMouseLeave={() => onHoverIndex(null)}
           >
+            {/* Stationary Hover Indicator Badge */}
+            <div
+              style={{
+                height: 36,
+                position: "relative",
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 8,
+              }}
+            >
+              {activeSlice ? (
+                <div
+                  className="results-pie-tooltip"
+                  data-testid="pie-tooltip"
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    background: "rgba(15, 23, 42, 0.92)",
+                    backdropFilter: "blur(4px)",
+                    color: "#ffffff",
+                    padding: "5px 14px",
+                    borderRadius: "9999px",
+                    fontSize: "0.8rem",
+                    boxShadow: "0 2px 10px rgba(15, 23, 42, 0.16)",
+                    whiteSpace: "nowrap",
+                    maxWidth: "92%",
+                    lineHeight: 1.35,
+                    zIndex: 2,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: sliceColor(activeSlice.index),
+                      display: "inline-block",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span
+                    style={{
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      maxWidth: 130,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {activeSlice.option.label}
+                  </span>
+                  <span style={{ color: "#94a3b8" }}>·</span>
+                  <strong style={{ color: "#38bdf8", fontWeight: 700 }}>
+                    {activeSlice.option.percentage.toFixed(2)}%
+                  </strong>
+                  <span style={{ color: "#cbd5e1", fontSize: "0.75rem" }}>
+                    ({activeSlice.option.count} {t("results.votes").toLowerCase()})
+                  </span>
+                </div>
+              ) : null}
+            </div>
+
             <svg
               className="results-pie"
               viewBox="0 0 200 200"
               role="img"
               aria-label={summary}
-              style={{ overflow: "visible", width: "100%", height: "auto", display: "block" }}
+              style={{ overflow: "visible", width: "min(100%, 220px)", height: "auto", display: "block" }}
             >
               {fullSlice ? (
                 <circle
@@ -265,18 +331,11 @@ function ResultsPie({
                   strokeWidth={PIE_RADIUS - INNER_RADIUS}
                   style={{
                     cursor: "pointer",
-                    transition: "opacity 0.2s ease, stroke-width 0.2s ease",
+                    transition: "opacity 0.18s ease, stroke-width 0.18s ease",
                     filter: activeIndex === fullSlice.index ? "drop-shadow(0 2px 8px rgba(0,0,0,0.18))" : "none",
                   }}
-                  onMouseEnter={(e) => {
-                    onHoverIndex(fullSlice.index);
-                    updateTooltipPosition(e);
-                  }}
-                  onMouseMove={updateTooltipPosition}
-                  onClick={(e) => {
-                    updateTooltipPosition(e);
-                    onPinIndex((prev) => (prev === fullSlice.index ? null : fullSlice.index));
-                  }}
+                  onMouseEnter={() => onHoverIndex(fullSlice.index)}
+                  onClick={() => onPinIndex((prev) => (prev === fullSlice.index ? null : fullSlice.index))}
                 />
               ) : (
                 slices.map((slice) => {
@@ -285,10 +344,6 @@ function ResultsPie({
                     return null;
                   }
                   const isHovered = activeIndex === slice.index;
-                  const midAngle = (slice.start + slice.end) / 2;
-                  const offset = isHovered ? 4 : 0;
-                  const tx = Math.cos(midAngle) * offset;
-                  const ty = Math.sin(midAngle) * offset;
 
                   return (
                     <path
@@ -299,20 +354,12 @@ function ResultsPie({
                       strokeWidth={isHovered ? 2.5 : 0}
                       style={{
                         cursor: "pointer",
-                        transform: `translate(${tx}px, ${ty}px)`,
-                        transition: "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.18s ease, stroke-width 0.18s ease",
+                        transition: "opacity 0.18s ease, stroke-width 0.18s ease",
                         opacity: activeIndex === null || isHovered ? 1 : 0.65,
-                        filter: isHovered ? "drop-shadow(0 3px 6px rgba(0,0,0,0.18))" : "none",
+                        filter: isHovered ? "drop-shadow(0 2px 8px rgba(0,0,0,0.22))" : "none",
                       }}
-                      onMouseEnter={(e) => {
-                        onHoverIndex(slice.index);
-                        updateTooltipPosition(e);
-                      }}
-                      onMouseMove={updateTooltipPosition}
-                      onClick={(e) => {
-                        updateTooltipPosition(e);
-                        onPinIndex((prev) => (prev === slice.index ? null : slice.index));
-                      }}
+                      onMouseEnter={() => onHoverIndex(slice.index)}
+                      onClick={() => onPinIndex((prev) => (prev === slice.index ? null : slice.index))}
                     />
                   );
                 })
@@ -321,16 +368,14 @@ function ResultsPie({
                 if (slice.sweep < Math.PI * 2 * 0.15 || slice.option.percentage < 15) {
                   return null;
                 }
-                const isHovered = activeIndex === slice.index;
                 const midAngle = (slice.start + slice.end) / 2;
-                const offset = isHovered ? 4 : 0;
                 const labelRadius = (PIE_RADIUS + INNER_RADIUS) / 2;
                 const point = piePoint(midAngle, labelRadius);
                 return (
                   <text
                     key={`label-${slice.option.option_id}`}
-                    x={point.x + Math.cos(midAngle) * offset}
-                    y={point.y + Math.sin(midAngle) * offset}
+                    x={point.x}
+                    y={point.y}
                     textAnchor="middle"
                     dominantBaseline="central"
                     className="results-pie-label"
@@ -340,7 +385,6 @@ function ResultsPie({
                       fontSize: "11px",
                       fontWeight: 800,
                       filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.45))",
-                      transition: "transform 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
                     }}
                   >
                     {Math.round(slice.option.percentage)}%
@@ -376,90 +420,8 @@ function ResultsPie({
                 </text>
               </g>
             </svg>
-
-            {/* Floating Tooltip */}
-            {activeSlice ? (
-              <div
-                className="results-pie-tooltip"
-                data-testid="pie-tooltip"
-                style={{
-                  position: "absolute",
-                  left: tooltipPos ? `${tooltipPos.x}px` : "50%",
-                  top: tooltipPos ? `${tooltipPos.y - 12}px` : "50%",
-                  transform: tooltipPos ? "translate(-50%, -100%)" : "translate(-50%, -50%)",
-                  background: "rgba(15, 23, 42, 0.94)",
-                  backdropFilter: "blur(4px)",
-                  color: "#ffffff",
-                  padding: "8px 12px",
-                  borderRadius: "8px",
-                  fontSize: "0.82rem",
-                  boxShadow: "0 4px 14px rgba(15, 23, 42, 0.25)",
-                  pointerEvents: "none",
-                  whiteSpace: "nowrap",
-                  zIndex: 10,
-                  lineHeight: 1.35,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700 }}>
-                  <span
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      background: sliceColor(activeSlice.index),
-                      display: "inline-block",
-                      flexShrink: 0,
-                    }}
-                  />
-                  <span>{activeSlice.option.label}</span>
-                </div>
-                <div style={{ color: "#cbd5e1", marginTop: 3, fontSize: "0.78rem" }}>
-                  <strong style={{ color: "#ffffff", fontSize: "0.85rem" }}>
-                    {activeSlice.option.percentage.toFixed(2)}%
-                  </strong>
-                  {" · "}
-                  {activeSlice.option.count} {t("results.votes").toLowerCase()}
-                </div>
-              </div>
-            ) : null}
           </div>
-
-          {/* Interactive Legend List */}
-          <div className="results-pie-legend" role="list">
-            {options.map((option, idx) => {
-              const isItemActive = activeIndex === idx;
-              return (
-                <div
-                  key={`legend-${option.option_id}`}
-                  role="listitem"
-                  className={`results-pie-legend-item${isItemActive ? " active" : ""}`}
-                  onMouseEnter={() => onHoverIndex(idx)}
-                  onMouseLeave={() => onHoverIndex(null)}
-                  onClick={() => onPinIndex((prev) => (prev === idx ? null : idx))}
-                >
-                  <div className="results-pie-legend-left">
-                    <span
-                      className="results-pie-legend-dot"
-                      style={{ background: sliceColor(idx) }}
-                      aria-hidden="true"
-                    />
-                    <span className="results-pie-legend-label" title={option.label}>
-                      {option.label}
-                    </span>
-                  </div>
-                  <div className="results-pie-legend-right">
-                    <span className="results-pie-legend-votes">
-                      {option.count} {t("results.votes").toLowerCase()}
-                    </span>
-                    <span className="results-pie-legend-pct">
-                      {option.percentage.toFixed(1)}%
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
+        </div>
       )}
     </div>
   );
@@ -508,9 +470,9 @@ export function ResultsPanel({ results }: { results: PollResults }) {
           <table className="saas-table">
             <thead>
               <tr>
-                <th>{t("results.option")}</th>
-                <th style={{ textAlign: "right" }}>{t("results.votes")}</th>
-                <th style={{ textAlign: "right" }}>{t("results.percentageCol")}</th>
+                <th style={{ width: "52%" }}>{t("results.option")}</th>
+                <th style={{ textAlign: "right", width: "18%", whiteSpace: "nowrap" }}>{t("results.votes")}</th>
+                <th style={{ textAlign: "right", width: "30%", whiteSpace: "nowrap" }}>{t("results.percentageCol")}</th>
               </tr>
             </thead>
             <tbody>
@@ -529,27 +491,36 @@ export function ResultsPanel({ results }: { results: PollResults }) {
                     onClick={() => setPinnedIndex((prev) => (prev === index ? null : index))}
                   >
                     <td>
-                      <span className="results-swatch" style={{ background: sliceColor(index) }} aria-hidden="true" />
-                      <strong>{option.label}</strong>
-                      {leaders.has(option.option_id) ? (
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            fontSize: "0.72rem",
-                            fontWeight: 700,
-                            padding: "2px 8px",
-                            borderRadius: 9999,
-                            background: "#eff6ff",
-                            color: "#1363df",
-                            border: "1px solid #bfdbfe",
-                            marginLeft: 8,
-                            letterSpacing: "0.03em",
-                          }}
+                      <div style={{ display: "flex", alignItems: "center", minWidth: 0 }}>
+                        <span className="results-swatch" style={{ background: sliceColor(index), flexShrink: 0 }} aria-hidden="true" />
+                        <strong
+                          className="results-option-text"
+                          title={option.label}
                         >
-                          {results.is_final ? t("results.winner") : t("results.leading")}
-                        </span>
-                      ) : null}
+                          {option.label}
+                        </strong>
+                        {leaders.has(option.option_id) ? (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              fontSize: "0.72rem",
+                              fontWeight: 700,
+                              padding: "2px 8px",
+                              borderRadius: 9999,
+                              background: "#eff6ff",
+                              color: "#1363df",
+                              border: "1px solid #bfdbfe",
+                              marginLeft: 8,
+                              letterSpacing: "0.03em",
+                              flexShrink: 0,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {results.is_final ? t("results.winner") : t("results.leading")}
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{option.count}</td>
                     <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600, color: "#475569" }}>

@@ -320,7 +320,7 @@
 
 .results-split {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 320px);
   gap: 20px;
   align-items: stretch;
   margin-bottom: 12px;
@@ -449,16 +449,27 @@
 @keyframes pieTooltipFadeIn {
   from {
     opacity: 0;
-    transform: translate(-50%, -90%) scale(0.96);
+    transform: translate(-50%, -50%) scale(0.96);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, -100%) scale(1);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
 .results-pie-tooltip {
   animation: pieTooltipFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.results-option-text {
+  display: inline-block;
+  max-width: min(200px, 28vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: #0f172a;
+  vertical-align: middle;
 }
 
 .results-pie-legend {
@@ -584,6 +595,7 @@
   text-transform: uppercase;
   border-bottom: 1px solid #e2e8f0;
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 .saas-table td {
