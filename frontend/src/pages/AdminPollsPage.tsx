@@ -32,6 +32,15 @@ export function AdminPollsPage() {
   const [loading, setLoading] = useState(true);
   const pageSize = 12;
 
+  // Auto-debounce search query (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1);
+      setQ(qInput.trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [qInput]);
+
   const queryKey = `${page}:${q}:${status}`;
   const [seenKey, setSeenKey] = useState(queryKey);
   if (seenKey !== queryKey) {

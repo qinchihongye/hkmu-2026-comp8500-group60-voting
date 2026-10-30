@@ -224,6 +224,10 @@ export function BallotForm({
                     key={option.id}
                     className={`ballot-option-tile ${isSelected ? "selected" : ""} ${multiple ? "is-multiple" : ""}`}
                   >
+                    <div className="ballot-option-radio-dot" aria-hidden="true">
+                      <div className="ballot-option-radio-inner" />
+                    </div>
+
                     <div className="ballot-option-left">
                       <span className="ballot-option-letter" aria-hidden="true">
                         {letter}
@@ -244,6 +248,7 @@ export function BallotForm({
                         }}
                       />
                       <span
+                        className="ballot-option-text"
                         style={{
                           cursor: locked ? "default" : "pointer",
                           margin: 0,
@@ -254,10 +259,6 @@ export function BallotForm({
                       >
                         {option.label}
                       </span>
-                    </div>
-
-                    <div className="ballot-option-radio-dot" aria-hidden="true">
-                      <div className="ballot-option-radio-inner" />
                     </div>
                   </label>
                 );

@@ -36,6 +36,15 @@ export function AdminAuditPage() {
 
   const pageSize = 12;
 
+  // Auto-debounce poll ID search (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1);
+      setPollId(pollIdInput.trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [pollIdInput]);
+
   const queryKey = `${page}:${pollId}:${action}`;
   const [seenKey, setSeenKey] = useState(queryKey);
   if (seenKey !== queryKey) {
@@ -135,26 +144,6 @@ export function AdminAuditPage() {
                 }}
               />
             </div>
-          </label>
-
-          {/* Action Select */}
-          <label style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: "0.82rem", fontWeight: 700, color: "#475569" }}>
-            <span>{t("admin.action")}</span>
-            <select
-              name="action"
-              value={action}
-              className="admin-action-select"
-              onChange={(event) => {
-                setPage(1);
-                setAction(event.target.value);
-              }}
-            >
-              {actions.map((item) => (
-                <option key={item} value={item}>
-                  {item ? (actionKeys[item] ? t(actionKeys[item]) : item) : t("action.all")}
-                </option>
-              ))}
-            </select>
           </label>
 
           {/* Filter Action Buttons */}

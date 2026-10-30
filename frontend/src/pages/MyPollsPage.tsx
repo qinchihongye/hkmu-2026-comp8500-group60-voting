@@ -10,7 +10,7 @@ import type { ManagePollSummary } from "../lib/api-types";
 import "../styles/polls.css";
 
 export function MyPollsPage() {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const failure = useFailure("error.myPollsLoad");
   const { setCause, clear } = failure;
   const statusTabs = [
@@ -113,20 +113,26 @@ export function MyPollsPage() {
 
         {/* Status Segmented Tabs */}
         <div className="polls-status-tabs">
-          {statusTabs.map((tab) => (
-            <button
-              key={tab.value}
-              type="button"
-              className={`polls-tab-btn ${status === tab.value ? "active" : ""}`}
-              onClick={() => {
-                setPage(1);
-                setStatus(tab.value);
-              }}
-            >
-              {tab.dot ? <span className="polls-tab-dot" /> : null}
-              <span>{tab.label}</span>
-            </button>
-          ))}
+          {statusTabs.map((tab) => {
+            const isActive = status === tab.value;
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                className={`polls-tab-btn ${isActive ? "active" : ""}`}
+                onClick={() => {
+                  setPage(1);
+                  setStatus(tab.value);
+                }}
+              >
+                {tab.dot ? <span className="polls-tab-dot" /> : null}
+                <span>{tab.label}</span>
+                {isActive && total > 0 ? (
+                  <span className="polls-tab-count">{total}</span>
+                ) : null}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -151,6 +157,26 @@ export function MyPollsPage() {
             {items.map((poll) => (
               <MyPollCard key={poll.id} poll={poll} />
             ))}
+            {items.length > 0 && items.length < pageSize && (
+              <Link
+                to="/my-polls/new"
+                className="plaza-card my-polls-quick-create-card"
+                aria-label={t("polls.create")}
+              >
+                <div className="quick-create-inner">
+                  <div className="quick-create-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                  </div>
+                  <span className="quick-create-title">{t("polls.create")}</span>
+                  <span className="quick-create-desc">
+                    {locale === "zh-CN" ? "快速发起一场新投票" : "Launch a new poll quickly"}
+                  </span>
+                </div>
+              </Link>
+            )}
           </div>
         </PageState>
 

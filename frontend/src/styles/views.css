@@ -168,31 +168,36 @@
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 14px;
   padding: 16px 20px;
   border: 2px solid #e2e8f0;
   border-radius: 14px;
   background: #ffffff;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
 }
 
 .ballot-option-tile:hover {
-  border-color: #cbd5e1;
+  border-color: #93c5fd;
   background: #f8fafc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
 }
 
 .ballot-option-tile.selected {
-  border-color: #1363df;
+  border-color: #2563eb;
   background: #eff6ff;
-  box-shadow: 0 0 0 3px rgba(19, 99, 223, 0.12), 0 2px 6px rgba(19, 99, 223, 0.08);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16), 0 4px 14px rgba(37, 99, 235, 0.12);
+  transform: translateY(-1px);
 }
 
 .ballot-option-left {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  flex: 1;
 }
 
 .ballot-option-letter {

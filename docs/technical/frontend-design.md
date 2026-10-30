@@ -28,8 +28,9 @@
   | --- | --- | --- |
   | `app/router.tsx` | URL 与页面绑定 | RequireAuth 控制登录／管理员页面 |
   | `app/providers.tsx` | 语言、Ant Design 主题、账户、访客上下文 | 账户与访客状态分开 |
-  | `layouts/AppLayout.*` | 顶栏、侧栏、手机导航、账户菜单 | 布局不决定服务端权限 |
+  | `layouts/AppLayout.*` | 顶栏（通知下拉、语言与账户）、侧栏、手机导航 | 布局不决定服务端权限 |
   | `pages/` | 加载数据、路由参数、组合业务组件 | 不直接访问数据库 |
+  | `features/notifications/` | 通知中心、下拉面板与轮询更新 | 与全局顶栏深度集成 |
   | `features/*/api.ts` | 按业务封装端点 | 统一经 apiClient 调用 |
   | `lib/http.ts` | JSON 信封、Cookie、CSRF、重试和错误分类 | 写请求不自动重试 |
   | `lib/api-types.ts` | TypeScript 接口类型 | 与后端模型同步 |
@@ -71,15 +72,19 @@
 
   | 组件／模块 | 输入／职责 | 输出／行为 |
   | --- | --- | --- |
-  | PollCard | 投票摘要 | 状态、时间、进度与详情／结果入口 |
+  | PollCard | 投票摘要 | 状态、时间、进度条与详情／结果入口，大屏三列自适应网格 |
   | PollHeroHeader | 标题、描述、状态、时间、可选版本 | 详情与管理页公共头部 |
   | PollForm | 创建／编辑模式、初始值 | 完整草稿字段；前端校验后提交 |
-  | PollTextImport | 用户粘贴文字 | 先查能力，再识别；仅应用返回字段 |
+  | PollTextImport | 用户粘贴文字 | 先查能力，再识别；支持识别后 JSON 预览确认 |
+  | JsonPreviewModal | 智能识别输出 JSON 与草稿字段映射 | 模态框展示原始 JSON，高亮语法与对比字段，确认后填入表单 |
+  | PolicyModal | 服务条款与隐私政策 | 注册页模态框展示中英服务规范与条款占位说明 |
   | usePollAccess | pollId 或 shareCode | 详情、门禁状态、重新加载、提交未知态 |
   | ParticipationPanel | 访问状态与结果链接 | 登录、密码、可投、已投等分支 |
-  | BallotForm / ConfirmVoteModal | 选项与选择模式 | 选择数组、确认后提交 |
+  | BallotForm / ConfirmVoteModal | 选项与选择模式 | 原生左对齐选项指示器与选中高亮光晕，提交前弹窗确认 |
   | SharePanel | 创建者分享信息 | 复制链接、密码、邀请文本、二维码 |
-  | ResultsPanel | PollResults | 汇总表、占比图、领先／最终状态 |
+  | ResultsPanel | PollResults | Donut 甜甜圈环形占比图（居中显示总票数）与单项微进度条 |
+  | DangerCloseModal | 投票提前结束二次确认 | 警示色双重确认弹窗，明确提示操作不可逆 |
+  | NotificationDropdown | 用户消息与系统公告 | 顶栏铃铛徽标、通知下拉列表、未读统计与一键清空已读 |
   | ShareCardModal / generate-share-card | 已取得的最终结果 | 浏览器生成 PNG 卡片 |
   | export-excel | 已取得的结果与可选详情 | XLSX 概况与结果明细，无额外导出 API |
 
@@ -91,7 +96,8 @@
   | 访客凭据 | HttpOnly Cookie；GuestProvider 通过 /guest/context 恢复 CSRF | 到期时更新访客状态 |
   | 两类 CSRF | 内存中的独立 auth / guest 槽位 | 不互相替代 |
   | 表单字段 | PollForm 本地 React state | 保存成功后以服务端结果为准 |
-  | 列表过滤与分页 | 对应页面 state | 变更过滤条件后重新请求 |
+  | 列表过滤与分页 | 对应页面 state（管理与审计含300ms防抖） | 变更过滤条件后防抖重新请求 |
+  | 通知状态 | useNotifications 本地状态与徽标计算 | 手动标为已读或轮询更新 |
   | 参与状态 | usePollAccess + 后端 has_voted / receipt | 提交不确定时重新读取，禁止自动重投 |
   | 结果数据 | PollResultPage 请求结果 | 进行中提供手动刷新；非持续自动推送 |
 
@@ -134,15 +140,25 @@
 
   | 条件 | 显示依据 |
   | --- | --- |
-  | 有 vote_limit | ballot_count / vote_limit |
+  | 有 vote_limit | ballot_count / vote_limit；双色平滑渐变进度条 |
   | 无 vote_limit | 开始至结束时间进度 |
   | SCHEDULED | 开始时间与未开始状态 |
   | CLOSED | 区分 BALLOT_CAP_REACHED、CLOSED_EARLY、ENDED |
   | live results 关闭 | 可展示选票总量，不展示未授权选项统计 |
-  | 单选／多选 | 由 selection_mode 决定，不按选项数量猜测已启用多选 |
-  | 结果占比 | 直接使用后端 percentage；分母是 total_selections |
-  | 最终结果 | is_final 决定最终状态；进行中只表示当前领先 |
+  | 单选／多选 | 由 selection_mode 决定；原生左对齐选择指示器与选中态光晕轮廓 |
+  | 结果图表与占比 | Donut 甜甜圈环形图（65% 内径展示总票数） + 选项行独立微进度条 |
+  | 最终结果 | is_final 决定最终状态并高亮胜出者；进行中只表示当前领先 |
   | 导出 | 可见结果可导出 XLSX；独立结果页最终结果提供 PNG 分享入口 |
+
+* 界面与交互布局
+
+  ![公共概览自适应三列网格卡片布局](../images/guide-overview.png)
+
+  ![投票参与界面：原生左对齐选择指示器与高亮轮廓](../images/guide-poll-ballot.png)
+
+  ![投票结果 Donut 环形图与选项微进度条](../images/guide-poll-results.png)
+
+  ![智能填写结构化 JSON 预览对比弹窗](../images/guide-json-preview.png)
 
 ## 样式、构建与验证
 
@@ -153,7 +169,8 @@
   | 技术 | React 19、TypeScript、Vite、React Router、Ant Design |
   | 开发代理 | Vite 5173 → VITE_API_PROXY；浏览器请求同源 /api |
   | 发布 | npm run build → dist；Nginx 托管与 SPA fallback |
-  | 响应式 | 桌面侧栏、手机底部导航；表单和图表按宽度重排 |
+  | 响应式与布局 | 桌面侧栏与顶栏通知中心、手机底部导航；广场卡片自适应三列网格（`≥ 1200px`） |
+  | 列表与管理体验 | My Polls 状态分类徽标与首位快捷创建卡片；管理员端 300ms 搜索防抖与操作胶囊 |
   | 图片／Excel | 浏览器 Canvas、xlsx；不上传已生成文件 |
   | 类型检查 | npm run typecheck |
   | 风格检查 | npm run lint |
