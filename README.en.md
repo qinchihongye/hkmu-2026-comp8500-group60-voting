@@ -12,32 +12,46 @@
 
   ![VoteNow Product Showcase](docs/images/product-showcase.png)
 
-* Core UI carousel showcase (dynamic smooth slide transition):
+* Core UI interactive switcher (click navigation buttons `| Previous | 1, 2, 3 | Next |` below, or try the [interactive web viewer](docs/images/interactive-viewer.html)):
+
+<a id="preview-1"></a>
+
+| [◀ Previous](#preview-3) | **[ 1 ] Overview** | [[ 2 ] Create Poll](#preview-2) | [[ 3 ] Results](#preview-3) | [Next ▶](#preview-2) |
+| :---: | :---: | :---: | :---: | :---: |
+
+> **Screen 1 / 3 · Overview Plaza**: Browse poll status, remaining time, responsive grid, and ballot progress.
+
+![Poll overview](docs/images/overview.jpg)
+
+<br/>
+
+---
+
+<a id="preview-2"></a>
+
+| [◀ Previous](#preview-1) | [[ 1 ] Overview](#preview-1) | **[ 2 ] Create Poll** | [[ 3 ] Results](#preview-3) | [Next ▶](#preview-3) |
+| :---: | :---: | :---: | :---: | :---: |
+
+> **Screen 2 / 3 · Create Poll & Smart Fill**: Configure topic, options, schedule, and rules with LLM text recognition and JSON preview.
+
+![Create poll](docs/images/create-poll.jpg)
+
+<br/>
+
+---
+
+<a id="preview-3"></a>
+
+| [◀ Previous](#preview-2) | [[ 1 ] Overview](#preview-1) | [[ 2 ] Create Poll](#preview-2) | **[ 3 ] Results** | [Next ▶](#preview-1) |
+| :---: | :---: | :---: | :---: | :---: |
+
+> **Screen 3 / 3 · Results & Donut Chart**: View ballot and selection counts, Donut chart, micro-bars, and winner status.
+
+![Poll results](docs/images/poll-results.jpg)
+
+* Dynamic animated carousel preview:
 
   ![Core UI Carousel Showcase](docs/images/preview-carousel.gif)
-
-* Step-by-step static views & details:
-
-  <details open>
-    <summary><b>📊 1. Poll Overview Plaza</b> - Browse poll status, remaining time, and ballot progress</summary>
-    <br/>
-
-    ![Poll overview](docs/images/overview.jpg)
-  </details>
-
-  <details>
-    <summary><b>✍️ 2. Create Poll & Smart Fill</b> - Configure topic, options, schedule, and rules with LLM text recognition</summary>
-    <br/>
-
-    ![Create poll](docs/images/create-poll.jpg)
-  </details>
-
-  <details>
-    <summary><b>📈 3. Results & Donut Chart</b> - View ballot and selection counts, Donut chart, and winner status</summary>
-    <br/>
-
-    ![Poll results](docs/images/poll-results.jpg)
-  </details>
 
   Screenshots captured on October 30, 2026, using local demo data.
 

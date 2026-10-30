@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoteNow · 核心页面交互轮播预览</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 600;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      color: #93c5fd;
+      margin-bottom: 12px;
+    }
+    .title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 15px;
+      color: #94a3b8;
+    }
+    .carousel-container {
+      width: 100%;
+      max-width: 1100px;
+      background: #1e293b;
+      border-radius: 16px;
+      border: 1px solid #334155;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+    .window-bar {
+      height: 40px;
+      background: #0f172a;
+      border-bottom: 1px solid #334155;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      position: relative;
+    }
+    .window-dots {
+      display: flex;
+      gap: 8px;
+    }
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .dot.red { background: #ef4444; }
+    .dot.yellow { background: #f59e0b; }
+    .dot.green { background: #10b981; }
+    .window-title {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #94a3b8;
+      font-family: monospace;
+    }
+    .slides-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #020617;
+      overflow: hidden;
+    }
+    .slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      transform: scale(0.98);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .slide.active {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+    .slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: #1e293b;
+      border-top: 1px solid #334155;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .info-text {
+      font-size: 14px;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .info-pill {
+      background: #3b82f6;
+      color: #ffffff;
+      padding: 2px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .nav-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn {
+      background: #334155;
+      color: #f8fafc;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn:hover {
+      background: #475569;
+      border-color: #64748b;
+    }
+    .btn:active {
+      transform: scale(0.97);
+    }
+    .page-btn {
+      min-width: 36px;
+      height: 36px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .page-btn:hover {
+      background: #1e293b;
+      color: #f8fafc;
+      border-color: #64748b;
+    }
+    .page-btn.active {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #3b82f6;
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="badge">VOTENOW UI SHOWCASE</div>
+    <h1 class="title">核心功能视图交互式切换</h1>
+    <p class="subtitle">点击 Previous / Next 或数字按钮 1、2、3 进行实时切换</p>
+  </div>
+
+  <div class="carousel-container">
+    <div class="window-bar">
+      <div class="window-dots">
+        <span class="dot red"></span>
+        <span class="dot yellow"></span>
+        <span class="dot green"></span>
+      </div>
+      <div class="window-title" id="window-url">http://localhost:8188/overview</div>
+    </div>
+
+    <div class="slides-wrapper">
+      <div class="slide active" id="slide-0">
+        <img src="overview.jpg" alt="投票概览广场">
+      </div>
+      <div class="slide" id="slide-1">
+        <img src="create-poll.jpg" alt="创建投票与智能填写">
+      </div>
+      <div class="slide" id="slide-2">
+        <img src="poll-results.jpg" alt="统计结果与环形图">
+      </div>
+    </div>
+
+    <div class="controls-bar">
+      <div class="info-text">
+        <span class="info-pill" id="slide-tag">1 / 3</span>
+        <span id="slide-desc">📊 投票概览广场：查看投票状态、剩余时间和选票进度</span>
+      </div>
+
+      <div class="nav-group">
+        <button class="btn" id="prev-btn">◀ Previous</button>
+        <button class="page-btn active" data-index="0">1</button>
+        <button class="page-btn" data-index="1">2</button>
+        <button class="page-btn" data-index="2">3</button>
+        <button class="btn" id="next-btn">Next ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const slides = [
+      {
+        url: "http://localhost:8188/overview",
+        tag: "1 / 3",
+        desc: "📊 投票概览广场：查看投票状态、剩余时间和选票进度"
+      },
+      {
+        url: "http://localhost:8188/my-polls/new",
+        tag: "2 / 3",
+        desc: "✍️ 创建投票与智能填写：填写主题、选项、规则及大模型 JSON 识别"
+      },
+      {
+        url: "http://localhost:8188/polls/:id/results",
+        tag: "3 / 3",
+        desc: "📈 统计结果与环形图：分别统计选票数量与选择次数，展示 Donut 环形图和胜出徽标"
+      }
+    ];
+
+    let currentIndex = 0;
+    const total = slides.length;
+
+    const slideElements = [
+      document.getElementById('slide-0'),
+      document.getElementById('slide-1'),
+      document.getElementById('slide-2')
+    ];
+    const pageButtons = document.querySelectorAll('.page-btn');
+    const urlElement = document.getElementById('window-url');
+    const tagElement = document.getElementById('slide-tag');
+    const descElement = document.getElementById('slide-desc');
+
+    function updateSlide(index) {
+      currentIndex = (index + total) % total;
+      
+      slideElements.forEach((el, i) => {
+        el.classList.toggle('active', i === currentIndex);
+      });
+      pageButtons.forEach((btn, i) => {
+        btn.classList.toggle('active', i === currentIndex);
+      });
+
+      urlElement.textContent = slides[currentIndex].url;
+      tagElement.textContent = slides[currentIndex].tag;
+      descElement.textContent = slides[currentIndex].desc;
+    }
+
+    document.getElementById('prev-btn').addEventListener('click', () => {
+      updateSlide(currentIndex - 1);
+    });
+
+    document.getElementById('next-btn').addEventListener('click', () => {
+      updateSlide(currentIndex + 1);
+    });
+
+    pageButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.target.getAttribute('data-index'), 10);
+        updateSlide(idx);
+      });
+    });
+
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') updateSlide(currentIndex - 1);
+      if (e.key === 'ArrowRight') updateSlide(currentIndex + 1);
+      if (e.key === '1') updateSlide(0);
+      if (e.key === '2') updateSlide(1);
+      if (e.key === '3') updateSlide(2);
+    });
+  </script>
+</body>
+</html>
+

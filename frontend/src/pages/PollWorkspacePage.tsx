@@ -266,7 +266,7 @@ export function PollWorkspacePage() {
                   await act("close");
                 }}
               >
-                {busy ? t("common.processing") : t("workspace.close")}
+                {busy ? t("common.saving") : t("workspace.close")}
               </button>
             </div>
           </div>

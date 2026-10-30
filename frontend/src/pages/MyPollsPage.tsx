@@ -172,7 +172,7 @@ export function MyPollsPage() {
                   </div>
                   <span className="quick-create-title">{t("polls.create")}</span>
                   <span className="quick-create-desc">
-                    {locale === "zh-CN" ? "快速发起一场新投票" : "Launch a new poll quickly"}
+                    {locale === "zh" ? "快速发起一场新投票" : "Launch a new poll quickly"}
                   </span>
                 </div>
               </Link>

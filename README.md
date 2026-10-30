@@ -12,32 +12,46 @@
 
   ![VoteNow 效果总览](docs/images/product-showcase.png)
 
-* 核心页面左右轮播效果（动态平滑切换）：
+* 核心页面切换浏览（点击下方按钮栏 `| Previous | 1, 2, 3 | Next |` 快速切换，或体验 [交互式切换页面](docs/images/interactive-viewer.html)）：
+
+<a id="preview-1"></a>
+
+| [◀ Previous](#preview-3) | **[ 1 ] 投票概览** | [[ 2 ] 创建投票](#preview-2) | [[ 3 ] 统计结果](#preview-3) | [Next ▶](#preview-2) |
+| :---: | :---: | :---: | :---: | :---: |
+
+> **第 1 / 3 屏 · 投票概览广场**：查看投票状态、剩余时间和选票进度。
+
+![投票概览](docs/images/overview.jpg)
+
+<br/>
+
+---
+
+<a id="preview-2"></a>
+
+| [◀ Previous](#preview-1) | [[ 1 ] 投票概览](#preview-1) | **[ 2 ] 创建投票** | [[ 3 ] 统计结果](#preview-3) | [Next ▶](#preview-3) |
+| :---: | :---: | :---: | :---: | :---: |
+
+> **第 2 / 3 屏 · 创建投票与智能填写**：填写主题、选项、时间及参与规则，支持大模型文字识别与 JSON 预览回填。
+
+![创建投票](docs/images/create-poll.jpg)
+
+<br/>
+
+---
+
+<a id="preview-3"></a>
+
+| [◀ Previous](#preview-2) | [[ 1 ] 投票概览](#preview-1) | [[ 2 ] 创建投票](#preview-2) | **[ 3 ] 统计结果** | [Next ▶](#preview-1) |
+| :---: | :---: | :---: | :---: | :---: |
+
+> **第 3 / 3 屏 · 统计结果与环形图**：分别统计选票数量与选择次数，展示 Donut 环形图和胜出徽标。
+
+![投票结果](docs/images/poll-results.jpg)
+
+* 动态轮播动图效果：
 
   ![核心页面左右轮播效果](docs/images/preview-carousel.gif)
-
-* 分步查看与详情折叠：
-
-  <details open>
-    <summary><b>📊 1. 投票概览广场 (Overview)</b> - 查看投票状态、剩余时间和选票进度</summary>
-    <br/>
-
-    ![投票概览](docs/images/overview.jpg)
-  </details>
-
-  <details>
-    <summary><b>✍️ 2. 创建投票与智能填写 (Create Poll)</b> - 填写主题、选项、时间及参与规则，支持大模型文字识别</summary>
-    <br/>
-
-    ![创建投票](docs/images/create-poll.jpg)
-  </details>
-
-  <details>
-    <summary><b>📈 3. 统计结果与环形图 (Poll Results)</b> - 分别统计选票数量与选择次数，展示 Donut 环形图和胜出徽标</summary>
-    <br/>
-
-    ![投票结果](docs/images/poll-results.jpg)
-  </details>
 
   截图采集于 2026-10-30，展示本地演示数据。
 

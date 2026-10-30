@@ -44,7 +44,7 @@ export function RegisterPage() {
   const [agree, setAgree] = useState(true);
   const [busy, setBusy] = useState(false);
   const [policyModal, setPolicyModal] = useState<{ open: boolean; title: string }>({ open: false, title: "" });
-  const strength = getPasswordStrength(password, locale === "zh-CN");
+  const strength = getPasswordStrength(password, locale === "zh");
 
   async function submit() {
     if (!agree) {
@@ -238,7 +238,7 @@ export function RegisterPage() {
                   onChange={(e) => setAgree(e.target.checked)}
                 />
                 <label htmlFor="reg-agree" className="auth-checkbox-label">
-                  {locale === "zh-CN" ? (
+                  {locale === "zh" ? (
                     <>
                       我已阅读并同意
                       <button

@@ -147,6 +147,16 @@ export function PollResultPage() {
               </button>
               <button
                 type="button"
+                className="view-btn view-btn-primary"
+                onClick={() => setShareModalOpen(true)}
+                style={{ padding: "8px 16px", fontSize: "0.88rem", display: "inline-flex", alignItems: "center", gap: 6 }}
+                data-testid="share-image-btn"
+              >
+                <span>🖼️</span>
+                <span>{t("resultPage.shareImage")}</span>
+              </button>
+              <button
+                type="button"
                 className="view-btn view-btn-secondary"
                 onClick={() => exportPollResultsToExcel(results, pollDetail, locale)}
                 style={{ padding: "8px 16px", fontSize: "0.88rem", display: "inline-flex", alignItems: "center", gap: 6 }}
