@@ -30,6 +30,28 @@ export function useNotifications() {
   const [dynamicNotifications, setDynamicNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Synchronize readIds whenever the active user changes (e.g. session load, login, logout)
+  useEffect(() => {
+    const userReads = getStoredReads(userId);
+    if (userId !== "guest") {
+      // If user has reads, load them; also merge any guest reads marked on this device
+      const guestReads = getStoredReads("guest");
+      if (guestReads.size > 0) {
+        let changed = false;
+        guestReads.forEach((id) => {
+          if (!userReads.has(id)) {
+            userReads.add(id);
+            changed = true;
+          }
+        });
+        if (changed) {
+          saveStoredReads(userId, userReads);
+        }
+      }
+    }
+    setReadIds(userReads);
+  }, [userId]);
+
   // Load contextual notifications from backend polls
   useEffect(() => {
     let cancelled = false;
