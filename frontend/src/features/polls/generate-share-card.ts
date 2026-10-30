@@ -8,6 +8,8 @@ function roundRect(
   height: number,
   radius: number
 ): void {
+  if (width <= 0 || height <= 0) return;
+  radius = Math.min(radius, width / 2, height / 2);
   ctx.beginPath();
   ctx.moveTo(x + radius, y);
   ctx.lineTo(x + width - radius, y);
@@ -120,17 +122,15 @@ export function generateShareCardImage(
     try {
       const isZh = locale === "zh";
       const scale = 2; // High-DPI 2x Retina
-      const width = 780;
+      const width = 800; // 800px width for generous, elegant spacing
       const pad = 36;
-      const contentWidth = width - pad * 2; // 708
-      const cardGap = 20;
-      const cardW = (contentWidth - cardGap) / 2; // 344
-      const rcX = pad + cardW + cardGap; // 400
+      const contentWidth = width - pad * 2; // 728px
 
       const title = results.poll_title || pollDetail?.title || (isZh ? "投票活动" : "Poll Event");
       const sortedOptions = [...results.options].sort((a, b) => b.count - a.count);
       const optCount = sortedOptions.length;
-      const totalSelections = results.total_selections || results.total_votes || 1;
+      const totalVotes = results.total_votes ?? 0;
+      const totalSelections = results.total_selections ?? results.total_votes ?? 0;
 
       // -------------------------------------------------------------
       // 1. TIE & WINNER DETECTION
@@ -151,34 +151,34 @@ export function generateShareCardImage(
         return;
       }
 
-      // 2.1 Measure Poll Title (Adaptive height so title never clips or overlaps)
-      mctx.font = "bold 15px 'Georgia', 'PingFang SC', serif, sans-serif";
-      const wrappedTitle = wrapText(mctx, title, cardW - 36);
-      const titleLineH = 21;
-      const titleTotalH = wrappedTitle.length * titleLineH;
-      const metaBlockH = 3 * 20 + 8;
-      const topHeroContentH = 26 + titleTotalH + metaBlockH + 16;
-      const topHeroH = Math.max(172, topHeroContentH);
+      // 2.1 Measure Full-Width Poll Title (Width available = contentWidth - 48 = 680px!)
+      mctx.font = "bold 18px 'Georgia', 'PingFang SC', serif, sans-serif";
+      const wrappedTitle = wrapText(mctx, title, contentWidth - 48);
+      const titleH = wrappedTitle.length * 26;
+      const heroCardH = 40 + titleH + 16 + 1 + 16 + 64; // Tag row + Title + gap + divider + gap + 4-col metrics
 
       // 2.2 Winner Banner Height
       const winnerBannerH = hasWinner ? 62 : 0;
 
-      // 2.3 Middle Section: Table vs Dual Charts Height Balance
-      const tableRowH = optCount > 7 ? 28 : optCount > 4 ? 32 : 38;
+      // 2.3 Middle Section: Table on Left (434px) + Donut on Right (276px)
+      const tableW = 434;
+      const chartW = contentWidth - tableW - 18; // 276px
+      const rcX = pad + tableW + 18;
+
+      // Measure option names with wrapText to avoid any truncation!
+      const optColW = 246;
+      mctx.font = "500 12px 'PingFang SC', -apple-system, sans-serif";
+      const optionWrappedLines = sortedOptions.map((o) => wrapText(mctx, o.label, optColW));
+      const optionRowHeights = optionWrappedLines.map((lines) => (lines.length > 1 ? 48 : 38));
       const tableHeaderH = 34;
-      const tableTotalH = tableHeaderH + (optCount + 1) * tableRowH;
+      const tableTotalH = tableHeaderH + optionRowHeights.reduce((a, b) => a + b, 0) + 38;
 
-      // Right chart height needed:
-      // If optCount > 5, layout legends in a neat 2-column format
-      const isTwoColLegend = optCount > 5;
+      // Right chart height needed
+      const isTwoColLegend = optCount > 6;
       const legendRows = isTwoColLegend ? Math.ceil(optCount / 2) : optCount;
-      const legendLineH = 19;
-      const donutTopOffset = 36;
-      const donutDiameter = optCount > 8 ? 108 : 124;
-      const legendTopGap = 20;
-      const chartBoxNeededH = donutTopOffset + donutDiameter + legendTopGap + legendRows * legendLineH + 20;
-
-      const midSectionH = Math.max(tableTotalH, chartBoxNeededH, 310);
+      const legendLineH = 20;
+      const chartBoxNeededH = Math.max(320, 36 + 120 + 20 + legendRows * legendLineH + 20);
+      const midSectionH = Math.max(tableTotalH, chartBoxNeededH);
 
       // 2.4 Bottom Section Height (Statistical Notes & Metadata)
       mctx.font = "500 11px -apple-system, BlinkMacSystemFont, sans-serif";
@@ -194,7 +194,8 @@ export function generateShareCardImage(
             "3. Cryptographic integrity hash verified and permanently archived for audit.",
           ];
 
-      const wrappedNotes = notes.flatMap((n) => wrapText(mctx, n, cardW - 36));
+      const bottomCardW = (contentWidth - 18) / 2;
+      const wrappedNotes = notes.flatMap((n) => wrapText(mctx, n, bottomCardW - 36));
       const bottomCardsH = Math.max(126, 36 + wrappedNotes.length * 17 + 16);
 
       // 2.5 Overall Canvas Dimensions
@@ -203,7 +204,7 @@ export function generateShareCardImage(
       const totalHeight =
         pad +
         headerH +
-        topHeroH +
+        heroCardH +
         (hasWinner ? 18 + winnerBannerH : 0) +
         24 +
         midSectionH +
@@ -254,7 +255,7 @@ export function generateShareCardImage(
       const repTitleW = ctx.measureText(reportTitle).width;
       ctx.fillText(reportTitle, (width - repTitleW) / 2, headerTop + 46);
 
-      // Double rule with center diamond
+      // Double rule with amber diamond
       const ruleY = headerTop + 62;
       const ruleW = 90;
       ctx.strokeStyle = "#d97706";
@@ -296,91 +297,134 @@ export function generateShareCardImage(
       ctx.stroke();
 
       // -------------------------------------------------------------
-      // 5. HERO ROW: Symmetrical Two-Column Box
+      // 5. UNIFIED FULL-WIDTH HERO CARD (728px wide!)
       // -------------------------------------------------------------
       const heroY = headerDivY + 20;
 
-      // 5.1 Left Hero Box: Ballot Measure
-      roundRect(ctx, pad, heroY, cardW, topHeroH, 10);
+      roundRect(ctx, pad, heroY, contentWidth, heroCardH, 12);
       ctx.fillStyle = "#ffffff";
       ctx.fill();
       ctx.strokeStyle = "#e7e5e4";
       ctx.lineWidth = 1;
-      roundRect(ctx, pad, heroY, cardW, topHeroH, 10);
+      roundRect(ctx, pad, heroY, contentWidth, heroCardH, 12);
       ctx.stroke();
 
+      // Top Row: Tag on left, Status Badge on right
       ctx.font = "bold 10px -apple-system, BlinkMacSystemFont, sans-serif";
       ctx.fillStyle = "#047857";
-      ctx.fillText(isZh ? "公报投票议案 / 事项" : "OFFICIAL BALLOT MEASURE", pad + 18, heroY + 22);
+      ctx.fillText(isZh ? "公报投票议案 / 事项" : "OFFICIAL BALLOT MEASURE", pad + 24, heroY + 24);
 
-      ctx.font = "bold 15px 'Georgia', 'PingFang SC', serif, sans-serif";
-      ctx.fillStyle = "#1c1917";
-      let titleCurY = heroY + 44;
-      wrappedTitle.forEach((line) => {
-        ctx.fillText(line, pad + 18, titleCurY);
-        titleCurY += titleLineH;
-      });
-
+      // Status Pill
       const isSingle = (results.selection_mode || pollDetail?.selection_mode) === "SINGLE";
       const isNamed = pollDetail?.identity_mode === "NAMED";
       const statusText = results.is_final
-        ? isZh ? "已结束 (最终公报)" : "Closed (Final)"
-        : isZh ? "进行中 (实时进展)" : "Open (Live)";
+        ? isZh ? "● 已结束 (最终公报)" : "● Closed (Final)"
+        : isZh ? "● 进行中 (实时进展)" : "● Open (Live)";
 
-      const metaItems = [
-        { label: isZh ? "选票格式:" : "Format:", val: `${isSingle ? (isZh ? "单选" : "Single") : (isZh ? "多选" : "Multiple")} · ${isNamed ? (isZh ? "实名认证" : "Named") : (isZh ? "匿名无痕" : "Secret Ballot")}` },
-        { label: isZh ? "公报状态:" : "Status:", val: statusText, isStatus: true },
-        { label: isZh ? "投票周期:" : "Period:", val: `${formatDateTimeStr(pollDetail?.starts_at)} ~ ${formatDateTimeStr(pollDetail?.ends_at)}` },
-      ];
-
-      let metaCurY = titleCurY + 6;
-      ctx.font = "500 11px -apple-system, BlinkMacSystemFont, sans-serif";
-      metaItems.forEach((m) => {
-        ctx.fillStyle = "#78716c";
-        ctx.fillText(m.label, pad + 18, metaCurY);
-        const lblW = ctx.measureText(m.label).width;
-
-        if (m.isStatus) {
-          ctx.fillStyle = "#047857";
-          ctx.font = "bold 11px -apple-system, BlinkMacSystemFont, sans-serif";
-        } else {
-          ctx.fillStyle = "#1c1917";
-          ctx.font = "600 11px -apple-system, BlinkMacSystemFont, sans-serif";
-        }
-        const valMaxW = cardW - 36 - lblW - 8;
-        ctx.fillText(truncateText(ctx, m.val, valMaxW), pad + 18 + lblW + 6, metaCurY);
-        ctx.font = "500 11px -apple-system, BlinkMacSystemFont, sans-serif";
-        metaCurY += 20;
-      });
-
-      // 5.2 Right Hero Box: Participation Stats & QR Code
-      roundRect(ctx, rcX, heroY, cardW, topHeroH, 10);
-      ctx.fillStyle = "#f7fee7"; // Warm lime/emerald tint
+      ctx.font = "bold 10px -apple-system, BlinkMacSystemFont, sans-serif";
+      const stW = ctx.measureText(statusText).width;
+      const stPillW = stW + 20;
+      const stPillX = width - pad - 24 - stPillW;
+      roundRect(ctx, stPillX, heroY + 12, stPillW, 22, 6);
+      ctx.fillStyle = results.is_final ? "#ecfdf5" : "#eff6ff";
       ctx.fill();
-      ctx.strokeStyle = "#d9f99d";
-      ctx.lineWidth = 1.5;
-      roundRect(ctx, rcX, heroY, cardW, topHeroH, 10);
+      ctx.strokeStyle = results.is_final ? "#a7f3d0" : "#bfdbfe";
+      ctx.lineWidth = 1;
+      roundRect(ctx, stPillX, heroY + 12, stPillW, 22, 6);
       ctx.stroke();
 
-      const qrSize = 74;
-      const qrX = rcX + cardW - qrSize - 18;
-      const qrY = heroY + 20;
+      ctx.fillStyle = results.is_final ? "#047857" : "#1d4ed8";
+      ctx.fillText(statusText, stPillX + 10, heroY + 27);
+
+      // Full-Width Title (680px available, NEVER CROSSES BORDER!)
+      ctx.font = "bold 18px 'Georgia', 'PingFang SC', serif, sans-serif";
+      ctx.fillStyle = "#1c1917";
+      let curTitleY = heroY + 52;
+      wrappedTitle.forEach((line) => {
+        ctx.fillText(line, pad + 24, curTitleY);
+        curTitleY += 26;
+      });
+
+      // Hairline divider inside hero card
+      const heroInnerDivY = curTitleY + 4;
+      ctx.strokeStyle = "#f3f4f6";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pad + 24, heroInnerDivY);
+      ctx.lineTo(width - pad - 24, heroInnerDivY);
+      ctx.stroke();
+
+      // Bottom 4-Column Balanced Grid
+      const metricsY = heroInnerDivY + 20;
+
+      // Col 1: Format
+      const col1X = pad + 24;
+      ctx.font = "bold 9px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillStyle = "#78716c";
+      ctx.letterSpacing = "0.5px";
+      ctx.fillText(isZh ? "选票类型" : "BALLOT FORMAT", col1X, metricsY);
+      ctx.letterSpacing = "0px";
+      ctx.font = "600 12px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillStyle = "#1c1917";
+      const formatStr = `${isSingle ? (isZh ? "单选投票" : "Single Choice") : (isZh ? "多选投票" : "Multiple Choice")} · ${isNamed ? (isZh ? "实名认证" : "Named Ballot") : (isZh ? "匿名无痕" : "Secret Ballot")}`;
+      ctx.fillText(formatStr, col1X, metricsY + 18);
+
+      // Col 2: Voting Period (Full timestamp, NO TRUNCATION!)
+      const col2X = pad + 190;
+      ctx.font = "bold 9px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillStyle = "#78716c";
+      ctx.letterSpacing = "0.5px";
+      ctx.fillText(isZh ? "公示起止时段" : "VOTING TIMEFRAME", col2X, metricsY);
+      ctx.letterSpacing = "0px";
+      ctx.font = "500 11px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillStyle = "#44403c";
+      ctx.fillText(formatDateTimeStr(pollDetail?.starts_at), col2X, metricsY + 17);
+      ctx.fillText(`~ ${formatDateTimeStr(pollDetail?.ends_at)}`, col2X, metricsY + 31);
+
+      // Col 3: Participation
+      const col3X = pad + 380;
+      ctx.font = "bold 9px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillStyle = "#78716c";
+      ctx.letterSpacing = "0.5px";
+      ctx.fillText(isZh ? "参与统计" : "PARTICIPATION", col3X, metricsY);
+      ctx.letterSpacing = "0px";
+
+      if (totalVotes === 0) {
+        ctx.font = "bold 13px 'Georgia', serif, sans-serif";
+        ctx.fillStyle = "#78716c";
+        ctx.fillText(isZh ? "0 票 (暂无提交)" : "0 Ballots (No Votes Yet)", col3X, metricsY + 18);
+        ctx.font = "500 11px -apple-system, sans-serif";
+        ctx.fillStyle = "#a8a29e";
+        ctx.fillText(isZh ? "等待参与投票中..." : "Awaiting Submissions...", col3X, metricsY + 31);
+      } else {
+        ctx.font = "bold 14px 'Georgia', serif, sans-serif";
+        ctx.fillStyle = "#064e3b";
+        ctx.fillText(`${totalVotes} Valid Ballots`, col3X, metricsY + 18);
+        ctx.font = "600 11px -apple-system, sans-serif";
+        ctx.fillStyle = "#65a30d";
+        ctx.fillText(`${totalSelections} Selections Recorded`, col3X, metricsY + 31);
+      }
+
+      // Col 4: QR Code & Verification
+      const col4X = width - pad - 24 - 130;
+      const qrSize = 48;
+      const qrY = metricsY - 8;
 
       if (qrCanvas) {
-        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+        ctx.drawImage(qrCanvas, col4X, qrY, qrSize, qrSize);
       } else {
         ctx.fillStyle = "#ffffff";
-        roundRect(ctx, qrX, qrY, qrSize, qrSize, 6);
+        roundRect(ctx, col4X, qrY, qrSize, qrSize, 4);
         ctx.fill();
         ctx.strokeStyle = "#d9f99d";
         ctx.lineWidth = 1;
-        roundRect(ctx, qrX, qrY, qrSize, qrSize, 6);
+        roundRect(ctx, col4X, qrY, qrSize, qrSize, 4);
         ctx.stroke();
 
         ctx.fillStyle = "#064e3b";
-        const dot = 5;
-        for (let qx = qrX + 4; qx < qrX + qrSize - 4; qx += dot + 2) {
-          for (let qy = qrY + 4; qy < qrY + qrSize - 4; qy += dot + 2) {
+        const dot = 4;
+        for (let qx = col4X + 3; qx < col4X + qrSize - 3; qx += dot + 2) {
+          for (let qy = qrY + 3; qy < qrY + qrSize - 3; qy += dot + 2) {
             if ((qx * 3 + qy * 7) % 11 < 6) {
               ctx.fillRect(qx, qy, dot, dot);
             }
@@ -388,47 +432,17 @@ export function generateShareCardImage(
         }
       }
 
-      ctx.font = "600 9px -apple-system, BlinkMacSystemFont, sans-serif";
-      ctx.fillStyle = "#365314";
-      const qrCap = isZh ? "扫码核验证书" : "Scan to Verify";
-      const qrCapW = ctx.measureText(qrCap).width;
-      ctx.fillText(qrCap, qrX + (qrSize - qrCapW) / 2, qrY + qrSize + 14);
-
-      // Left stats inside right box
-      const totalVotesStr = String(results.total_votes);
-      ctx.font = "bold 38px 'Georgia', serif, sans-serif";
+      ctx.font = "bold 9px -apple-system, BlinkMacSystemFont, sans-serif";
       ctx.fillStyle = "#064e3b";
-      ctx.fillText(totalVotesStr, rcX + 20, heroY + 54);
-
-      ctx.font = "bold 10px -apple-system, BlinkMacSystemFont, sans-serif";
-      ctx.fillStyle = "#365314";
-      ctx.fillText(isZh ? "有效总投票人次 (BALLOTS)" : "TOTAL VALID BALLOTS", rcX + 20, heroY + 74);
-
-      ctx.font = "600 12px -apple-system, BlinkMacSystemFont, sans-serif";
-      ctx.fillStyle = "#65a30d";
-      ctx.fillText(
-        isZh ? `共计核验记录 ${totalSelections} 次选项选择` : `${totalSelections} Selections Recorded`,
-        rcX + 20,
-        heroY + 98
-      );
-
-      const validRatePillY = heroY + topHeroH - 36;
-      roundRect(ctx, rcX + 20, validRatePillY, 130, 24, 6);
-      ctx.fillStyle = "#ecfdf5";
-      ctx.fill();
-      ctx.strokeStyle = "#a7f3d0";
-      ctx.lineWidth = 1;
-      roundRect(ctx, rcX + 20, validRatePillY, 130, 24, 6);
-      ctx.stroke();
-
-      ctx.font = "bold 10px -apple-system, BlinkMacSystemFont, sans-serif";
-      ctx.fillStyle = "#047857";
-      ctx.fillText(isZh ? "● 认证有效率: 100%" : "● 100% VALID AUDIT", rcX + 28, validRatePillY + 16);
+      ctx.fillText(isZh ? "扫码验真" : "Scan to Verify", col4X + qrSize + 10, qrY + 20);
+      ctx.font = "500 9px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillStyle = "#78716c";
+      ctx.fillText("Official Ledger", col4X + qrSize + 10, qrY + 34);
 
       // -------------------------------------------------------------
-      // 6. WINNER CALLOUT BANNER (Golden Laurel Ribbon / Tie Ribbon)
+      // 6. WINNER CALLOUT BANNER (Only when totalVotes > 0)
       // -------------------------------------------------------------
-      let nextY = heroY + topHeroH + 18;
+      let nextY = heroY + heroCardH + 18;
       if (hasWinner) {
         const winY = nextY;
         const winH = winnerBannerH;
@@ -449,7 +463,7 @@ export function generateShareCardImage(
 
         const winTitle = isTie
           ? (isZh
-              ? `并列优胜 (${tiedWinners.length}项并列最高票): ${tiedWinners.map(w => w.label).join(" / ")}`
+              ? `并列优胜 (${tiedWinners.length}项最高票): ${tiedWinners.map(w => w.label).join(" / ")}`
               : `Tied Winners (${tiedWinners.length} Choices Tied): ${tiedWinners.map(w => w.label).join(" / ")}`)
           : (isZh
               ? `当选优胜选项: ${sortedOptions[0]!.label}`
@@ -481,64 +495,71 @@ export function generateShareCardImage(
       }
 
       // -------------------------------------------------------------
-      // 7. MIDDLE SECTION: Two-Column Results
+      // 7. MIDDLE SECTION: Table on Left + Donut on Right
       // -------------------------------------------------------------
       const midY = nextY;
 
-      // 7.1 Left Table Box
-      roundRect(ctx, pad, midY, cardW, midSectionH, 10);
+      // 7.1 Left Table Box (434px wide)
+      roundRect(ctx, pad, midY, tableW, midSectionH, 10);
       ctx.fillStyle = "#ffffff";
       ctx.fill();
       ctx.strokeStyle = "#e7e5e4";
       ctx.lineWidth = 1;
-      roundRect(ctx, pad, midY, cardW, midSectionH, 10);
+      roundRect(ctx, pad, midY, tableW, midSectionH, 10);
       ctx.stroke();
 
-      roundRect(ctx, pad, midY, cardW, tableHeaderH, 10);
+      roundRect(ctx, pad, midY, tableW, tableHeaderH, 10);
       ctx.fillStyle = "#064e3b";
       ctx.fill();
-      ctx.fillRect(pad, midY + tableHeaderH - 8, cardW, 8);
+      ctx.fillRect(pad, midY + tableHeaderH - 8, tableW, 8);
 
       const colNoX = pad + 14;
       const colOptX = pad + 44;
-      const colVotesX = pad + 242;
-      const colShareX = pad + 288;
+      const colVotesX = pad + tableW - 124;
+      const colShareX = pad + tableW - 68;
 
       ctx.font = "bold 11px -apple-system, BlinkMacSystemFont, sans-serif";
       ctx.fillStyle = "#f7fee7";
       ctx.fillText(isZh ? "序号" : "No.", colNoX, midY + 21);
-      ctx.fillText(isZh ? "提名候选项 / 选项" : "Candidate / Option", colOptX, midY + 21);
+      ctx.fillText(isZh ? "候选项明细 (完整展示)" : "Candidate / Option (Full Name)", colOptX, midY + 21);
       ctx.fillText(isZh ? "票数" : "Votes", colVotesX, midY + 21);
       ctx.fillText(isZh ? "占比" : "Share", colShareX, midY + 21);
 
       let rowY = midY + tableHeaderH;
       const maxVotes = Math.max(...sortedOptions.map((o) => o.count), 1);
-      const optMaxTextW = 192; // Generous width for option names
 
       sortedOptions.forEach((opt, idx) => {
         const isWinRow = opt.count === topCount && topCount > 0;
+        const curRowH = optionRowHeights[idx]!;
+        const lines = optionWrappedLines[idx]!;
+
         ctx.fillStyle = isWinRow ? "#fffbeb" : idx % 2 === 0 ? "#ffffff" : "#fafaf9";
-        ctx.fillRect(pad, rowY, cardW, tableRowH);
+        ctx.fillRect(pad, rowY, tableW, curRowH);
         ctx.strokeStyle = "#f5f5f4";
         ctx.lineWidth = 1;
-        ctx.strokeRect(pad, rowY, cardW, tableRowH);
+        ctx.strokeRect(pad, rowY, tableW, curRowH);
 
         // Rank
         ctx.fillStyle = isWinRow ? "#d97706" : "#78716c";
         ctx.font = isWinRow ? "bold 11px 'Georgia', serif" : "600 11px -apple-system, BlinkMacSystemFont, sans-serif";
-        ctx.fillText(String(idx + 1), colNoX + 2, rowY + tableRowH / 2 + 4);
+        ctx.fillText(String(idx + 1), colNoX + 2, rowY + 22);
 
-        // Option name
+        // Option name (MULTI-LINE WRAPPED, 100% COMPLETE!)
         ctx.fillStyle = isWinRow ? "#064e3b" : "#1c1917";
-        ctx.font = isWinRow ? "bold 11px 'PingFang SC', sans-serif" : "500 11px 'PingFang SC', sans-serif";
-        const optName = truncateText(ctx, opt.label, optMaxTextW);
-        ctx.fillText(optName, colOptX, rowY + tableRowH / 2 + (tableRowH > 28 ? 1 : 4));
+        ctx.font = isWinRow ? "bold 12px 'PingFang SC', sans-serif" : "500 12px 'PingFang SC', sans-serif";
 
-        // Micro-bar below option name
-        if (tableRowH > 28) {
-          const barY = rowY + tableRowH / 2 + 6;
-          const barMaxW = 180;
-          const barLen = Math.max((opt.count / maxVotes) * barMaxW, opt.count > 0 ? 4 : 0);
+        if (lines.length === 1) {
+          ctx.fillText(lines[0]!, colOptX, rowY + 22);
+        } else {
+          ctx.fillText(lines[0]!, colOptX, rowY + 17);
+          ctx.fillText(lines[1]!, colOptX, rowY + 33);
+        }
+
+        // Micro-bar below: ONLY DRAW WHEN opt.count > 0!
+        if (opt.count > 0) {
+          const barY = curRowH > 40 ? rowY + 39 : rowY + 28;
+          const barMaxW = 200;
+          const barLen = Math.max((opt.count / maxVotes) * barMaxW, 6);
 
           ctx.fillStyle = "#f5f5f4";
           roundRect(ctx, colOptX, barY, barMaxW, 3, 1.5);
@@ -551,146 +572,165 @@ export function generateShareCardImage(
 
         // Votes
         ctx.fillStyle = isWinRow ? "#064e3b" : "#44403c";
-        ctx.font = "bold 11px 'Georgia', serif, sans-serif";
-        ctx.fillText(String(opt.count), colVotesX + 4, rowY + tableRowH / 2 + 4);
+        ctx.font = "bold 12px 'Georgia', serif, sans-serif";
+        ctx.fillText(String(opt.count), colVotesX + 4, rowY + 22);
 
-        // Share Pill
+        // Share
         const pctStr = `${opt.percentage.toFixed(1)}%`;
         if (isWinRow) {
-          roundRect(ctx, colShareX - 2, rowY + tableRowH / 2 - 9, 44, 18, 4);
+          roundRect(ctx, colShareX - 2, rowY + 9, 44, 18, 4);
           ctx.fillStyle = "#ecfdf5";
           ctx.fill();
           ctx.strokeStyle = "#a7f3d0";
           ctx.lineWidth = 1;
-          roundRect(ctx, colShareX - 2, rowY + tableRowH / 2 - 9, 44, 18, 4);
+          roundRect(ctx, colShareX - 2, rowY + 9, 44, 18, 4);
           ctx.stroke();
 
           ctx.fillStyle = "#047857";
           ctx.font = "bold 10px 'Georgia', serif, sans-serif";
-          ctx.fillText(pctStr, colShareX + 4, rowY + tableRowH / 2 + 4);
+          ctx.fillText(pctStr, colShareX + 4, rowY + 22);
         } else {
           ctx.fillStyle = "#78716c";
           ctx.font = "500 11px 'Georgia', serif, sans-serif";
-          ctx.fillText(pctStr, colShareX + 4, rowY + tableRowH / 2 + 4);
+          ctx.fillText(pctStr, colShareX + 4, rowY + 22);
         }
 
-        rowY += tableRowH;
+        rowY += curRowH;
       });
 
       // Total Row
       ctx.fillStyle = "#f5f5f4";
-      ctx.fillRect(pad, rowY, cardW, tableRowH);
+      ctx.fillRect(pad, rowY, tableW, 38);
       ctx.strokeStyle = "#e7e5e4";
       ctx.lineWidth = 1;
-      ctx.strokeRect(pad, rowY, cardW, tableRowH);
+      ctx.strokeRect(pad, rowY, tableW, 38);
 
       ctx.font = "bold 11px 'Georgia', 'PingFang SC', serif, sans-serif";
       ctx.fillStyle = "#064e3b";
-      ctx.fillText(isZh ? "认证有效总计" : "Certified Total", colOptX, rowY + tableRowH / 2 + 4);
-      ctx.fillText(String(totalSelections), colVotesX + 4, rowY + tableRowH / 2 + 4);
-      ctx.fillText("100.0%", colShareX + 4, rowY + tableRowH / 2 + 4);
+      ctx.fillText(isZh ? "认证有效总计" : "Certified Total", colOptX, rowY + 23);
+      ctx.fillText(String(totalSelections), colVotesX + 4, rowY + 23);
+      ctx.fillText(totalVotes > 0 ? "100.0%" : "0.0%", colShareX + 4, rowY + 23);
 
-      // 7.2 Right Chart Box
-      roundRect(ctx, rcX, midY, cardW, midSectionH, 10);
+      // 7.2 Right Chart Box (276px wide)
+      roundRect(ctx, rcX, midY, chartW, midSectionH, 10);
       ctx.fillStyle = "#ffffff";
       ctx.fill();
       ctx.strokeStyle = "#e7e5e4";
       ctx.lineWidth = 1;
-      roundRect(ctx, rcX, midY, cardW, midSectionH, 10);
+      roundRect(ctx, rcX, midY, chartW, midSectionH, 10);
       ctx.stroke();
 
-      ctx.font = "bold 13px 'Georgia', 'PingFang SC', serif, sans-serif";
+      ctx.font = "bold 12px 'Georgia', 'PingFang SC', serif, sans-serif";
       ctx.fillStyle = "#064e3b";
-      const chartHead = isZh ? "得票比例分布 (PROPORTIONAL SHARE)" : "Proportional Vote Share";
-      ctx.fillText(chartHead, rcX + 20, midY + 28);
+      ctx.fillText(isZh ? "得票比例分布" : "Proportional Vote Share", rcX + 20, midY + 26);
 
-      // Donut Chart Placement
-      const donutCenterX = rcX + cardW / 2;
-      const rOuter = optCount > 8 ? 54 : 62;
-      const rInner = optCount > 8 ? 32 : 38;
+      const donutCenterX = rcX + chartW / 2;
+      const rOuter = 58;
+      const rInner = 36;
       const donutCenterY = midY + 36 + rOuter;
 
-      let startAngle = -Math.PI / 2;
-      sortedOptions.forEach((opt, idx) => {
-        const sliceAngle = (opt.percentage / 100) * (Math.PI * 2);
-        const endAngle = startAngle + sliceAngle;
-        const col = PALETTE[idx % PALETTE.length]!;
-
+      if (totalVotes === 0) {
+        // Empty / Awaiting votes donut ring
         ctx.beginPath();
-        ctx.arc(donutCenterX, donutCenterY, rOuter, startAngle, endAngle);
-        ctx.arc(donutCenterX, donutCenterY, rInner, endAngle, startAngle, true);
+        ctx.arc(donutCenterX, donutCenterY, rOuter, 0, Math.PI * 2);
+        ctx.arc(donutCenterX, donutCenterY, rInner, Math.PI * 2, 0, true);
         ctx.closePath();
-        ctx.fillStyle = col;
+        ctx.fillStyle = "#f3f4f6";
         ctx.fill();
+        ctx.strokeStyle = "#e5e7eb";
+        ctx.lineWidth = 1;
+        ctx.stroke();
 
-        startAngle = endAngle;
-      });
+        ctx.font = "bold 22px 'Georgia', serif, sans-serif";
+        ctx.fillStyle = "#9ca3af";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("0", donutCenterX, donutCenterY - 2);
 
-      // Donut Center Text
-      ctx.font = "bold 24px 'Georgia', serif, sans-serif";
-      ctx.fillStyle = "#064e3b";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(String(totalSelections), donutCenterX, donutCenterY - 2);
+        ctx.font = "bold 8px -apple-system, sans-serif";
+        ctx.fillStyle = "#9ca3af";
+        ctx.fillText(isZh ? "暂无选票" : "AWAITING", donutCenterX, donutCenterY + 14);
+        ctx.textAlign = "start";
+        ctx.textBaseline = "alphabetic";
+      } else {
+        let startAngle = -Math.PI / 2;
+        sortedOptions.forEach((opt, idx) => {
+          const sliceAngle = (opt.percentage / 100) * (Math.PI * 2);
+          const endAngle = startAngle + sliceAngle;
+          const col = PALETTE[idx % PALETTE.length]!;
 
-      ctx.font = "bold 8px -apple-system, BlinkMacSystemFont, sans-serif";
-      ctx.fillStyle = "#78716c";
-      ctx.letterSpacing = "1px";
-      ctx.fillText(isZh ? "选择总次" : "CHOICES", donutCenterX, donutCenterY + 14);
-      ctx.textAlign = "start";
-      ctx.textBaseline = "alphabetic";
-      ctx.letterSpacing = "0px";
+          ctx.beginPath();
+          ctx.arc(donutCenterX, donutCenterY, rOuter, startAngle, endAngle);
+          ctx.arc(donutCenterX, donutCenterY, rInner, endAngle, startAngle, true);
+          ctx.closePath();
+          ctx.fillStyle = col;
+          ctx.fill();
+
+          startAngle = endAngle;
+        });
+
+        ctx.font = "bold 24px 'Georgia', serif, sans-serif";
+        ctx.fillStyle = "#064e3b";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(totalSelections), donutCenterX, donutCenterY - 2);
+
+        ctx.font = "bold 8px -apple-system, sans-serif";
+        ctx.fillStyle = "#78716c";
+        ctx.fillText(isZh ? "选择总次" : "CHOICES", donutCenterX, donutCenterY + 14);
+        ctx.textAlign = "start";
+        ctx.textBaseline = "alphabetic";
+      }
 
       // Legend below Donut
-      const legStartY = donutCenterY + rOuter + 20;
+      const legStartY = donutCenterY + rOuter + 22;
 
       if (isTwoColLegend) {
-        // Two-column legend for > 5 options so all options appear cleanly!
-        const col1X = rcX + 16;
-        const col2X = rcX + cardW / 2 + 8;
-        const colMaxTextW = cardW / 2 - 58;
+        // Two-column legend for > 6 options
+        const col1X = rcX + 12;
+        const col2X = rcX + chartW / 2 + 4;
 
         sortedOptions.forEach((opt, idx) => {
           const colX = idx % 2 === 0 ? col1X : col2X;
           const rowIdx = Math.floor(idx / 2);
-          const curY = legStartY + rowIdx * legendLineH;
+          const curY = legStartY + rowIdx * 19;
           const col = PALETTE[idx % PALETTE.length]!;
 
-          ctx.fillStyle = col;
-          roundRect(ctx, colX, curY - 7, 8, 8, 2);
+          ctx.fillStyle = totalVotes > 0 ? col : "#d1d5db";
+          roundRect(ctx, colX, curY - 7, 7, 7, 2);
           ctx.fill();
 
           ctx.fillStyle = "#44403c";
           ctx.font = "500 10px -apple-system, BlinkMacSystemFont, sans-serif";
-          const shortName = truncateText(ctx, opt.label, colMaxTextW);
-          ctx.fillText(shortName, colX + 13, curY);
+          const shortName = opt.label.length > 8 ? opt.label.slice(0, 7) + "..." : opt.label;
+          ctx.fillText(shortName, colX + 11, curY);
 
           ctx.fillStyle = opt.count === topCount && topCount > 0 ? "#064e3b" : "#78716c";
-          ctx.font = "bold 10px 'Georgia', serif, sans-serif";
+          ctx.font = "bold 9px 'Georgia', serif, sans-serif";
           const pct = `${opt.percentage.toFixed(1)}%`;
           const pctW = ctx.measureText(pct).width;
-          const colRightX = idx % 2 === 0 ? rcX + cardW / 2 - 10 : rcX + cardW - 14;
+          const colRightX = idx % 2 === 0 ? rcX + chartW / 2 - 4 : rcX + chartW - 8;
           ctx.fillText(pct, colRightX - pctW, curY);
         });
       } else {
-        // Single column legend for <= 5 options
+        // Single column legend for <= 6 options
         let legY = legStartY;
         sortedOptions.forEach((opt, idx) => {
           const col = PALETTE[idx % PALETTE.length]!;
-          ctx.fillStyle = col;
-          roundRect(ctx, rcX + 20, legY - 8, 9, 9, 2);
+          ctx.fillStyle = totalVotes > 0 ? col : "#d1d5db";
+          roundRect(ctx, rcX + 18, legY - 8, 8, 8, 2);
           ctx.fill();
 
           ctx.fillStyle = "#44403c";
           ctx.font = "500 11px -apple-system, BlinkMacSystemFont, sans-serif";
-          const shortName = truncateText(ctx, opt.label, 205);
-          ctx.fillText(shortName, rcX + 36, legY);
+          const shortName = opt.label.length > 24 ? opt.label.slice(0, 22) + "..." : opt.label;
+          ctx.fillText(shortName, rcX + 32, legY);
 
           ctx.fillStyle = opt.count === topCount && topCount > 0 ? "#064e3b" : "#78716c";
           ctx.font = "bold 11px 'Georgia', serif, sans-serif";
           const pct = `${opt.percentage.toFixed(1)}%`;
           const pctW = ctx.measureText(pct).width;
-          ctx.fillText(pct, rcX + cardW - 20 - pctW, legY);
+          ctx.fillText(pct, rcX + chartW - 16 - pctW, legY);
 
           legY += 21;
         });
@@ -701,13 +741,13 @@ export function generateShareCardImage(
       // -------------------------------------------------------------
       const bottomY = midY + midSectionH + 20;
 
-      // 8.1 Left Box: Audit Declaration
-      roundRect(ctx, pad, bottomY, cardW, bottomCardsH, 10);
+      // 8.1 Left Box
+      roundRect(ctx, pad, bottomY, bottomCardW, bottomCardsH, 10);
       ctx.fillStyle = "#ffffff";
       ctx.fill();
       ctx.strokeStyle = "#e7e5e4";
       ctx.lineWidth = 1;
-      roundRect(ctx, pad, bottomY, cardW, bottomCardsH, 10);
+      roundRect(ctx, pad, bottomY, bottomCardW, bottomCardsH, 10);
       ctx.stroke();
 
       ctx.font = "bold 11px -apple-system, BlinkMacSystemFont, sans-serif";
@@ -718,27 +758,28 @@ export function generateShareCardImage(
       ctx.fillStyle = "#57534e";
       let noteY = bottomY + 44;
       notes.forEach((n) => {
-        const wrapped = wrapText(ctx, n, cardW - 36);
+        const wrapped = wrapText(ctx, n, bottomCardW - 36);
         wrapped.forEach((line) => {
           ctx.fillText(line, pad + 18, noteY);
           noteY += 17;
         });
       });
 
-      // 8.2 Right Box: Cryptographic Seal
-      roundRect(ctx, rcX, bottomY, cardW, bottomCardsH, 10);
+      // 8.2 Right Box
+      const rightBottomX = pad + bottomCardW + 18;
+      roundRect(ctx, rightBottomX, bottomY, bottomCardW, bottomCardsH, 10);
       ctx.fillStyle = "#ffffff";
       ctx.fill();
       ctx.strokeStyle = "#e7e5e4";
       ctx.lineWidth = 1;
-      roundRect(ctx, rcX, bottomY, cardW, bottomCardsH, 10);
+      roundRect(ctx, rightBottomX, bottomY, bottomCardW, bottomCardsH, 10);
       ctx.stroke();
 
       ctx.font = "bold 11px -apple-system, BlinkMacSystemFont, sans-serif";
       ctx.fillStyle = "#064e3b";
-      ctx.fillText(isZh ? "防伪存证印记" : "CRYPTOGRAPHIC SEAL & METADATA", rcX + 18, bottomY + 24);
+      ctx.fillText(isZh ? "防伪存证印记" : "CRYPTOGRAPHIC SEAL & METADATA", rightBottomX + 18, bottomY + 24);
 
-      const fingerprint = getFingerprint(results.poll_id, results.total_votes, totalSelections);
+      const fingerprint = getFingerprint(results.poll_id, totalVotes, totalSelections);
       const currentTime = formatDateTimeStr(new Date().toISOString());
 
       const auditItems = [
@@ -752,11 +793,11 @@ export function generateShareCardImage(
       auditItems.forEach((item) => {
         ctx.fillStyle = "#78716c";
         ctx.font = "500 11px -apple-system, BlinkMacSystemFont, sans-serif";
-        ctx.fillText(item.label, rcX + 18, auditY);
+        ctx.fillText(item.label, rightBottomX + 18, auditY);
         const lblW = ctx.measureText(item.label).width;
 
-        const valX = rcX + 18 + lblW + 6;
-        const maxValW = cardW - 36 - lblW - 6;
+        const valX = rightBottomX + 18 + lblW + 6;
+        const maxValW = bottomCardW - 36 - lblW - 6;
 
         if (item.isHash) {
           ctx.font = "bold 10px monospace";
