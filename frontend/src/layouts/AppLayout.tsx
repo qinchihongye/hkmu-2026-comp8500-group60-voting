@@ -117,7 +117,7 @@ export function AppLayout() {
         <div className="sidebar-header">
           <Link to="/overview" className="brand" aria-label={t("nav.home")} title={t("nav.home")}>
             <img className="brand-logo-icon" src="/favicon.png" alt="" />
-            {!collapsed && <span className="brand-name">VOTE</span>}
+            {!collapsed && <span className="brand-name">VoteNow</span>}
           </Link>
 
           <button
@@ -278,7 +278,7 @@ export function AppLayout() {
           <div className="topbar-mobile-left">
             <Link to="/overview" className="topbar-mobile-brand" aria-label={t("nav.home")}>
               <img className="brand-logo-icon" src="/favicon.png" alt="" style={{ width: 24, height: 24 }} />
-              <span className="brand-name" style={{ fontSize: "1.15rem" }}>VOTE</span>
+              <span className="brand-name" style={{ fontSize: "1.15rem" }}>VoteNow</span>
             </Link>
           </div>
 

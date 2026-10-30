@@ -131,7 +131,7 @@ export function RegisterPage() {
             <div className="auth-brand-badge">
               <img className="auth-brand-icon" src="/favicon.png" alt="" />
             </div>
-            <div className="auth-brand-title">VoteMaster</div>
+            <div className="auth-brand-title">VoteNow</div>
             <p className="auth-brand-desc">{t("auth.registerPitch")}</p>
           </div>
         </section>

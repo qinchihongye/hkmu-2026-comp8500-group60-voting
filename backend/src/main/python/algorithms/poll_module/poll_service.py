@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import Select, and_, func, or_, select
+from sqlalchemy import Select, and_, case, func, or_, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -523,11 +523,12 @@ class PollService:
         Raises:
             AppError: 搜索过长或数据库不可用。
         """
-        clauses = [*extra, *_filter_clauses(filters, self._clock.now())]
+        now = self._clock.now()
+        clauses = [*extra, *_filter_clauses(filters, now)]
         with self._factory() as session:
             try:
                 total = session.scalar(_count(clauses)) or 0
-                rows = session.scalars(_ordered(clauses, filters)).all()
+                rows = session.scalars(_ordered(clauses, filters, now)).all()
                 poll_ids = [row.id for row in rows]
                 counts: dict[int, int] = {}
                 if poll_ids:
@@ -794,12 +795,17 @@ def _count(clauses: list[object]) -> Select[tuple[int]]:
     return statement
 
 
-def _ordered(clauses: list[object], filters: PollListFilters) -> Select[tuple[Poll]]:
+def _ordered(
+    clauses: list[object],
+    filters: PollListFilters,
+    now: datetime | None = None,
+) -> Select[tuple[Poll]]:
     """按指定排序方式和主键倒序取一页。
 
     Args:
         clauses: WHERE 条件。
         filters: 分页和排序参数。
+        now: 当前时间，用于区分已结束投票。
 
     Returns:
         当前页的查询。
@@ -821,7 +827,24 @@ def _ordered(clauses: list[object], filters: PollListFilters) -> Select[tuple[Po
             )
         )
     elif sort == "ends_at":
-        statement = select(Poll).order_by(Poll.ends_at.asc(), Poll.id.desc())
+        if now is not None:
+            is_closed = case(
+                (
+                    or_(
+                        Poll.lifecycle == PollLifecycle.CLOSED,
+                        and_(Poll.lifecycle == PollLifecycle.PUBLISHED, Poll.ends_at <= now),
+                    ),
+                    1,
+                ),
+                else_=0,
+            )
+            statement = select(Poll).order_by(
+                is_closed.asc(),
+                Poll.ends_at.asc(),
+                Poll.id.desc(),
+            )
+        else:
+            statement = select(Poll).order_by(Poll.ends_at.asc(), Poll.id.desc())
     elif sort == "starts_at":
         statement = select(Poll).order_by(Poll.starts_at.desc(), Poll.id.desc())
     else:
