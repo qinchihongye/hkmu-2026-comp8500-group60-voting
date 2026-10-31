@@ -65,8 +65,16 @@ export function ElectionBallotPage() {
     });
   };
 
+  const getCandidateId = (c: { option_id?: number; poll_option_id?: number }): number => {
+    return c.option_id ?? c.poll_option_id ?? 0;
+  };
+
+  const handleToggleCandidate = (candidateId: number) => {
+    setSelectedCandidateId((prev) => (prev === candidateId ? null : candidateId));
+  };
+
   const selectedCandidate = election?.candidates.find(
-    (c) => c.poll_option_id === selectedCandidateId
+    (c) => getCandidateId(c) === selectedCandidateId
   );
 
   if (loading) {
@@ -172,12 +180,22 @@ export function ElectionBallotPage() {
                 <label className="selection-prompt">{t("election.ballot.selectCandidate")}</label>
                 <div className="candidate-radio-grid">
                   {election.candidates.map((cand) => {
-                    const isSelected = selectedCandidateId === cand.poll_option_id;
+                    const candId = getCandidateId(cand);
+                    const isSelected = selectedCandidateId !== null && selectedCandidateId === candId;
                     return (
                       <div
-                        key={cand.poll_option_id}
+                        key={candId || cand.candidate_code}
                         className={`candidate-radio-card ${isSelected ? "selected" : ""}`}
-                        onClick={() => setSelectedCandidateId(cand.poll_option_id)}
+                        onClick={() => handleToggleCandidate(candId)}
+                        role="radio"
+                        aria-checked={isSelected}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === " " || e.key === "Enter") {
+                            e.preventDefault();
+                            handleToggleCandidate(candId);
+                          }
+                        }}
                       >
                         <div className="radio-indicator">
                           <span className="radio-circle">{isSelected ? "●" : ""}</span>

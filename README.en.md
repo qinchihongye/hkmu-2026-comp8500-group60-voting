@@ -1,8 +1,8 @@
-# VoteNow · Online Voting System
+# VoteNow · Online Voting and Election System
 
 * [中文](README.md) | **English**
 
-* VoteNow is a course project by Group 60 for HKMU COMP8500SEF. It uses a React frontend and a separate Python backend to create, share, participate in, and view the results of polls. It is designed for classroom activities, team discussions, and group decision-making demonstrations.
+* VoteNow is a course project by Group 60 for HKMU COMP8500SEF. It uses a React frontend and a separate Python backend. It supports everyday polls and course-demonstration elections with voter registration, eligibility review, roster freezing, and secret ballots.
 
   Registered users can create polls. Guests can participate directly in public anonymous polls, while private polls require a share link and an access password. The project supports Docker Compose deployment and separate frontend and backend development.
 
@@ -55,61 +55,174 @@
 
   Screenshots captured on October 30, 2026, using local demo data.
 
-## Features
-
-* Poll creation and participation
-
-  | Feature | Description |
-  | --- | --- |
-  | Accounts and guests | Registration, login, and guest browsing; creating polls requires login |
-  | Named / anonymous | Named polls require login; anonymous polls use browser credentials to prevent duplicate submissions |
-  | Public / private | Public polls appear in the public list; private polls require a link and password |
-  | Single / multiple choice | Multiple choice can be enabled with at least three valid options |
-  | Ballot limit | Optional cap on total ballot submissions; reaching the cap closes the poll |
-  | Scheduling | Start and end times, including a scheduled state after publication |
-  | Result visibility | Creators decide whether participants can view aggregate results while voting is open |
-  | Sharing | Share links, invitation text, and QR codes |
-  | Creator workspace | Manage drafts, publish and close polls, and view aggregate results |
-  | Voting history | Logged-in users can view their named voting records |
-  | Administration | View all polls and results, and inspect audit events |
-  | Smart fill (optional) | Extract a title, options, and explicitly stated settings from text; review and edit the populated form |
-
 ## Quick Start
 
-* Docker Compose is the recommended setup. Install Git, Docker, and the Compose plugin, then run these steps from the repository root.
+* Docker Compose is recommended. Select the instructions for your operating system and complete each step in order. If the project or `.env` already exists, skip the corresponding clone or copy step instead of overwriting it.
 
-  1. Copy the environment template on first setup. Do not overwrite an existing `.env` file.
+### Windows
+
+* Complete these steps in PowerShell.
+
+  1. Install Git and Docker Desktop, enable the WSL 2 backend, and start Docker Desktop.
+
+  2. Clone the repository and enter its root directory. If the code already exists, enter the existing directory instead.
+
+     ```powershell
+     git clone https://github.com/qinchihongye/hkmu-2026-comp8500-group60-voting.git
+     Set-Location hkmu-2026-comp8500-group60-voting
+     ```
+
+  3. Confirm that Git, Docker, and Compose are available.
+
+     ```powershell
+     git --version
+     docker --version
+     docker compose version
+     ```
+
+  4. Copy the environment template on first setup. Skip this step when `.env` already exists.
+
+     ```powershell
+     Copy-Item .env.example .env
+     ```
+
+  5. Open `.env` and set the database password, demo account passwords, private demo poll password, `ANON_VOTER_HMAC_KEY`, and `IDENTITY_FINGERPRINT_HMAC_KEY`. Do not commit `.env`.
+
+     ```powershell
+     notepad .env
+     ```
+
+     Keep `PUBLIC_BASE_URL=http://localhost:8188`, `ALLOWED_ORIGINS=["http://localhost:8188"]`, and `COOKIE_SECURE=false` for local Docker. Database usernames, passwords, and database names in connection URLs must match the PostgreSQL settings.
+
+  6. Build and start the database, backend, and frontend in the background.
+
+     ```powershell
+     docker compose up -d --build
+     ```
+
+  7. Check the containers. `postgres`, `backend`, and `web` should be running, and the database should pass its health check.
+
+     ```powershell
+     docker compose ps
+     ```
+
+  8. Open VoteNow. If the page is not ready, inspect the backend startup log.
+
+     ```powershell
+     Start-Process http://localhost:8188
+     docker compose logs --tail=100 backend
+     ```
+
+### macOS
+
+* Complete these steps in Terminal. Apple Silicon and Intel Macs use the same Compose commands.
+
+  1. Install Git and Docker Desktop, then start Docker Desktop.
+
+  2. Clone the repository and enter its root directory. If the code already exists, enter the existing directory instead.
+
+     ```bash
+     git clone https://github.com/qinchihongye/hkmu-2026-comp8500-group60-voting.git
+     cd hkmu-2026-comp8500-group60-voting
+     ```
+
+  3. Confirm that Git, Docker, and Compose are available.
+
+     ```bash
+     git --version
+     docker --version
+     docker compose version
+     ```
+
+  4. Copy the environment template on first setup. Skip this step when `.env` already exists.
 
      ```bash
      cp .env.example .env
      ```
 
-  2. Edit `.env` to set the database password, demo account passwords, private demo poll password, and anonymous voter secret. Template values are intended for local course demonstrations only. Do not commit `.env` to the repository.
+  5. Open `.env` and set the database password, demo account passwords, private demo poll password, `ANON_VOTER_HMAC_KEY`, and `IDENTITY_FINGERPRINT_HMAC_KEY`. Do not commit `.env`.
 
-     Keep these addresses for local Docker deployment:
-
-     ```dotenv
-     PUBLIC_BASE_URL=http://localhost:8188
-     ALLOWED_ORIGINS=["http://localhost:8188"]
-     COOKIE_SECURE=false
+     ```bash
+     open -e .env
      ```
 
-     `ALLOWED_ORIGINS` must be a JSON array. Credentials in `DATABASE_URL` and `TEST_DATABASE_URL` must match the PostgreSQL configuration, particularly when switching to local development.
+     Keep `PUBLIC_BASE_URL=http://localhost:8188`, `ALLOWED_ORIGINS=["http://localhost:8188"]`, and `COOKIE_SECURE=false` for local Docker. Database usernames, passwords, and database names in connection URLs must match the PostgreSQL settings.
 
-  3. Build and start the database, backend, and frontend services.
+  6. Build and start the database, backend, and frontend in the background.
 
      ```bash
      docker compose up -d --build
      ```
 
-  4. Check service status, then open [http://localhost:8188](http://localhost:8188).
+  7. Check the containers. `postgres`, `backend`, and `web` should be running, and the database should pass its health check.
 
      ```bash
      docker compose ps
+     ```
+
+  8. Open VoteNow. If the page is not ready, inspect the backend startup log.
+
+     ```bash
+     open http://localhost:8188
      docker compose logs --tail=100 backend
      ```
 
-     Startup applies database migrations and creates missing demo accounts. When poll initialization is enabled, it also creates missing predefined polls. A healthy database does not mean backend migrations have finished; check the backend logs if the application is not yet available.
+### Linux
+
+* Complete these steps in a terminal.
+
+  1. Follow the official instructions for your distribution to install Git, Docker Engine, and the Docker Compose plugin, then start Docker.
+
+  2. Clone the repository and enter its root directory. If the code already exists, enter the existing directory instead.
+
+     ```bash
+     git clone https://github.com/qinchihongye/hkmu-2026-comp8500-group60-voting.git
+     cd hkmu-2026-comp8500-group60-voting
+     ```
+
+  3. Confirm that Git, Docker, and Compose are available.
+
+     ```bash
+     git --version
+     docker --version
+     docker compose version
+     ```
+
+     If Docker reports a permission error, configure the current user's Docker group according to the official Docker guide. Use `sudo docker compose` only when permitted by system policy.
+
+  4. Copy the environment template on first setup. Skip this step when `.env` already exists.
+
+     ```bash
+     cp .env.example .env
+     ```
+
+  5. Open `.env` and set the database password, demo account passwords, private demo poll password, `ANON_VOTER_HMAC_KEY`, and `IDENTITY_FINGERPRINT_HMAC_KEY`. Do not commit `.env`.
+
+     ```bash
+     ${EDITOR:-vi} .env
+     ```
+
+     Keep `PUBLIC_BASE_URL=http://localhost:8188`, `ALLOWED_ORIGINS=["http://localhost:8188"]`, and `COOKIE_SECURE=false` for local Docker. Database usernames, passwords, and database names in connection URLs must match the PostgreSQL settings.
+
+  6. Build and start the database, backend, and frontend in the background.
+
+     ```bash
+     docker compose up -d --build
+     ```
+
+  7. Check the containers. `postgres`, `backend`, and `web` should be running, and the database should pass its health check.
+
+     ```bash
+     docker compose ps
+     ```
+
+  8. Open [http://localhost:8188](http://localhost:8188) in a browser. If the page is not ready, inspect the backend startup log.
+
+     ```bash
+     docker compose logs --tail=100 backend
+     ```
+
+* On all three platforms, first startup applies database migrations and creates missing demo accounts. When poll initialization is enabled, it also creates missing predefined polls. A healthy database does not mean backend migrations have finished; check the backend logs if the application is not yet available.
 
 * Demo accounts
 
@@ -135,6 +248,38 @@
   ```
 
   Both the full-stack Compose setup and the standalone database setup below use host port 5432. Do not run both database services at the same time.
+
+## Features
+
+* Poll creation and participation
+
+  | Feature | Description |
+  | --- | --- |
+  | Accounts and guests | Registration, login, and guest browsing; creating polls requires login |
+  | Named / anonymous | Named polls require login; anonymous polls use browser credentials to prevent duplicate submissions |
+  | Public / private | Public polls appear in the public list; private polls require a link and password |
+  | Single / multiple choice | Multiple choice can be enabled with at least three valid options |
+  | Ballot limit | Optional cap on total ballot submissions; reaching the cap closes the poll |
+  | Scheduling | Start and end times, including a scheduled state after publication |
+  | Result visibility | Creators decide whether participants can view aggregate results while voting is open |
+  | Sharing | Share links, invitation text, and QR codes |
+  | Creator workspace | Manage drafts, publish and close polls, and view aggregate results |
+  | Voting history | Logged-in users can view their named voting records |
+  | Administration | View all polls and results, and inspect audit events |
+  | Smart fill (optional) | Extract a title, options, and explicitly stated settings from text; review and edit the populated form |
+
+* Election system (B2: identity chain separated from ballot records)
+
+  | Feature | Description |
+  | --- | --- |
+  | B2 data boundary | Ballot records contain no user ID, registration ID, credential ID, IP address, or User-Agent, and have no foreign-key link to the identity chain |
+  | Atomic credential consumption | The ISSUED → CONSUMED transition and ballot insertion occur in one database transaction |
+  | Roster freezing | Administrators explicitly freeze the roster after registration closes and issue one internal credential for every approved registration |
+  | Voter registration | Supports resident identity cards, Hong Kong/Macau permits, and student IDs; full numbers are not persisted, only a keyed HMAC-SHA-256 fingerprint and suffix |
+  | Course-demo review | A local format and checksum rules engine approves, rejects, or sends registrations for manual review; it does not connect to government, university, or third-party identity databases |
+  | Live-result matrix | When enabled, administrators and voters who have submitted a ballot can see candidate totals; when disabled, administrators see scale statistics only while voting is open |
+  | Abstention calculation | After closing, system abstentions equal the frozen eligible-voter count minus submitted ballots |
+  | Submission receipt | Voters confirm one candidate and receive a random UUID receipt; it is not a cryptographically verifiable proof |
 
 ## Workflow and Voting Rules
 
@@ -316,6 +461,7 @@
   | `GUEST_TTL_DAYS` | Guest session lifetime |
   | `POLL_ACCESS_TTL_MINUTES` | Private poll access authorization lifetime |
   | `ANON_VOTER_HMAC_KEY` | Server secret for anonymous duplicate-prevention identifiers; keep stable while existing data is in use |
+  | `IDENTITY_FINGERPRINT_HMAC_KEY` | Voter identity fingerprint secret; at least 32 bytes and different from `ANON_VOTER_HMAC_KEY` |
   | `COOKIE_SECURE` | Use `false` for local HTTP and `true` for HTTPS deployment |
   | `PUBLIC_BASE_URL` | Frontend URL used in share links |
   | `ALLOWED_ORIGINS` | Allowed browser origins as a JSON array |

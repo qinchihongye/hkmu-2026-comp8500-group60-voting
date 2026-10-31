@@ -17,7 +17,7 @@ import { ElectionResultPage } from "../pages/ElectionResultPage";
 import { ElectionsPage } from "../pages/ElectionsPage";
 import { ForbiddenPage } from "../pages/ForbiddenPage";
 import { LoginPage } from "../pages/LoginPage";
-import { MyElectionRegistrationsPage } from "../pages/MyElectionRegistrationsPage";
+import { MyActivityPage } from "../pages/MyActivityPage";
 import { MyPollsPage } from "../pages/MyPollsPage";
 import { MyVotesPage } from "../pages/MyVotesPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
@@ -48,7 +48,8 @@ export function AppRouter() {
         <Route path="/elections/:id/register" element={<RequireAuth><ElectionRegisterPage /></RequireAuth>} />
         <Route path="/elections/:id/vote" element={<RequireAuth><ElectionBallotPage /></RequireAuth>} />
         <Route path="/elections/:id/results" element={<ElectionResultPage />} />
-        <Route path="/my-election-registrations" element={<RequireAuth><MyElectionRegistrationsPage /></RequireAuth>} />
+        <Route path="/my-election-registrations" element={<Navigate to="/elections?view=my_registrations" replace />} />
+        <Route path="/my-activity" element={<RequireAuth><MyActivityPage /></RequireAuth>} />
         <Route path="/my-polls" element={<RequireAuth><MyPollsPage /></RequireAuth>} />
         <Route path="/my-polls/new" element={<RequireAuth><PollEditPage /></RequireAuth>} />
         <Route path="/my-polls/:id" element={<RequireAuth><PollWorkspacePage /></RequireAuth>} />

@@ -1,3 +1,7 @@
+
+
+
+
 # VoteNow · 在线投票与选举系统
 
 * **中文** | [English](README.en.md)
@@ -55,6 +59,200 @@
 
   截图采集于 2026-10-30，展示本地演示数据。
 
+## 快速启动
+
+* 推荐使用 Docker Compose。请根据操作系统选择一组步骤，并从上到下依次执行。已有项目代码或 `.env` 时，跳过对应的克隆或复制步骤，不要覆盖原配置。
+
+### Windows
+
+* 使用 PowerShell 执行以下步骤。
+
+  1. 安装 Git 和 Docker Desktop，启用并使用 WSL 2 后端，然后启动 Docker Desktop。
+
+  2. 首次使用时克隆仓库并进入项目根目录；已有代码时只需进入现有目录。
+
+     ```powershell
+     git clone https://github.com/qinchihongye/hkmu-2026-comp8500-group60-voting.git
+     Set-Location hkmu-2026-comp8500-group60-voting
+     ```
+
+  3. 检查 Git、Docker 和 Compose 是否可用。
+
+     ```powershell
+     git --version
+     docker --version
+     docker compose version
+     ```
+
+  4. 首次配置时复制环境变量模板；已有 `.env` 时跳过本步骤。
+
+     ```powershell
+     Copy-Item .env.example .env
+     ```
+
+  5. 打开 `.env`，设置数据库密码、演示账户密码、私有演示投票密码、`ANON_VOTER_HMAC_KEY` 和 `IDENTITY_FINGERPRINT_HMAC_KEY`。不要将 `.env` 提交到 Git。
+
+     ```powershell
+     notepad .env
+     ```
+
+     本机 Docker 模式应保留：`PUBLIC_BASE_URL=http://localhost:8188`、`ALLOWED_ORIGINS=["http://localhost:8188"]`、`COOKIE_SECURE=false`。数据库连接中的用户名、密码和数据库名必须与 PostgreSQL 配置一致。
+
+  6. 构建并在后台启动数据库、后端和前端。
+
+     ```powershell
+     docker compose up -d --build
+     ```
+
+  7. 检查容器状态。`postgres`、`backend` 和 `web` 应处于运行状态，数据库应通过健康检查。
+
+     ```powershell
+     docker compose ps
+     ```
+
+  8. 打开系统；若页面暂时不可用，再查看后端启动日志。
+
+     ```powershell
+     Start-Process http://localhost:8188
+     docker compose logs --tail=100 backend
+     ```
+
+### macOS
+
+* 使用 Terminal 执行以下步骤。Apple Silicon 与 Intel Mac 使用相同的 Compose 命令。
+
+  1. 安装 Git 和 Docker Desktop，然后启动 Docker Desktop。
+
+  2. 首次使用时克隆仓库并进入项目根目录；已有代码时只需进入现有目录。
+
+     ```bash
+     git clone https://github.com/qinchihongye/hkmu-2026-comp8500-group60-voting.git
+     cd hkmu-2026-comp8500-group60-voting
+     ```
+
+  3. 检查 Git、Docker 和 Compose 是否可用。
+
+     ```bash
+     git --version
+     docker --version
+     docker compose version
+     ```
+
+  4. 首次配置时复制环境变量模板；已有 `.env` 时跳过本步骤。
+
+     ```bash
+     cp .env.example .env
+     ```
+
+  5. 打开 `.env`，设置数据库密码、演示账户密码、私有演示投票密码、`ANON_VOTER_HMAC_KEY` 和 `IDENTITY_FINGERPRINT_HMAC_KEY`。不要将 `.env` 提交到 Git。
+
+     ```bash
+     open -e .env
+     ```
+
+     本机 Docker 模式应保留：`PUBLIC_BASE_URL=http://localhost:8188`、`ALLOWED_ORIGINS=["http://localhost:8188"]`、`COOKIE_SECURE=false`。数据库连接中的用户名、密码和数据库名必须与 PostgreSQL 配置一致。
+
+  6. 构建并在后台启动数据库、后端和前端。
+
+     ```bash
+     docker compose up -d --build
+     ```
+
+  7. 检查容器状态。`postgres`、`backend` 和 `web` 应处于运行状态，数据库应通过健康检查。
+
+     ```bash
+     docker compose ps
+     ```
+
+  8. 打开系统；若页面暂时不可用，再查看后端启动日志。
+
+     ```bash
+     open http://localhost:8188
+     docker compose logs --tail=100 backend
+     ```
+
+### Linux
+
+* 使用终端执行以下步骤。
+
+  1. 按当前发行版的官方安装说明安装 Git、Docker Engine 和 Docker Compose 插件，并启动 Docker 服务。
+
+  2. 首次使用时克隆仓库并进入项目根目录；已有代码时只需进入现有目录。
+
+     ```bash
+     git clone https://github.com/qinchihongye/hkmu-2026-comp8500-group60-voting.git
+     cd hkmu-2026-comp8500-group60-voting
+     ```
+
+  3. 检查 Git、Docker 和 Compose 是否可用。
+
+     ```bash
+     git --version
+     docker --version
+     docker compose version
+     ```
+
+     如果 Docker 返回权限错误，请按 Docker 官方说明配置当前用户的 Docker 用户组；只有在系统策略允许时才使用 `sudo docker compose`。
+
+  4. 首次配置时复制环境变量模板；已有 `.env` 时跳过本步骤。
+
+     ```bash
+     cp .env.example .env
+     ```
+
+  5. 打开 `.env`，设置数据库密码、演示账户密码、私有演示投票密码、`ANON_VOTER_HMAC_KEY` 和 `IDENTITY_FINGERPRINT_HMAC_KEY`。不要将 `.env` 提交到 Git。
+
+     ```bash
+     ${EDITOR:-vi} .env
+     ```
+
+     本机 Docker 模式应保留：`PUBLIC_BASE_URL=http://localhost:8188`、`ALLOWED_ORIGINS=["http://localhost:8188"]`、`COOKIE_SECURE=false`。数据库连接中的用户名、密码和数据库名必须与 PostgreSQL 配置一致。
+
+  6. 构建并在后台启动数据库、后端和前端。
+
+     ```bash
+     docker compose up -d --build
+     ```
+
+  7. 检查容器状态。`postgres`、`backend` 和 `web` 应处于运行状态，数据库应通过健康检查。
+
+     ```bash
+     docker compose ps
+     ```
+
+  8. 在浏览器打开 [http://localhost:8188](http://localhost:8188)。若页面暂时不可用，再查看后端启动日志。
+
+     ```bash
+     docker compose logs --tail=100 backend
+     ```
+
+* 三个平台首次启动都会执行数据库迁移、创建缺失的演示账户；启用初始化投票时，还会补齐固定投票数据。数据库健康检查通过不代表后端迁移已经完成，页面暂不可用时可查看后端日志。
+
+* 演示账户
+
+  | 用户名 | 用途 | 密码来源 |
+  | --- | --- | --- |
+  | `admin` | 管理员，查看全部投票与审计记录 | `DEMO_ADMIN_PASSWORD` |
+  | `demo_user` | 普通创建者，拥有初始化投票 | `DEMO_USER_PASSWORD` |
+  | `demo_voter` | 普通参与者，用于体验记名投票 | `DEMO_VOTER_PASSWORD` |
+
+  密码以自己 `.env` 中的设置为准。初始化不会重置已有账户密码；修改环境变量后重启，也不会自动修改数据库中的旧密码。初始化私有投票的密码来自 `DEMO_POLL_PASSWORD`。
+
+* 常用维护命令
+
+  ```bash
+  # 停止服务，保留数据库卷
+  docker compose down
+  
+  # 修改代码或依赖后重新构建
+  docker compose up -d --build
+  
+  # 查看后端运行日志
+  docker compose logs -f backend
+  ```
+
+  全栈 Compose 与下文的独立数据库模式均使用宿主机 5432 端口，不应同时启动两套数据库服务。
+
 ## 主要功能
 
 * 投票创建与参与
@@ -86,97 +284,6 @@
   | 实时结果矩阵 | 开启时管理员及已投选民可看候选人票数；关闭时管理员在投票期只看规模数据 |
   | 弃权计算 | 结束后计算系统弃权人数：冻结名册的合资格人数减已投选票数 |
   | 提交确认 | 选民二次确认后单选提交，返回随机 UUID 回执；回执不是密码学可验证证明 |
-
-## 快速启动
-
-* 推荐使用 Docker Compose。三个平台都需要先安装 Git，并确认以下命令可用：
-
-  ```text
-  git --version
-  docker --version
-  docker compose version
-  ```
-
-* 首次启动前需要编辑根目录 `.env`，设置数据库密码、演示账户密码、私有演示投票密码、匿名凭据密钥及选民身份指纹密钥。模板中的值仅供本地课程演示；`.env` 不应提交到仓库。
-
-  本机 Docker 模式下保留以下访问地址：
-
-  ```dotenv
-  PUBLIC_BASE_URL=http://localhost:8188
-  ALLOWED_ORIGINS=["http://localhost:8188"]
-  COOKIE_SECURE=false
-  ```
-
-  `ALLOWED_ORIGINS` 必须是 JSON 数组。`DATABASE_URL` 和 `TEST_DATABASE_URL` 中的用户名、密码需与 PostgreSQL 配置一致。
-
-### Windows
-
-* 安装并启动 Docker Desktop，使用 WSL 2 后端。在 PowerShell 中进入项目根目录并执行：
-
-  ```powershell
-  Copy-Item .env.example .env
-  notepad .env
-  docker compose up -d --build
-  docker compose ps
-  docker compose logs --tail=100 backend
-  ```
-
-  已有 `.env` 时跳过 `Copy-Item`，避免覆盖配置。启动完成后访问 [http://localhost:8188](http://localhost:8188)。
-
-### macOS
-
-* 安装并启动 Docker Desktop。在 Terminal 中进入项目根目录并执行：
-
-  ```bash
-  cp .env.example .env
-  open -e .env
-  docker compose up -d --build
-  docker compose ps
-  docker compose logs --tail=100 backend
-  ```
-
-  已有 `.env` 时跳过 `cp`。Apple Silicon 与 Intel Mac 使用相同的 Compose 命令。启动完成后访问 [http://localhost:8188](http://localhost:8188)。
-
-### Linux
-
-* 安装并启动 Docker Engine 与 Docker Compose 插件，确保当前用户有权限访问 Docker。在终端中进入项目根目录并执行：
-
-  ```bash
-  cp .env.example .env
-  ${EDITOR:-vi} .env
-  docker compose up -d --build
-  docker compose ps
-  docker compose logs --tail=100 backend
-  ```
-
-  已有 `.env` 时跳过 `cp`。如果当前用户没有 Docker 权限，可按 Docker 官方安装说明配置用户组，或在系统策略允许时使用 `sudo docker compose`。启动完成后访问 [http://localhost:8188](http://localhost:8188)。
-
-* 三个平台首次启动都会执行数据库迁移、创建缺失的演示账户；启用初始化投票时，还会补齐固定投票数据。数据库健康检查通过不代表后端迁移已经完成，页面暂不可用时可查看后端日志。
-
-* 演示账户
-
-  | 用户名 | 用途 | 密码来源 |
-  | --- | --- | --- |
-  | `admin` | 管理员，查看全部投票与审计记录 | `DEMO_ADMIN_PASSWORD` |
-  | `demo_user` | 普通创建者，拥有初始化投票 | `DEMO_USER_PASSWORD` |
-  | `demo_voter` | 普通参与者，用于体验记名投票 | `DEMO_VOTER_PASSWORD` |
-
-  密码以自己 `.env` 中的设置为准。初始化不会重置已有账户密码；修改环境变量后重启，也不会自动修改数据库中的旧密码。初始化私有投票的密码来自 `DEMO_POLL_PASSWORD`。
-
-* 常用维护命令
-
-  ```bash
-  # 停止服务，保留数据库卷
-  docker compose down
-
-  # 修改代码或依赖后重新构建
-  docker compose up -d --build
-
-  # 查看后端运行日志
-  docker compose logs -f backend
-  ```
-
-  全栈 Compose 与下文的独立数据库模式均使用宿主机 5432 端口，不应同时启动两套数据库服务。
 
 ## 使用流程与投票规则
 

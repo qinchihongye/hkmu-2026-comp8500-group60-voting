@@ -16,10 +16,12 @@ export const en = {
     polls: "Polls",
     myPolls: "My polls",
     history: "History",
+    myActivity: "My activity",
     elections: "Elections",
     myRegistrations: "My registrations",
     create: "Create poll",
     createShort: "Create",
+    adminSection: "Governance",
     supervision: "Supervision",
     adminElections: "Elections governance",
     audit: "Audit",
@@ -219,6 +221,7 @@ export const en = {
     emptyPublic: "No public polls match this filter.",
     emptyPublicHint: "Try another title or status.",
     emptyMine: "No polls in this status.",
+    emptyMineDesc: "You haven't created any polls in this view yet. Launch a new poll to gather feedback!",
     create: "Create poll",
     editDraft: "Edit draft",
     openWorkspace: "Manage",
@@ -258,6 +261,12 @@ export const en = {
     timeDaysHoursMinutes: "{days}d {hours}h {minutes}m",
     startsOn: "Starts {date}",
     ended: "Ended",
+  },
+  activity: {
+    title: "My Activity",
+    subtitle: "Manage polls you have launched and inspect verified ballot audit receipts.",
+    tabCreated: "My Created Polls",
+    tabVoted: "Voting History",
   },
   votes: {
     title: "My votes",
@@ -487,6 +496,10 @@ export const en = {
   election: {
     title: "Elections",
     subtitle: "Official high-security elections featuring cryptographic identity and secret ballot separation.",
+    tabs: {
+      explore: "All Elections",
+      myRegistrations: "My Registrations",
+    },
     badge: "Official Election",
     phase: {
       DRAFT: "Draft",
@@ -627,10 +640,12 @@ export const zh: StringTree<typeof en> = {
     polls: "公开投票",
     myPolls: "我创建的",
     history: "投票记录",
+    myActivity: "我的活动",
     elections: "选举活动",
     myRegistrations: "选民登记",
     create: "创建投票",
     createShort: "创建",
+    adminSection: "系统治理",
     supervision: "监督",
     adminElections: "选举治理",
     audit: "审计",
@@ -830,6 +845,7 @@ export const zh: StringTree<typeof en> = {
     emptyPublic: "没有符合筛选条件的公开投票。",
     emptyPublicHint: "换一个标题或状态试试。",
     emptyMine: "这个状态下没有投票。",
+    emptyMineDesc: "您在此状态下暂无创建的投票。立即发起新投票收集大家意见！",
     create: "创建投票",
     editDraft: "编辑草稿",
     openWorkspace: "管理",
@@ -869,6 +885,12 @@ export const zh: StringTree<typeof en> = {
     timeDaysHoursMinutes: "剩余 {days} 天 {hours} 小时 {minutes} 分",
     startsOn: "{date}开始",
     ended: "已结束",
+  },
+  activity: {
+    title: "我的活动",
+    subtitle: "集中管理您发起的公开投票，以及查验您投出的无记名选票回执。",
+    tabCreated: "我创建的投票",
+    tabVoted: "参与投票记录",
   },
   votes: {
     title: "投票记录",
@@ -1096,6 +1118,10 @@ export const zh: StringTree<typeof en> = {
   election: {
     title: "选举活动",
     subtitle: "基于密码学身份与选票彻底分离的高安全官方选举。",
+    tabs: {
+      explore: "全部选举",
+      myRegistrations: "我的登记",
+    },
     badge: "官方选举",
     phase: {
       DRAFT: "草稿",

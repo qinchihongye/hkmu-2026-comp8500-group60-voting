@@ -22,11 +22,13 @@ export interface ElectionCandidateItem {
 }
 
 export interface CandidatePublic {
-  poll_option_id: number;
+  option_id: number;
+  poll_option_id?: number;
   candidate_code: string;
   name: string;
   statement: string | null;
-  position: number;
+  display_order?: number;
+  position?: number;
 }
 
 export interface ElectionSummary {

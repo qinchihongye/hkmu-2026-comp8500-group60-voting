@@ -405,18 +405,12 @@
   font-weight: 500;
 }
 
-/* Card Grid for Public Polls */
+/* Card Grid for Public Polls (2 per row on desktop) */
 .polls-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
   margin-bottom: 32px;
-}
-
-@media (min-width: 1200px) {
-  .polls-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
 /* Single Poll Plaza Card */

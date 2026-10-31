@@ -220,7 +220,7 @@ export function AdminElectionDetailPage() {
                 </thead>
                 <tbody>
                   {election.candidates.map((c) => (
-                    <tr key={c.poll_option_id}>
+                    <tr key={c.option_id ?? c.poll_option_id ?? c.candidate_code}>
                       <td className="col-code">
                         <span className="candidate-code-tag">{c.candidate_code}</span>
                       </td>

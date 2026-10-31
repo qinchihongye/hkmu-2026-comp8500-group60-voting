@@ -168,7 +168,7 @@ export function ElectionRegisterPage() {
                     {t("polls.viewDetails")}
                   </button>
                   <Link
-                    to="/my-election-registrations"
+                    to="/elections?view=my_registrations"
                     className="btn-submit"
                     style={{
                       background: "#f1f5f9",

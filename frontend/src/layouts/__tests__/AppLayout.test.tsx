@@ -30,8 +30,7 @@ describe("AppLayout", () => {
     const userNav = await screen.findByRole("navigation", { name: "Main" });
     expect(within(userNav).getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/overview");
     expect(within(userNav).getByRole("link", { name: "Create poll" })).toBeInTheDocument();
-    expect(within(userNav).getByRole("link", { name: "My polls" })).toBeInTheDocument();
-    expect(within(userNav).getByRole("link", { name: "History" })).toBeInTheDocument();
+    expect(within(userNav).getByRole("link", { name: "My activity" })).toBeInTheDocument();
     expect(within(userNav).queryByRole("link", { name: "Supervision" })).not.toBeInTheDocument();
     cleanup();
 

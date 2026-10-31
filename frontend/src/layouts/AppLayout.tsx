@@ -183,13 +183,12 @@ export function AppLayout() {
 
           {authenticated ? (
             <>
-              {/* My Polls */}
+              {/* My Activity */}
               <NavLink
-                to="/my-polls"
-                end
+                to="/my-activity"
                 className="sidebar-nav-item"
-                aria-label={t("nav.myPolls")}
-                title={t("nav.myPolls")}
+                aria-label={t("nav.myActivity")}
+                title={t("nav.myActivity")}
               >
                 <span className="sidebar-nav-icon">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -197,42 +196,7 @@ export function AppLayout() {
                     <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
                   </svg>
                 </span>
-                <span className="sidebar-nav-text">{t("nav.myPolls")}</span>
-              </NavLink>
-
-              {/* History / My Votes */}
-              <NavLink
-                to="/my-votes"
-                className="sidebar-nav-item"
-                aria-label={t("nav.history")}
-                title={t("nav.history")}
-              >
-                <span className="sidebar-nav-icon">
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 14 14" />
-                  </svg>
-                </span>
-                <span className="sidebar-nav-text">{t("nav.history")}</span>
-              </NavLink>
-
-              {/* My Voter Registrations */}
-              <NavLink
-                to="/my-election-registrations"
-                className="sidebar-nav-item"
-                aria-label={t("nav.myRegistrations")}
-                title={t("nav.myRegistrations")}
-              >
-                <span className="sidebar-nav-icon">
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <line x1="16" y1="13" x2="8" y2="13" />
-                    <line x1="16" y1="17" x2="8" y2="17" />
-                    <polyline points="10 9 9 9 8 9" />
-                  </svg>
-                </span>
-                <span className="sidebar-nav-text">{t("nav.myRegistrations")}</span>
+                <span className="sidebar-nav-text">{t("nav.myActivity")}</span>
               </NavLink>
 
               {/* Create Poll + (Distinctive highlighted pill button) */}
@@ -254,7 +218,14 @@ export function AppLayout() {
               </NavLink>
 
               {isAdmin ? (
-                <>
+                <div className="sidebar-admin-section">
+                  <div className="sidebar-section-divider" />
+                  {!collapsed && (
+                    <div className="sidebar-section-header">
+                      <span className="sidebar-section-text">{t("nav.adminSection")}</span>
+                    </div>
+                  )}
+
                   <NavLink
                     to="/admin/polls"
                     className="sidebar-nav-item"
@@ -297,7 +268,7 @@ export function AppLayout() {
                     </span>
                     <span className="sidebar-nav-text">{t("nav.audit")}</span>
                   </NavLink>
-                </>
+                </div>
               ) : null}
             </>
           ) : null}

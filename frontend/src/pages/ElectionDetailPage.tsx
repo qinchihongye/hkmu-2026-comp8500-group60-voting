@@ -171,7 +171,7 @@ export function ElectionDetailPage() {
             </h2>
             <div className="candidates-list-grid">
               {election.candidates.map((cand) => (
-                <div key={cand.poll_option_id} className="candidate-card">
+                <div key={cand.option_id ?? cand.poll_option_id ?? cand.candidate_code} className="candidate-card">
                   <div className="candidate-header">
                     <span className="candidate-code-tag">{cand.candidate_code}</span>
                     <h3 className="candidate-name">{cand.name}</h3>

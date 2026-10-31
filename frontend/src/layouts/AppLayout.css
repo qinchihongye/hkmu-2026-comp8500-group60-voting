@@ -243,6 +243,39 @@
   display: none;
 }
 
+/* Sidebar Section Divider & Header (Plan A: Admin / Governance grouping) */
+.sidebar-admin-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-section-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 14px 8px 10px;
+}
+
+.sidebar-section-header {
+  padding: 4px 12px 6px;
+}
+
+.sidebar-section-text {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.sidebar.collapsed .sidebar-section-header {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-section-divider {
+  margin: 10px 4px;
+}
+
 /* Sidebar Footer (Logout) */
 .sidebar-footer {
   margin-top: auto;

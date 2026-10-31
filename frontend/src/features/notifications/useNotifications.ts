@@ -161,7 +161,7 @@ export function useNotifications() {
                   messageFallback:
                     "Your voter registration was not approved. Click to view registration details.",
                   pollId: reg.poll_id,
-                  targetUrl: "/my-election-registrations",
+                  targetUrl: "/elections?view=my_registrations",
                   timestamp: reg.reviewed_at || reg.submitted_at || new Date().toISOString(),
                   read: false,
                 });
@@ -176,7 +176,7 @@ export function useNotifications() {
                   messageFallback:
                     "Your voter registration has been submitted and is currently awaiting manual review.",
                   pollId: reg.poll_id,
-                  targetUrl: "/my-election-registrations",
+                  targetUrl: "/elections?view=my_registrations",
                   timestamp: reg.submitted_at || new Date().toISOString(),
                   read: false,
                 });
