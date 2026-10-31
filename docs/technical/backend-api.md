@@ -1,6 +1,6 @@
 # VoteNow 后端接口文档
 
-* **版本**：v1；核对日期 2026-10-30；覆盖当前注册的全部 **27 个应用操作**。依据路由生成的 OpenAPI、请求／响应模型、校验器及服务代码，按 `http-api-doc-writer` 模板整理。请求／响应字段集中定义，避免每个接口重复相同表格。
+* **版本**：v1；核对日期 2026-10-31；覆盖当前注册的全部 **42 个应用操作**。依据路由生成的 OpenAPI、请求／响应模型、校验器及服务代码，按 `http-api-doc-writer` 模板整理。请求／响应字段集中定义，避免每个接口重复相同表格。
 
   [后端设计](backend-design.md) · [数据库设计](database-design.md) · [详细使用](user-guide.md)
 
@@ -62,8 +62,8 @@
   | POST | /api/v1/admin/elections/{election_id}/publish | Origin + 账户 CSRF + ADMIN | ElectionDetail | 200 |
   | POST | /api/v1/admin/elections/{election_id}/freeze-roster | Origin + 账户 CSRF + ADMIN | RosterFreezeResponse | 200 |
   | POST | /api/v1/admin/elections/{election_id}/close | Origin + 账户 CSRF + ADMIN | ElectionDetail | 200 |
-  | GET | /api/v1/admin/elections/{election_id}/registrations | 账户 Cookie + ADMIN | Page_VoterRegistrationSummary_ | 200 |
-  | POST | /api/v1/admin/elections/{election_id}/registrations/{reg_id}/review | Origin + 账户 CSRF + ADMIN | VoterRegistrationSummary | 200 |
+  | GET | /api/v1/admin/elections/{election_id}/registrations | 账户 Cookie + ADMIN | Page_AdminRegistrationItem_ | 200 |
+  | POST | /api/v1/admin/elections/{election_id}/registrations/{registration_id}/review | Origin + 账户 CSRF + ADMIN | AdminRegistrationItem | 200 |
 
 ## 请求与响应公共约定
 
@@ -546,6 +546,203 @@
   | page_size | query | integer | 否 | {"maximum": 50, "minimum": 1, "default": 8} |
   | q | query | string / null | 否 | {} |
 
+### GET /api/v1/elections
+
+* 分页返回已发布或已结束的选举；登录时附带当前用户的登记和投票状态。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 无；账户 Cookie 可选 |
+  | 参数 | `page` 默认 1；`page_size` 默认 20、范围 1–100 |
+  | 成功响应 | HTTP 200；Page_ElectionSummary_ |
+  | 主要错误 | 42201 |
+  | 实现 | `api/election/election_get.py` |
+
+### GET /api/v1/elections/{election_id}
+
+* 返回公开选举、候选人和当前调用者可执行动作。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 无；账户 Cookie 可选 |
+  | 参数 | `election_id`：path integer |
+  | 成功响应 | HTTP 200；ElectionDetail |
+  | 主要错误 | 40402 |
+  | 实现 | `api/election/election_get.py` |
+
+### POST /api/v1/elections/{election_id}/registrations
+
+* 在登记窗口提交选民身份资料；完整证件号只用于本次规则检查和生成 HMAC 指纹，不进入响应。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin + 账户 Cookie + 账户 CSRF |
+  | 参数 | `election_id`：path integer |
+  | 请求 data | RegisterVoterRequest |
+  | 成功响应 | HTTP 201；VoterRegistrationSummary |
+  | 主要错误 | 40101、40302、40402、40910、40911、40912、40915、42201 |
+  | 实现 | `api/election/election_post.py` |
+
+  ```json
+  {"data":{"legal_name":"Chan Tai Man","document_type":"STUDENT_ID","issuer":"HKMU","document_number":"S12345678"}}
+  ```
+
+### GET /api/v1/me/election-registrations
+
+* 分页返回当前账户在所有选举中的登记历史。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 账户 Cookie |
+  | 参数 | `page` 默认 1；`page_size` 默认 20、范围 1–100 |
+  | 成功响应 | HTTP 200；Page_VoterRegistrationSummary_ |
+  | 主要错误 | 40101、42201 |
+  | 实现 | `api/election/election_get.py` |
+
+### POST /api/v1/elections/{election_id}/ballots
+
+* 合资格选民提交一名候选人；消费内部凭证与写入身份分离选票在同一事务完成。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin + 账户 Cookie + 账户 CSRF |
+  | 参数 | `election_id`：path integer |
+  | 请求 data | SubmitElectionBallotRequest |
+  | 成功响应 | HTTP 201；BallotReceiptResponse |
+  | 主要错误 | 40101、40302、40307、40401、40914、40917、40918、42204、50302 |
+  | 实现 | `api/election/election_post.py` |
+
+  ```json
+  {"data":{"candidate_option_id":101}}
+  ```
+
+### GET /api/v1/elections/{election_id}/results
+
+* 返回规模数据和按权限开放的候选人票数。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 可选账户 Cookie；进行中按 allow_live_results、ADMIN 与已投状态判定 |
+  | 参数 | `election_id`：path integer |
+  | 成功响应 | HTTP 200；ElectionResultResponse |
+  | 主要错误 | 40306、40401 |
+  | 实现 | `api/election/election_get.py` |
+
+### GET /api/v1/admin/elections
+
+* 分页返回包括草稿在内的全部选举。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 账户 Cookie + ADMIN |
+  | 参数 | `page` 默认 1；`page_size` 默认 20、范围 1–100 |
+  | 成功响应 | HTTP 200；Page_ElectionSummary_ |
+  | 主要错误 | 40101、40301、42201 |
+  | 实现 | `api/admin/admin_election_get.py` |
+
+### POST /api/v1/admin/elections
+
+* 创建一场草稿选举。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin + 账户 Cookie + ADMIN + 账户 CSRF |
+  | 请求 data | CreateElectionRequest |
+  | 成功响应 | HTTP 201；ElectionDetail |
+  | 主要错误 | 40101、40301、40302、42201 |
+  | 实现 | `api/admin/admin_election_post.py` |
+
+  ```json
+  {"data":{"title":"Student Representative Election","description":"Choose one candidate","registration_starts_at":"2030-10-01T01:00:00Z","registration_ends_at":"2030-10-03T01:00:00Z","starts_at":"2030-10-04T01:00:00Z","ends_at":"2030-10-05T01:00:00Z","allow_live_results":false,"candidates":[{"candidate_code":"A","name":"Candidate A","statement":"Statement A"},{"candidate_code":"B","name":"Candidate B","statement":"Statement B"}]}}
+  ```
+
+### GET /api/v1/admin/elections/{election_id}
+
+* 返回管理员选举详情，包括草稿。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 账户 Cookie + ADMIN |
+  | 参数 | `election_id`：path integer |
+  | 成功响应 | HTTP 200；ElectionDetail |
+  | 主要错误 | 40101、40301、40402 |
+  | 实现 | `api/admin/admin_election_get.py` |
+
+### PATCH /api/v1/admin/elections/{election_id}
+
+* 以乐观版本控制修改草稿；除 `version` 外均为可选字段。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin + 账户 Cookie + ADMIN + 账户 CSRF |
+  | 参数 | `election_id`：path integer |
+  | 请求 data | UpdateElectionRequest |
+  | 成功响应 | HTTP 200；ElectionDetail |
+  | 主要错误 | 40101、40301、40302、40402、40903、40904、42201 |
+  | 实现 | `api/admin/admin_election_patch.py` |
+
+### POST /api/v1/admin/elections/{election_id}/publish
+
+* 发布草稿选举；无请求体。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin + 账户 Cookie + ADMIN + 账户 CSRF |
+  | 成功响应 | HTTP 200；ElectionDetail |
+  | 主要错误 | 40101、40301、40302、40402、40903 |
+  | 实现 | `api/admin/admin_election_post.py` |
+
+### POST /api/v1/admin/elections/{election_id}/freeze-roster
+
+* 登记结束后冻结名册并为 APPROVED 登记批量签发内部凭证；重复调用返回既有冻结结果。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin + 账户 Cookie + ADMIN + 账户 CSRF |
+  | 成功响应 | HTTP 200；RosterFreezeResponse |
+  | 主要错误 | 40101、40301、40302、40402、40910、40916 |
+  | 实现 | `api/admin/admin_election_post.py` |
+
+### POST /api/v1/admin/elections/{election_id}/close
+
+* 提前关闭已发布且名册已冻结、已进入投票期的选举；无请求体。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin + 账户 Cookie + ADMIN + 账户 CSRF |
+  | 成功响应 | HTTP 200；ElectionDetail |
+  | 主要错误 | 40101、40301、40302、40402、40914、40917 |
+  | 实现 | `api/admin/admin_election_post.py` |
+
+### GET /api/v1/admin/elections/{election_id}/registrations
+
+* 分页查询该选举的登记，可按状态筛选。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | 账户 Cookie + ADMIN |
+  | 参数 | `status` 可选：PENDING／NEEDS_REVIEW／APPROVED／REJECTED；`page` 默认 1；`page_size` 默认 20、范围 1–100 |
+  | 成功响应 | HTTP 200；Page_AdminRegistrationItem_ |
+  | 主要错误 | 40101、40301、40402、42201 |
+  | 实现 | `api/admin/admin_election_get.py` |
+
+### POST /api/v1/admin/elections/{election_id}/registrations/{registration_id}/review
+
+* 管理员人工批准或拒绝一条登记。
+
+  | 项目 | 约定 |
+  | --- | --- |
+  | 权限 | Origin + 账户 Cookie + ADMIN + 账户 CSRF |
+  | 参数 | `election_id`、`registration_id`：path integer |
+  | 请求 data | ReviewRegistrationRequest |
+  | 成功响应 | HTTP 200；AdminRegistrationItem |
+  | 主要错误 | 40101、40301、40302、40400、40402、40915、42201 |
+  | 实现 | `api/admin/admin_election_post.py` |
+
+  ```json
+  {"data":{"decision":"APPROVED","reason_codes":["MANUAL_VERIFIED"],"review_note":"Document checked"}}
+  ```
+
 ## 字段校验补充
 
 * 自定义校验器规则（OpenAPI 不一定完整显示）
@@ -567,6 +764,12 @@
   | UnlockRequest.share_code | 非空且最多128字符；不裁剪 |
   | PollTextParseRequest.text | trim 后1–10000个Unicode码点 |
   | sort_by | created_at、starts_at、ends_at、popularity；其他值归一化为默认排序，不返回枚举校验失败 |
+  | CreateElectionRequest | 请求模型允许标题 1–200、描述最多 2000；至少 2 名候选人；四个时间严格递增；候选人代号场内唯一。共享 polls.title 当前为 VARCHAR(120)，部署使用应把标题控制在 120 字符内 |
+  | UpdateElectionRequest | version 为严格整数；候选人列表出现时至少 2 名且代号唯一；合并后仍由服务校验完整时间顺序 |
+  | CandidateInput | code 1–32、name 1–200、statement 最多 500；字符串 trim |
+  | RegisterVoterRequest | legal_name 与 issuer 1–120；document_number 1–100；支持 RESIDENT_ID、HK_MACAU_PERMIT、STUDENT_ID |
+  | ReviewRegistrationRequest | decision 只能为 APPROVED 或 REJECTED；review_note 最多 500 |
+  | SubmitElectionBallotRequest | candidate_option_id 为整数；服务检查候选人归属、资格、凭证和阶段 |
 
 ## 请求与响应模型
 
@@ -2181,6 +2384,96 @@
   }
   ```
 
+## 选举请求与响应模型
+
+* 枚举
+
+  | 模型 | 值 |
+  | --- | --- |
+  | DocumentType | RESIDENT_ID、HK_MACAU_PERMIT、STUDENT_ID |
+  | RegistrationStatus | PENDING、NEEDS_REVIEW、APPROVED、REJECTED |
+  | ElectionPhase | DRAFT、REGISTRATION_SCHEDULED、REGISTRATION_OPEN、REVIEWING、VOTING_SCHEDULED、VOTING_OPEN、CLOSED |
+
+* 写请求模型；均放入 `{ "data": ... }`。
+
+  | 模型 | 必填字段 | 可选字段／约束 |
+  | --- | --- | --- |
+  | CandidateInput | candidate_code: string；name: string | statement: string／null |
+  | CreateElectionRequest | title、registration_starts_at、registration_ends_at、starts_at、ends_at、allow_live_results、candidates | description 默认空字符串；candidates 至少 2 项 |
+  | UpdateElectionRequest | version: integer | title、description、四个时间、allow_live_results、candidates；仅提交需要修改的字段 |
+  | RegisterVoterRequest | legal_name、document_type、issuer、document_number | 无；document_number 不会进入响应 |
+  | ReviewRegistrationRequest | decision | reason_codes 默认空数组；review_note 可空 |
+  | SubmitElectionBallotRequest | candidate_option_id: integer | 无 |
+
+* 公开选举模型
+
+  | 模型 | 字段 |
+  | --- | --- |
+  | CandidatePublic | option_id、candidate_code、name、statement、display_order |
+  | ElectionSummary | id、title、description、lifecycle、phase、registration_starts_at、registration_ends_at、starts_at、ends_at、allow_live_results、candidate_count、roster_frozen_at、eligible_voter_count、created_at、my_registration_status、user_registration_status、has_voted |
+  | ElectionDetail | ElectionSummary 的核心时间与状态字段、candidates、version、updated_at、can_register、can_vote、can_view_results、next_action |
+  | VoterRegistrationSummary | id、poll_id、election_title、legal_name_snapshot、document_type、document_suffix、issuer、status、model_score、model_reason_codes、submitted_at、reviewed_at |
+  | BallotReceiptResponse | receipt_id: UUID、poll_id、submitted_at |
+
+  `statement`、冻结信息、个人登记状态、更新时间和 `next_action` 等上下文字段可为 null。`has_voted`、`can_register`、`can_vote`、`can_view_results` 为布尔值。
+
+* 管理与结果模型
+
+  | 模型 | 字段 |
+  | --- | --- |
+  | AdminRegistrationItem | id、poll_id、user_id、username、legal_name_snapshot、document_type、document_suffix、issuer、status、model_score、model_reason_codes、model_version、reviewed_by、reviewed_by_username、reviewed_at、submitted_at、updated_at |
+  | RosterFreezeResponse | poll_id、roster_frozen_at、eligible_voter_count、issued_credential_count |
+  | TurnoutScaleStats | registration_count、approved_count、ballot_count、remaining_count、abstention_count、turnout_percentage |
+  | CandidateResultItem | candidate_option_id、candidate_code、name、vote_count、percentage |
+  | ElectionResultResponse | poll_id、title、phase、allow_live_results、scale、candidate_results、winner_option_ids、is_tie |
+
+  进行中返回 `remaining_count`，结束后返回 `abstention_count`。没有候选人票数权限时，管理员可取得规模数据但 `candidate_results` 和 `winner_option_ids` 为 null；非管理员会收到 40306。分页包装沿用 `Page<T>`，对应名称为 `Page_ElectionSummary_`、`Page_VoterRegistrationSummary_` 和 `Page_AdminRegistrationItem_`。
+
+  **选举详情 data 示例**
+
+  ```json
+  {
+    "id": 41,
+    "title": "Student Representative Election",
+    "description": "Choose one candidate",
+    "lifecycle": "PUBLISHED",
+    "phase": "VOTING_OPEN",
+    "registration_starts_at": "2030-10-01T01:00:00Z",
+    "registration_ends_at": "2030-10-03T01:00:00Z",
+    "starts_at": "2030-10-04T01:00:00Z",
+    "ends_at": "2030-10-05T01:00:00Z",
+    "allow_live_results": false,
+    "candidates": [{"option_id":101,"candidate_code":"A","name":"Candidate A","statement":"Statement A","display_order":0}],
+    "roster_frozen_at": "2030-10-03T02:00:00Z",
+    "eligible_voter_count": 30,
+    "version": 2,
+    "created_at": "2030-09-20T01:00:00Z",
+    "updated_at": "2030-09-21T01:00:00Z",
+    "user_registration_status": "APPROVED",
+    "my_registration_status": "APPROVED",
+    "has_voted": false,
+    "can_register": false,
+    "can_vote": true,
+    "can_view_results": false,
+    "next_action": "VOTE_NOW"
+  }
+  ```
+
+  **选举结果 data 示例**
+
+  ```json
+  {
+    "poll_id": 41,
+    "title": "Student Representative Election",
+    "phase": "CLOSED",
+    "allow_live_results": false,
+    "scale":{"registration_count":32,"approved_count":30,"ballot_count":27,"remaining_count":null,"abstention_count":3,"turnout_percentage":90.0},
+    "candidate_results":[{"candidate_option_id":101,"candidate_code":"A","name":"Candidate A","vote_count":15,"percentage":55.56},{"candidate_option_id":102,"candidate_code":"B","name":"Candidate B","vote_count":12,"percentage":44.44}],
+    "winner_option_ids":[101],
+    "is_tie":false
+  }
+  ```
+
 ## 错误响应与自测
 
 * HTTP 与业务码
@@ -2195,8 +2488,11 @@
   | 40303 | RESULTS_NOT_AVAILABLE | 403 | 结果尚未公布 |
   | 40304 | POLL_PASSWORD_INVALID | 403 | 投票密码错误 |
   | 40305 | POLL_ACCESS_REQUIRED | 403 | 需要先完成本场访问验证 |
+  | 40306 | ELECTION_RESULTS_NOT_AVAILABLE | 403 | 当前无法查看候选人票数 |
+  | 40307 | NOT_ELIGIBLE | 403 | 未获得本场选举投票资格 |
   | 40400 | NOT_FOUND | 404 | 资源不存在 |
   | 40401 | POLL_NOT_FOUND | 404 | 投票不存在 |
+  | 40402 | ELECTION_NOT_FOUND | 404 | 选举不存在 |
   | 40500 | METHOD_NOT_ALLOWED | 405 | 请求方法不被允许 |
   | 40901 | ALREADY_VOTED | 409 | 你已参与本次投票 |
   | 40902 | POLL_NOT_OPEN | 409 | 当前不能参与这次投票 |
@@ -2204,10 +2500,20 @@
   | 40904 | STALE_POLL_VERSION | 409 | 投票已被其他人更新，请刷新后重试 |
   | 40905 | USERNAME_TAKEN | 409 | 用户名已被使用 |
   | 40906 | POLL_CAPACITY_REACHED | 409 | This poll has reached its ballot limit. |
+  | 40910 | REGISTRATION_NOT_OPEN | 409 | 当前不在登记窗口期 |
+  | 40911 | ALREADY_REGISTERED | 409 | 你已提交过本场选举登记 |
+  | 40912 | IDENTITY_DOCUMENT_DUPLICATE | 409 | 该证件已绑定其他账户 |
+  | 40913 | ELIGIBILITY_REVIEW_REQUIRED | 409 | 资格待管理员人工复核 |
+  | 40914 | ROSTER_NOT_FROZEN | 409 | 选举名册尚未冻结，暂不能投票 |
+  | 40915 | ROSTER_ALREADY_FROZEN | 409 | 名册已冻结，禁止修改或复核 |
+  | 40916 | PENDING_REVIEWS_EXIST | 409 | 尚有待复核选民，无法冻结名册 |
+  | 40917 | ELECTION_NOT_OPEN | 409 | 当前不在投票窗口期 |
+  | 40918 | ELECTION_ALREADY_VOTED | 409 | 本凭证已完成投票，不可重复投票 |
   | 41500 | UNSUPPORTED_MEDIA_TYPE | 415 | 不支持的内容类型 |
   | 42201 | VALIDATION_ERROR | 422 | 请求参数不合法 |
   | 42202 | INVALID_OPTION | 422 | 选项不属于这次投票 |
   | 42203 | INVALID_SELECTION_COUNT | 422 | The number of selected options is not allowed. |
+  | 42204 | INVALID_CANDIDATE | 422 | 所选候选人不属于该场选举 |
   | 42901 | TOO_MANY_ATTEMPTS | 429 | 尝试次数过多，请稍后再试 |
   | 50000 | INTERNAL_ERROR | 500 | 服务内部错误 |
   | 50201 | POLL_PARSE_INVALID_OUTPUT | 502 | Poll text recognition returned an unusable result. |
@@ -2235,6 +2541,7 @@
   curl -i http://localhost:8188/api/v1/health/live
   curl -i http://localhost:8188/api/v1/health/ready
   curl -i 'http://localhost:8188/api/v1/polls?page=1&page_size=12'
+  curl -i 'http://localhost:8188/api/v1/elections?page=1&page_size=20'
   ```
 
   | 操作 | 预期 |
@@ -2245,6 +2552,8 @@
   | 未登录访问 /me/polls | HTTP 401、code=40101 |
   | 已登录写请求 CSRF 错误 | HTTP 403、code=40302 |
   | 重复提交同场选票 | HTTP 409、code=40901 |
+  | 未登录提交选举登记 | HTTP 401、code=40101 |
+  | 无权限查看进行中选举票数 | HTTP 403、code=40306 |
 
   有状态联调使用独立测试数据，先登录或建立访客上下文，从对应响应取 CSRF 并保存 Cookie，再按各接口示例提交。不要用文档占位符替代真实会话，也不要自动重复写请求。
 

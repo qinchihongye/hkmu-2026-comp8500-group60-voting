@@ -1,6 +1,6 @@
 # VoteNow 后端设计
 
-* **范围**：Python 3.12 / FastAPI 后端；核对日期 2026-10-30。入口 `backend/src/main/python/main.py:create_app`。
+* **范围**：Python 3.12 / FastAPI 后端；核对日期 2026-10-31。入口 `backend/src/main/python/main.py:create_app`。
 
   [数据库设计](database-design.md) · [全部接口](backend-api.md) · [前端设计](frontend-design.md) · [详细使用](user-guide.md)
 
@@ -47,7 +47,7 @@
   | 模块 | 职责 | 主要依赖 |
   | --- | --- | --- |
   | main.py | 应用工厂、中间件、生命周期 | Settings、路由、会话工厂、模型客户端 |
-  | api/ | 27个应用操作；调用业务服务、设置Cookie与响应头 | dependencies、fileds |
+  | api/ | 42 个应用操作；调用业务服务、设置 Cookie 与响应头 | dependencies、fileds |
   | fileds/request | 统一 data 外壳与业务输入 | Pydantic、枚举、校验函数 |
   | fileds/response | 统一信封、分页、公开／管理输出 | Pydantic |
   | fileds/context | Principal、GuestContext、PollAccessContext | 已验证身份与请求上下文 |
@@ -60,6 +60,8 @@
   | algorithms/audit_module | 审计写入与管理员读取 | audit_events |
   | algorithms/poll_import_module | 文字候选字段、时间解析、问题码 | 外部提取器，不直接创建投票 |
   | algorithms/demo_module | 固定投票初始化与目录查询 | 两张登记表、普通业务服务 |
+  | algorithms/election_module | 选举、资格审核、名册冻结、秘密选票与结果授权 | 7 张选举表、polls、poll_options |
+  | algorithms/election_module/mock_eligibility_model.py | 本地课程演示规则引擎 | 证件格式、校验位与签发方关键字 |
   | database/models | ORM 表、索引与约束 | PostgreSQL |
   | config/ | 环境、连接、日志配置 | 根目录 .env |
   | external_services/ | OpenAI SDK 调用与上游错误转换 | 可选模型服务 |
@@ -89,6 +91,9 @@
   | 修改／发布／关闭 | 否 | 仅自己的 | 是 | 仅自己的 |
   | 进行中结果 | 依投票规则 | 依投票规则 | 非草稿可读 | 非草稿可读 |
   | 审计 | 否 | 否 | 否 | 是 |
+  | 浏览选举 | 公开摘要 | 公开摘要和个人状态 | 同普通用户 | 包括草稿 |
+  | 登记／投选举票 | 否 | 符合阶段与资格时 | 符合阶段与资格时 | 管理权限不替代选民资格 |
+  | 管理选举／审核／冻结名册 | 否 | 否 | 否 | 是 |
 
   私有未授权读取通常返回404，避免暴露资源；固定登记投票对已登录用户存在锁定摘要例外。管理详情可读取草稿，但通用结果端点仍拒绝草稿，不能将“管理员可看全部”解释为草稿也有参与结果。
 
@@ -149,6 +154,62 @@
   | 一致结果 | 锁定投票读取，分别统计父票数量和明细选择次数 |
   | 百分比 | 选项选择次数 / 总选择次数 ×100；两位小数；零票项保留 |
   | 并列 | winner_option_ids 包含所有最高且大于0的选项；is_final 区分进行中与结束 |
+
+## 选举 B2 流程
+
+* 普通投票和选举共用 `polls`、`poll_options`，由 `activity_type` 隔离；资格链与选票链在数据库结构上分离。
+
+  ```mermaid
+  flowchart LR
+    Draft[DRAFT] --> Publish[发布]
+    Publish --> RegScheduled[REGISTRATION_SCHEDULED]
+    RegScheduled --> RegOpen[REGISTRATION_OPEN]
+    RegOpen --> Reviewing[REVIEWING]
+    Reviewing --> Freeze[管理员冻结名册]
+    Freeze --> VoteScheduled[VOTING_SCHEDULED]
+    VoteScheduled --> VoteOpen[VOTING_OPEN]
+    VoteOpen --> Closed[CLOSED]
+  ```
+
+  | 规则 | 实现 |
+  | --- | --- |
+  | 时间顺序 | `registration_starts_at < registration_ends_at < starts_at < ends_at` |
+  | 创建／修改 | 仅 ADMIN；新建为 DRAFT；修改仅限草稿并校验 version |
+  | 发布 | 将草稿变为 PUBLISHED，之后不可编辑候选人和时间 |
+  | 身份登记 | 登录用户在登记窗口提交姓名、证件类型、签发方与号码 |
+  | 证件存储 | 号码经 NFKC、大小写和空白规范化后生成独立密钥 HMAC-SHA-256 指纹；数据库只保存指纹和尾号 |
+  | 资格判断 | 本地规则引擎输出 APPROVED、NEEDS_REVIEW 或 REJECTED；不连接政府、院校或第三方身份库 |
+  | 人工复核 | ADMIN 可将登记设为 APPROVED 或 REJECTED；事件追加写入审核历史 |
+  | 冻结名册 | 登记结束后显式执行；存在 PENDING／NEEDS_REVIEW 时拒绝；行锁、幂等，为每个 APPROVED 登记生成内部 UUID 凭证 |
+  | 投票 | 只允许 VOTING_OPEN；锁定并消费 ISSUED 凭证，同时插入一张单选选票 |
+  | 未投票 | 结束后的 `abstention_count = eligible_voter_count - ballot_count` |
+  | 回执 | 返回随机 UUID；用于提交确认，不是密码学可验证回执 |
+
+* 凭证消费和选票写入属于同一事务，但两条数据链不以外键互联。
+
+  ```mermaid
+  sequenceDiagram
+    participant V as 已登录选民
+    participant S as ElectionBallotService
+    participant DB as PostgreSQL
+    V->>S: candidate_option_id
+    S->>DB: 锁选举与该用户凭证
+    S->>S: 校验阶段、名册、候选人、ISSUED
+    S->>DB: UPDATE credential = CONSUMED
+    S->>DB: INSERT election_ballots
+    S->>DB: COMMIT
+    S-->>V: receipt_id + submitted_at
+  ```
+
+* 结果权限
+
+  | 阶段／设置 | 管理员 | 已投选民 | 其他调用者 |
+  | --- | --- | --- | --- |
+  | 进行中，实时结果开启 | 规模与候选人票数 | 规模与候选人票数 | 403 |
+  | 进行中，实时结果关闭 | 仅规模数据 | 403 | 403 |
+  | 已结束 | 最终规模与票数 | 最终规模与票数 | 最终规模与票数 |
+
+  进行中使用 `remaining_count`，结束后使用 `abstention_count`；零票不产生胜者，并列时返回全部最高票候选项。
 
 ## 智能识别、日志与运行
 

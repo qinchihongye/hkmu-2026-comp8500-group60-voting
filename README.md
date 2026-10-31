@@ -1,8 +1,8 @@
-# VoteNow · 在线投票系统
+# VoteNow · 在线投票与选举系统
 
 * **中文** | [English](README.en.md)
 
-* VoteNow 是 HKMU COMP8500SEF 第 60 组课程项目，采用 React 前端与 Python 后端分离架构，支持创建、分享、参与投票和查看结果。适用于课堂活动、团队讨论和小组决策演示。
+* VoteNow 是 HKMU COMP8500SEF 第 60 组课程项目，采用 React 前端与 Python 后端分离架构，支持日常投票及带选民登记、资格审核、名册冻结和秘密选票的课程演示选举。
 
   普通注册用户即可创建投票，访客可直接参与公开匿名投票；私有投票通过分享链接和访问密码进入。项目提供 Docker Compose 启动方式，也支持前后端独立开发。
 
@@ -74,54 +74,84 @@
   | 管理员 | 查看全部投票及结果，并查询审计事件 |
   | 智能填写（可选） | 从一段文字提取标题、选项及明确给出的部分设置，填入表单后可继续编辑 |
 
-* 官方选举系统（B2 架构：身份与选票彻底分离）
+* 选举系统（B2：身份链与选票表分离）
 
   | 功能 | 说明 |
   | --- | --- |
-  | B2 隐私架构 | 选票主表严禁保存 user_id、凭证 ID、IP 或 User-Agent，阻断任何回溯可能 |
-  | 单事务原子核销 | 资格凭据销毁（ISSUED → CONSUMED）与匿名选票写入在单次数据库事务中行锁原子完成 |
+  | B2 数据边界 | 选票表不保存 user_id、登记 ID、凭证 ID、IP 或 User-Agent；身份链与选票表无外键互联 |
+  | 单事务原子核销 | 资格凭据消费（ISSUED → CONSUMED）与选票写入在同一数据库事务中完成 |
   | 选民名册冻结 | 管理员在登记截止后显式冻结名册，冻结后不可变更，批量生成一次性投票凭证 |
-  | 身份资格登记 | 严格保护选民隐私，完整证件号码不上云不入库，仅留存加盐 HMAC-SHA-256 摘要 |
-  | 实时结果矩阵 | 支持配置 allow_live_results：关闭时投票期全程保密；开启时仅投票后的选民与管理员可查看 |
-  | 弃权精确计算 | 选举结束后自动计算法定最终弃权人数（合资格选民数 - 实投票数） |
-  | 不可撤销确认 | 选民提交前弹出二次不可撤销警告确认，提交后生成加密回执支持独立审计 |
+  | 身份资格登记 | 支持居民身份证、港澳通行证和学生证；完整号码不持久化，仅保存独立密钥 HMAC-SHA-256 指纹与尾号 |
+  | 课程演示审核 | 本地格式／校验规则引擎自动判断或转人工复核；不连接政府、院校或第三方身份库 |
+  | 实时结果矩阵 | 开启时管理员及已投选民可看候选人票数；关闭时管理员在投票期只看规模数据 |
+  | 弃权计算 | 结束后计算系统弃权人数：冻结名册的合资格人数减已投选票数 |
+  | 提交确认 | 选民二次确认后单选提交，返回随机 UUID 回执；回执不是密码学可验证证明 |
 
 ## 快速启动
 
-* 推荐使用 Docker Compose。准备好 Git、Docker 与 Compose 插件，在仓库根目录执行以下步骤。
+* 推荐使用 Docker Compose。三个平台都需要先安装 Git，并确认以下命令可用：
 
-  1. 首次配置时复制环境模板；已有 `.env` 时不要覆盖。
+  ```text
+  git --version
+  docker --version
+  docker compose version
+  ```
 
-     ```bash
-     cp .env.example .env
-     ```
+* 首次启动前需要编辑根目录 `.env`，设置数据库密码、演示账户密码、私有演示投票密码、匿名凭据密钥及选民身份指纹密钥。模板中的值仅供本地课程演示；`.env` 不应提交到仓库。
 
-  2. 编辑 `.env`。设置数据库密码、演示账户密码、私有演示投票密码及匿名凭据密钥。模板中的值仅供本地课程演示；`.env` 不应提交到仓库。
+  本机 Docker 模式下保留以下访问地址：
 
-     本机 Docker 模式下保留以下访问地址：
+  ```dotenv
+  PUBLIC_BASE_URL=http://localhost:8188
+  ALLOWED_ORIGINS=["http://localhost:8188"]
+  COOKIE_SECURE=false
+  ```
 
-     ```dotenv
-     PUBLIC_BASE_URL=http://localhost:8188
-     ALLOWED_ORIGINS=["http://localhost:8188"]
-     COOKIE_SECURE=false
-     ```
+  `ALLOWED_ORIGINS` 必须是 JSON 数组。`DATABASE_URL` 和 `TEST_DATABASE_URL` 中的用户名、密码需与 PostgreSQL 配置一致。
 
-     `ALLOWED_ORIGINS` 必须是 JSON 数组。`DATABASE_URL` 和 `TEST_DATABASE_URL` 中的用户名、密码需与 PostgreSQL 配置一致，尤其是在后续使用本机开发模式时。
+### Windows
 
-  3. 构建并启动数据库、后端和前端服务。
+* 安装并启动 Docker Desktop，使用 WSL 2 后端。在 PowerShell 中进入项目根目录并执行：
 
-     ```bash
-     docker compose up -d --build
-     ```
+  ```powershell
+  Copy-Item .env.example .env
+  notepad .env
+  docker compose up -d --build
+  docker compose ps
+  docker compose logs --tail=100 backend
+  ```
 
-  4. 查看服务状态，然后访问 [http://localhost:8188](http://localhost:8188)。
+  已有 `.env` 时跳过 `Copy-Item`，避免覆盖配置。启动完成后访问 [http://localhost:8188](http://localhost:8188)。
 
-     ```bash
-     docker compose ps
-     docker compose logs --tail=100 backend
-     ```
+### macOS
 
-     首次启动会执行数据库迁移、创建缺失的演示账户；启用初始化投票时，还会补齐固定投票数据。数据库健康检查通过不代表后端迁移已经完成，页面暂不可用时可通过后端日志确认启动状态。
+* 安装并启动 Docker Desktop。在 Terminal 中进入项目根目录并执行：
+
+  ```bash
+  cp .env.example .env
+  open -e .env
+  docker compose up -d --build
+  docker compose ps
+  docker compose logs --tail=100 backend
+  ```
+
+  已有 `.env` 时跳过 `cp`。Apple Silicon 与 Intel Mac 使用相同的 Compose 命令。启动完成后访问 [http://localhost:8188](http://localhost:8188)。
+
+### Linux
+
+* 安装并启动 Docker Engine 与 Docker Compose 插件，确保当前用户有权限访问 Docker。在终端中进入项目根目录并执行：
+
+  ```bash
+  cp .env.example .env
+  ${EDITOR:-vi} .env
+  docker compose up -d --build
+  docker compose ps
+  docker compose logs --tail=100 backend
+  ```
+
+  已有 `.env` 时跳过 `cp`。如果当前用户没有 Docker 权限，可按 Docker 官方安装说明配置用户组，或在系统策略允许时使用 `sudo docker compose`。启动完成后访问 [http://localhost:8188](http://localhost:8188)。
+
+* 三个平台首次启动都会执行数据库迁移、创建缺失的演示账户；启用初始化投票时，还会补齐固定投票数据。数据库健康检查通过不代表后端迁移已经完成，页面暂不可用时可查看后端日志。
 
 * 演示账户
 
@@ -188,6 +218,25 @@
   | 私有投票 | 不进入公共列表，分享链接不包含访问密码；解锁私有投票不能代替记名投票所需的登录 |
   | 历史记录 | 展示记名投票记录，不展示匿名投票记录 |
   | 时间 | 创建页面按香港时间填写，发布后按时间窗口和关闭状态决定是否可投票 |
+
+* 选举流程
+
+  ```mermaid
+  flowchart LR
+    Create[管理员创建并发布] --> Register[选民登记]
+    Register --> Review[规则检查／人工复核]
+    Review --> Freeze[冻结名册并签发内部凭证]
+    Freeze --> Vote[合资格选民单选投票]
+    Vote --> Result[按实时规则或结束后查看结果]
+  ```
+
+  | 角色 | 当前能力 |
+  | --- | --- |
+  | 访客 | 浏览已发布选举、候选人和结束后的最终结果 |
+  | 登录用户 | 在登记窗口提交身份信息；获批且名册冻结后投一票；查看自己的登记历史 |
+  | 管理员 | 创建／发布选举、复核登记、冻结名册、查看规模数据与提前关闭 |
+
+  选举时间必须满足“登记开始 < 登记结束 < 投票开始 < 投票结束”。名册冻结前必须处理全部待审核登记；投票结束前未消费的合资格凭证计入系统计算的弃权人数。完整操作与结果权限矩阵见 [详细使用文档](docs/technical/user-guide.md#选举)。
 
 ## 初始化投票与数据保存
 
@@ -328,6 +377,7 @@
   | `GUEST_TTL_DAYS` | 访客会话有效期 |
   | `POLL_ACCESS_TTL_MINUTES` | 私有投票访问授权有效期 |
   | `ANON_VOTER_HMAC_KEY` | 匿名防重复标识使用的服务端密钥，已有数据运行期间应保持稳定 |
+  | `IDENTITY_FINGERPRINT_HMAC_KEY` | 选民证件指纹密钥，至少 32 字节，且必须与 ANON_VOTER_HMAC_KEY 不同 |
   | `COOKIE_SECURE` | 本机 HTTP 使用 `false`，HTTPS 部署应配置为 `true` |
   | `PUBLIC_BASE_URL` | 分享链接使用的前端访问地址 |
   | `ALLOWED_ORIGINS` | 浏览器来源白名单，使用 JSON 数组 |
@@ -368,10 +418,10 @@
   | 文档 | 内容 |
   | --- | --- |
   | [数据库设计](docs/technical/database-design.md) | 全部表用途、字段、DDL、索引、ER 图与迁移 |
-  | [前端设计](docs/technical/frontend-design.md) | 页面路由、组件、状态、请求与导出流程 |
-  | [后端设计](docs/technical/backend-design.md) | 架构、业务模块、身份权限、生命周期与事务 |
+  | [前端设计](docs/technical/frontend-design.md) | 投票与选举页面路由、组件、状态及请求流程 |
+  | [后端设计](docs/technical/backend-design.md) | 架构、业务模块、身份权限、投票／选举生命周期与事务 |
   | [后端接口](docs/technical/backend-api.md) | 全部应用接口合并于一份文件，含字段、示例与错误码 |
-  | [详细使用](docs/technical/user-guide.md) | 安装、创建、分享、参与、结果导出、管理与维护 |
+  | [详细使用](docs/technical/user-guide.md) | 安装、投票、选民登记、选举管理、结果与维护 |
 
   旧协作快照保留在 `docs/coordination/`。开发计划与审查记录分别保存在 `docs/superpowers/plans/` 和 `docs/reviews/`，不作为已完成功能清单；代码修改后也应同步维护上述技术文档。
 

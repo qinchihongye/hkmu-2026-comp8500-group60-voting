@@ -1,6 +1,6 @@
 # VoteNow 数据库设计
 
-* **范围**：PostgreSQL 17；11 张应用表 + 1 张 Alembic 版本表。依据当前 ORM 和迁移链，核对日期 2026-10-30。本文是结构设计文档，不包含运行库中的业务数据或凭据。
+* **范围**：PostgreSQL 17；18 张应用表 + 1 张 Alembic 版本表。依据当前 ORM 和迁移链，核对日期 2026-10-31。本文是结构设计文档，不包含运行库中的业务数据或凭据。
 
   [后端设计](backend-design.md) · [接口文档](backend-api.md) · [详细使用](user-guide.md)
 
@@ -23,6 +23,15 @@
     guest_sessions ||--o{ poll_access_grants : holds
     polls ||--o{ audit_events : recorded
     polls ||--o| demo_poll_fixtures : registered
+    polls ||--o| election_configs : configures
+    poll_options ||--o| election_candidates : extends
+    users ||--o{ voter_identities : owns
+    polls ||--o{ election_registrations : receives
+    users ||--o{ election_registrations : submits
+    voter_identities ||--o{ election_registrations : supports
+    election_registrations ||--o{ eligibility_review_events : records
+    election_registrations ||--o| election_voter_credentials : issues
+    election_candidates ||--o{ election_ballots : receives
   ```
 
   每份选票至少一条明细由业务事务保证；ER 图中的该基数不是数据库单独强制的约束。`alembic_version` 无业务外键。
@@ -46,11 +55,11 @@
   | vote_selections | 选票选择明细，支持一票多选 | vote_id, option_id |
   | election_configs | 选举配置：登记窗口、名册冻结与合资格人数 | poll_id |
   | election_candidates | 选举候选人拓展表：候选人代号与政纲 | poll_option_id |
-  | voter_identities | 选民不可变证件版本（加盐 HMAC 指纹，不存明文号码） | id |
+  | voter_identities | 选民不可变证件版本（独立密钥 HMAC-SHA-256 指纹，不持久化明文号码） | id |
   | election_registrations | 选民登记快照、模型评分与审核结果 | id |
   | eligibility_review_events | 资格审核不可变事件流（只追加不更新） | id |
   | election_voter_credentials | 内部一次性投票资格凭证（ISSUED -> CONSUMED 单向） | id |
-  | election_ballots | 匿名选举选票（彻底分离：无 user_id、无凭据 ID、无外键关联身份） | id |
+  | election_ballots | 身份分离的选举选票（无 user_id、登记 ID、凭据 ID 或网络追踪字段） | id |
   | alembic_version | 记录已应用迁移版本 | version_num |
 
 ## 字段与建表语句
@@ -66,6 +75,7 @@
   | 字段 | PostgreSQL 类型 | 可空 | 默认值 | 用途 |
   | --- | --- | --- | --- | --- |
   | id | INTEGER | 否 | — | 数据库生成的主键。 |
+  | activity_type | VARCHAR(16) | 否 | POLL | POLL 或 ELECTION，隔离普通投票与选举。 |
   | token_hash | VARCHAR(64) | 否 | — | 访客 token 的散列。 |
   | csrf_token | VARCHAR(128) | 否 | — | 本访客凭据的写请求校验值。 |
   | created_at | TIMESTAMP WITH TIME ZONE | 否 | now() | 创建时间，UTC。 |
@@ -192,6 +202,7 @@
   ```sql
   CREATE TABLE polls (
   	id SERIAL NOT NULL, 
+	activity_type VARCHAR(16) DEFAULT 'POLL' NOT NULL,
   	title VARCHAR(120) NOT NULL, 
   	description TEXT, 
   	identity_mode VARCHAR(16) NOT NULL, 
@@ -212,6 +223,7 @@
   	updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL, 
   	PRIMARY KEY (id), 
   	CONSTRAINT uq_polls_id_identity_mode UNIQUE (id, identity_mode), 
+	CONSTRAINT ck_polls_activity_type CHECK (activity_type IN ('POLL', 'ELECTION')),
   	CONSTRAINT ck_polls_identity_mode CHECK (identity_mode IN ('NAMED', 'ANONYMOUS')), 
   	CONSTRAINT ck_polls_visibility CHECK (visibility IN ('PUBLIC', 'PRIVATE')), 
   	CONSTRAINT ck_polls_lifecycle CHECK (lifecycle IN ('DRAFT', 'PUBLISHED', 'CLOSED')), 
@@ -226,6 +238,7 @@
   	CONSTRAINT fk_polls_creator_id_users FOREIGN KEY(creator_id) REFERENCES users (id) ON DELETE RESTRICT
   );
   CREATE INDEX ix_polls_creator_id ON polls (creator_id);
+  CREATE INDEX ix_polls_activity_lifecycle_starts ON polls (activity_type, lifecycle, starts_at);
   ```
 
 ### audit_events
@@ -236,7 +249,7 @@
   | --- | --- | --- | --- | --- |
   | id | INTEGER | 否 | — | 数据库生成的主键。 |
   | actor_id | INTEGER | 否 | — | 执行操作的账户。 |
-  | action | VARCHAR(32) | 否 | — | CREATE、UPDATE、PUBLISH、CLOSE 或 VOTE_NAMED。 |
+  | action | VARCHAR(32) | 否 | — | CREATE、UPDATE、PUBLISH、CLOSE、VOTE_NAMED 或 FREEZE_ROSTER。 |
   | poll_id | INTEGER | 否 | — | 相关投票。 |
   | receipt_id | UUID | 是 | — | 记名选票回执。管理操作可为空。 |
   | created_at | TIMESTAMP WITH TIME ZONE | 否 | now() | 记录时间，UTC。 |
@@ -252,7 +265,7 @@
   	created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL, 
   	request_id VARCHAR(64) NOT NULL, 
   	PRIMARY KEY (id), 
-  	CONSTRAINT ck_audit_events_action CHECK (action IN ('CREATE', 'UPDATE', 'PUBLISH', 'CLOSE', 'VOTE_NAMED')), 
+	CONSTRAINT ck_audit_events_action CHECK (action IN ('CREATE', 'UPDATE', 'PUBLISH', 'CLOSE', 'VOTE_NAMED', 'FREEZE_ROSTER')),
   	CONSTRAINT fk_audit_events_actor_id_users FOREIGN KEY(actor_id) REFERENCES users (id) ON DELETE RESTRICT, 
   	CONSTRAINT fk_audit_events_poll_id_polls FOREIGN KEY(poll_id) REFERENCES polls (id) ON DELETE RESTRICT
   );
@@ -396,9 +409,235 @@
   CREATE INDEX ix_vote_selections_poll_option ON vote_selections (poll_id, option_id);
   ```
 
+### election_configs
+
+* 每场选举一行，保存登记窗口与名册冻结快照。
+
+  | 字段 | 类型 | 可空 | 用途 |
+  | --- | --- | --- | --- |
+  | poll_id | INTEGER | 否 | 选举主键，同时引用 polls。 |
+  | registration_starts_at / registration_ends_at | TIMESTAMPTZ | 否 | 登记窗口。 |
+  | roster_frozen_at | TIMESTAMPTZ | 是 | 名册冻结时间。 |
+  | eligible_voter_count | INTEGER | 是 | 冻结时的合资格人数。 |
+  | created_at / updated_at | TIMESTAMPTZ | 否 | 创建／更新时间。 |
+
+  ```sql
+  CREATE TABLE election_configs (
+    poll_id INTEGER NOT NULL,
+    registration_starts_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    registration_ends_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    roster_frozen_at TIMESTAMP WITH TIME ZONE,
+    eligible_voter_count INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    CONSTRAINT pk_election_configs PRIMARY KEY (poll_id),
+    CONSTRAINT fk_election_configs_poll_id_polls FOREIGN KEY (poll_id) REFERENCES polls (id) ON DELETE RESTRICT,
+    CONSTRAINT ck_election_configs_reg_window CHECK (registration_starts_at < registration_ends_at),
+    CONSTRAINT ck_election_configs_freeze CHECK ((roster_frozen_at IS NULL AND eligible_voter_count IS NULL) OR (roster_frozen_at IS NOT NULL AND eligible_voter_count IS NOT NULL AND eligible_voter_count >= 0))
+  );
+  ```
+
+### election_candidates
+
+* 一对一扩展普通选项，增加候选人代号与政纲。
+
+  | 字段 | 类型 | 可空 | 用途 |
+  | --- | --- | --- | --- |
+  | poll_option_id | INTEGER | 否 | 主键，引用选项。 |
+  | poll_id | INTEGER | 否 | 所属选举。 |
+  | candidate_code | VARCHAR(32) | 否 | 场内唯一候选人代号。 |
+  | statement | VARCHAR(500) | 是 | 候选人简介。 |
+  | created_at | TIMESTAMPTZ | 否 | 创建时间。 |
+
+  ```sql
+  CREATE TABLE election_candidates (
+    poll_option_id INTEGER NOT NULL,
+    poll_id INTEGER NOT NULL,
+    candidate_code VARCHAR(32) NOT NULL,
+    statement VARCHAR(500),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    CONSTRAINT pk_election_candidates PRIMARY KEY (poll_option_id),
+    CONSTRAINT fk_election_candidates_option_poll FOREIGN KEY (poll_id, poll_option_id) REFERENCES poll_options (poll_id, id) ON DELETE RESTRICT,
+    CONSTRAINT uq_election_candidates_poll_option UNIQUE (poll_id, poll_option_id),
+    CONSTRAINT uq_election_candidates_poll_code UNIQUE (poll_id, candidate_code)
+  );
+  ```
+
+### voter_identities
+
+* 保存证件版本及独立密钥 HMAC-SHA-256 指纹；不持久化完整证件号码。
+
+  | 字段 | 类型 | 可空 | 用途 |
+  | --- | --- | --- | --- |
+  | id | BIGSERIAL | 否 | 主键。 |
+  | user_id / version | INTEGER | 否 | 账户与其证件版本号。 |
+  | document_type | VARCHAR(32) | 否 | RESIDENT_ID、HK_MACAU_PERMIT 或 STUDENT_ID。 |
+  | issuer | VARCHAR(120) | 否 | 规范化签发机构。 |
+  | document_fingerprint | VARCHAR(64) | 否 | HMAC-SHA-256 十六进制指纹。 |
+  | document_suffix | VARCHAR(8) | 否 | 脱敏显示尾号。 |
+  | fingerprint_key_version | SMALLINT | 否 | 指纹密钥版本。 |
+  | created_at / updated_at | TIMESTAMPTZ | 否 | 创建／更新时间。 |
+
+  ```sql
+  CREATE TABLE voter_identities (
+    id BIGSERIAL NOT NULL,
+    user_id INTEGER NOT NULL,
+    version INTEGER NOT NULL,
+    document_type VARCHAR(32) NOT NULL,
+    issuer VARCHAR(120) NOT NULL,
+    document_fingerprint VARCHAR(64) NOT NULL,
+    document_suffix VARCHAR(8) NOT NULL,
+    fingerprint_key_version SMALLINT DEFAULT 1 NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    CONSTRAINT pk_voter_identities PRIMARY KEY (id),
+    CONSTRAINT fk_voter_identities_user_id_users FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
+    CONSTRAINT uq_voter_identities_fingerprint UNIQUE (document_type, issuer, document_fingerprint),
+    CONSTRAINT uq_voter_identities_user_version UNIQUE (user_id, version),
+    CONSTRAINT uq_voter_identities_user_id UNIQUE (user_id, id),
+    CONSTRAINT ck_voter_identities_doc_type CHECK (document_type IN ('RESIDENT_ID', 'HK_MACAU_PERMIT', 'STUDENT_ID')),
+    CONSTRAINT ck_voter_identities_version CHECK (version >= 1)
+  );
+  ```
+
+### election_registrations
+
+* 保存账户对某场选举的登记、身份快照引用和当前审核状态。
+
+  | 字段 | 类型 | 可空 | 用途 |
+  | --- | --- | --- | --- |
+  | id | BIGSERIAL | 否 | 主键。 |
+  | poll_id / user_id / identity_id | INTEGER／BIGINT | 否 | 选举、账户和证件版本。 |
+  | legal_name_snapshot | VARCHAR(120) | 否 | 登记时姓名快照。 |
+  | status | VARCHAR(24) | 否 | PENDING、NEEDS_REVIEW、APPROVED 或 REJECTED。 |
+  | model_score / model_reason_codes / model_version | SMALLINT／JSONB／VARCHAR(64) | 是 | 规则引擎结果。 |
+  | reviewed_by / reviewed_at | INTEGER／TIMESTAMPTZ | 是 | 人工审核信息，必须同时为空或同时有值。 |
+  | submitted_at / updated_at | TIMESTAMPTZ | 否 | 提交／更新时间。 |
+
+  ```sql
+  CREATE TABLE election_registrations (
+    id BIGSERIAL NOT NULL,
+    poll_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    identity_id BIGINT NOT NULL,
+    legal_name_snapshot VARCHAR(120) NOT NULL,
+    status VARCHAR(24) DEFAULT 'PENDING' NOT NULL,
+    model_score SMALLINT,
+    model_reason_codes JSONB,
+    model_version VARCHAR(64),
+    reviewed_by INTEGER,
+    reviewed_at TIMESTAMP WITH TIME ZONE,
+    submitted_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    CONSTRAINT pk_election_registrations PRIMARY KEY (id),
+    CONSTRAINT fk_election_registrations_poll_id_polls FOREIGN KEY (poll_id) REFERENCES polls (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_election_registrations_user_id_users FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_election_registrations_reviewed_by_users FOREIGN KEY (reviewed_by) REFERENCES users (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_election_registrations_user_identity FOREIGN KEY (user_id, identity_id) REFERENCES voter_identities (user_id, id) ON DELETE RESTRICT,
+    CONSTRAINT uq_election_registrations_poll_user UNIQUE (poll_id, user_id),
+    CONSTRAINT uq_election_registrations_poll_id UNIQUE (poll_id, id),
+    CONSTRAINT ck_election_registrations_status CHECK (status IN ('PENDING', 'NEEDS_REVIEW', 'APPROVED', 'REJECTED')),
+    CONSTRAINT ck_election_registrations_score CHECK (model_score IS NULL OR (model_score >= 0 AND model_score <= 100)),
+    CONSTRAINT ck_election_registrations_review_meta CHECK ((reviewed_by IS NULL AND reviewed_at IS NULL) OR (reviewed_by IS NOT NULL AND reviewed_at IS NOT NULL))
+  );
+  CREATE INDEX ix_election_registrations_poll_status_sub ON election_registrations (poll_id, status, submitted_at);
+  ```
+
+### eligibility_review_events
+
+* 只追加的模型、管理员或系统审核事件。
+
+  | 字段 | 类型 | 可空 | 用途 |
+  | --- | --- | --- | --- |
+  | id / registration_id | BIGSERIAL／BIGINT | 否 | 事件与登记。 |
+  | actor_type / actor_id | VARCHAR(16)／INTEGER | 否／是 | MODEL、ADMIN、SYSTEM；仅 ADMIN 必须有 actor_id。 |
+  | from_status / to_status | VARCHAR(24) | 是／否 | 状态迁移。 |
+  | score / reason_codes / model_version | SMALLINT／JSONB／VARCHAR(64) | 是／否／是 | 判断依据。 |
+  | review_note / request_id | VARCHAR(500)／VARCHAR(64) | 是 | 人工备注与请求跟踪。 |
+  | created_at | TIMESTAMPTZ | 否 | 事件时间。 |
+
+  ```sql
+  CREATE TABLE eligibility_review_events (
+    id BIGSERIAL NOT NULL,
+    registration_id BIGINT NOT NULL,
+    actor_type VARCHAR(16) NOT NULL,
+    actor_id INTEGER,
+    from_status VARCHAR(24),
+    to_status VARCHAR(24) NOT NULL,
+    score SMALLINT,
+    reason_codes JSONB NOT NULL,
+    model_version VARCHAR(64),
+    review_note VARCHAR(500),
+    request_id VARCHAR(64),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    CONSTRAINT pk_eligibility_review_events PRIMARY KEY (id),
+    CONSTRAINT fk_eligibility_review_events_reg_id FOREIGN KEY (registration_id) REFERENCES election_registrations (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_eligibility_review_events_actor_id_users FOREIGN KEY (actor_id) REFERENCES users (id) ON DELETE RESTRICT,
+    CONSTRAINT ck_eligibility_review_events_actor_type CHECK (actor_type IN ('MODEL', 'ADMIN', 'SYSTEM')),
+    CONSTRAINT ck_eligibility_review_events_to_status CHECK (to_status IN ('PENDING', 'NEEDS_REVIEW', 'APPROVED', 'REJECTED')),
+    CONSTRAINT ck_eligibility_review_events_actor CHECK ((actor_type = 'ADMIN' AND actor_id IS NOT NULL) OR (actor_type IN ('MODEL', 'SYSTEM') AND actor_id IS NULL)),
+    CONSTRAINT ck_eligibility_review_events_score CHECK (score IS NULL OR (score >= 0 AND score <= 100))
+  );
+  CREATE INDEX ix_eligibility_review_events_reg_created ON eligibility_review_events (registration_id, created_at);
+  ```
+
+### election_voter_credentials
+
+* 名册冻结时为每个 APPROVED 登记生成一个内部 UUID 凭证；凭证不返回前端。
+
+  | 字段 | 类型 | 可空 | 用途 |
+  | --- | --- | --- | --- |
+  | id | UUID | 否 | 内部凭证主键。 |
+  | poll_id / registration_id | INTEGER／BIGINT | 否 | 所属选举与登记。 |
+  | status | VARCHAR(16) | 否 | ISSUED 或 CONSUMED。 |
+  | issued_at / consumed_at | TIMESTAMPTZ | 否／是 | 签发与消费时间。 |
+
+  ```sql
+  CREATE TABLE election_voter_credentials (
+    id UUID NOT NULL,
+    poll_id INTEGER NOT NULL,
+    registration_id BIGINT NOT NULL,
+    status VARCHAR(16) DEFAULT 'ISSUED' NOT NULL,
+    issued_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    consumed_at TIMESTAMP WITH TIME ZONE,
+    CONSTRAINT pk_election_voter_credentials PRIMARY KEY (id),
+    CONSTRAINT fk_election_voter_credentials_reg FOREIGN KEY (poll_id, registration_id) REFERENCES election_registrations (poll_id, id) ON DELETE RESTRICT,
+    CONSTRAINT uq_election_voter_credentials_poll_reg UNIQUE (poll_id, registration_id),
+    CONSTRAINT ck_election_credentials_status_val CHECK (status IN ('ISSUED', 'CONSUMED')),
+    CONSTRAINT ck_election_credentials_status CHECK ((status = 'ISSUED' AND consumed_at IS NULL) OR (status = 'CONSUMED' AND consumed_at IS NOT NULL))
+  );
+  CREATE INDEX ix_election_voter_credentials_poll_status ON election_voter_credentials (poll_id, status);
+  ```
+
+### election_ballots
+
+* 单选选举票。只保存候选项、时间及随机 UUID 回执，不保存账户、登记、凭证、IP 或 User-Agent。
+
+  | 字段 | 类型 | 可空 | 用途 |
+  | --- | --- | --- | --- |
+  | id | BIGSERIAL | 否 | 选票主键。 |
+  | receipt_id | UUID | 否 | 唯一随机回执。 |
+  | poll_id / candidate_option_id | INTEGER | 否 | 选举与候选项。 |
+  | submitted_at | TIMESTAMPTZ | 否 | 提交时间。 |
+
+  ```sql
+  CREATE TABLE election_ballots (
+    id BIGSERIAL NOT NULL,
+    receipt_id UUID NOT NULL,
+    poll_id INTEGER NOT NULL,
+    candidate_option_id INTEGER NOT NULL,
+    submitted_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    CONSTRAINT pk_election_ballots PRIMARY KEY (id),
+    CONSTRAINT uq_election_ballots_receipt_id UNIQUE (receipt_id),
+    CONSTRAINT fk_election_ballots_candidate FOREIGN KEY (poll_id, candidate_option_id) REFERENCES election_candidates (poll_id, poll_option_id) ON DELETE RESTRICT
+  );
+  CREATE INDEX ix_election_ballots_poll_submitted ON election_ballots (poll_id, submitted_at);
+  CREATE INDEX ix_election_ballots_poll_candidate ON election_ballots (poll_id, candidate_option_id);
+  ```
+
 ### alembic_version
 
-* 迁移工具管理的版本表；当前 head 为 `e7c4a91b2d58`。不要手工改写版本值。
+* 迁移工具管理的版本表；当前 head 为 `b2e1ec710001`。不要手工改写版本值。
 
   | 字段 | 类型 | 可空 | 用途 |
   | --- | --- | --- | --- |
@@ -426,6 +665,11 @@
   | 不超选票上限 | 上限字段范围 CHECK | 锁定 polls 行、计数、插父票与明细、必要时关闭，同事务提交 |
   | 并发更新草稿 | version 列 | 行锁 + expected_version |
   | 删除关系数据 | 业务外键 `ON DELETE RESTRICT` | 当前无公开删除投票 API |
+  | 同一账户每场只登记一次 | `(poll_id, user_id)` 唯一约束 | 登记窗口与冻结状态检查 |
+  | 同一证件不能绑定多个账户 | 证件类型、签发方、HMAC 指纹唯一 | NFKC、大小写及空白规范化 |
+  | 名册冻结后凭证固定 | 登记与凭证一对一唯一约束 | 行锁；有待审核登记时拒绝冻结；重复冻结幂等返回 |
+  | 每个合资格登记最多一票 | 凭证状态与消费时间 CHECK | 锁定并消费凭证、插入选票，同一事务提交 |
+  | 选票不能跨场选择候选人 | 选举与候选项复合外键 | 候选项归属检查 |
 
 * 存储事实
 
@@ -439,6 +683,8 @@
   | 审计 | 不记录匿名逐票事件；记名事件不包含选项 |
   | 时间 | `TIMESTAMP WITH TIME ZONE`；服务按 UTC 处理，前端按香港时间显示／输入 |
   | updated_at | 默认 now() 仅用于插入；更新由业务代码赋值，没有自动更新时间触发器 |
+  | 完整证件号 | 请求内用于规则校验和生成指纹；不写入数据库，只保存 HMAC 指纹与尾号 |
+  | 选举选票 | 与身份链在表结构上分离；随机 UUID 回执不是密码学可验证或端到端匿名证明 |
 
 ## 迁移与初始化
 
@@ -452,6 +698,7 @@
   | c4e8a1b07d33 | 上限最大值收紧到 100000 |
   | d5a9c3e17b42 | allow_live_results，既有记录默认关闭 |
   | e7c4a91b2d58 | 两张初始化目录登记表 |
+  | b2e1ec710001 | `activity_type`、FREEZE_ROSTER 审计动作与 7 张 B2 选举表 |
 
   多选迁移回退会检查是否仍能无损恢复单选结构，不满足条件时拒绝。固定投票初始化与数据库迁移分离，CLI 在迁移后补齐数据；不会靠重启覆盖已有选票。
 
@@ -459,4 +706,4 @@
   | --- | --- |
   | ORM | `backend/src/main/python/database/models/` |
   | 迁移 | `db/migrations/versions/` |
-  | 并发／约束测试 | `backend/tests/integration/test_constraints.py`、`test_vote_concurrency.py`、`test_vote_limits.py` |
+  | 并发／约束测试 | `backend/tests/integration/` 下的投票与选举测试 |

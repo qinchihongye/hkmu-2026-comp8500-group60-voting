@@ -1,6 +1,6 @@
 # VoteNow 前端设计
 
-* **范围**：当前 React 前端；核对日期 2026-10-30。按实际路由与组件编写，不将开发计划当作已实现功能。
+* **范围**：当前 React 前端；核对日期 2026-10-31。按实际路由与组件编写，不将开发计划当作已实现功能。
 
   [后端接口](backend-api.md) · [后端设计](backend-design.md) · [详细使用](user-guide.md)
 
@@ -30,7 +30,7 @@
   | `app/providers.tsx` | 语言、Ant Design 主题、账户、访客上下文 | 账户与访客状态分开 |
   | `layouts/AppLayout.*` | 顶栏（通知下拉、语言与账户）、侧栏、手机导航 | 布局不决定服务端权限 |
   | `pages/` | 加载数据、路由参数、组合业务组件 | 不直接访问数据库 |
-  | `features/notifications/` | 通知中心、下拉面板与轮询更新 | 与全局顶栏深度集成 |
+  | `features/notifications/` | 通知中心、下拉面板与页面加载时生成的上下文通知 | 与全局顶栏深度集成 |
   | `features/*/api.ts` | 按业务封装端点 | 统一经 apiClient 调用 |
   | `lib/http.ts` | JSON 信封、Cookie、CSRF、重试和错误分类 | 写请求不自动重试 |
   | `lib/api-types.ts` | TypeScript 接口类型 | 与后端模型同步 |
@@ -61,6 +61,16 @@
   | `/admin/polls` | AdminPollsPage | ADMIN |
   | `/admin/polls/:id` | AdminPollDetailPage | ADMIN |
   | `/admin/audit` | AdminAuditPage | ADMIN |
+  | `/elections` | ElectionsPage，公开选举列表与阶段筛选 | 可访客访问；登录后附带个人状态 |
+  | `/elections/:id` | ElectionDetailPage，选举与候选人详情 | 可访客访问 |
+  | `/elections/:id/register` | ElectionRegisterPage，选民登记 | 登录 |
+  | `/elections/:id/vote` | ElectionBallotPage，秘密选票 | 登录；后端校验资格与阶段 |
+  | `/elections/:id/results` | ElectionResultPage，按权限显示结果 | 后端校验结果权限 |
+  | `/my-election-registrations` | MyElectionRegistrationsPage，本人登记历史 | 登录 |
+  | `/admin/elections` | AdminElectionsPage，全部选举 | ADMIN |
+  | `/admin/elections/new` | AdminElectionCreatePage，创建选举 | ADMIN |
+  | `/admin/elections/:id` | AdminElectionDetailPage，发布／冻结／关闭 | ADMIN |
+  | `/admin/elections/:id/registrations` | AdminElectionRegistrationsPage，资格复核 | ADMIN |
   | `/403` | ForbiddenPage | 无 |
   | `*` | NotFoundPage | 无 |
 
@@ -85,6 +95,13 @@
   | ResultsPanel | PollResults | Donut 甜甜圈环形占比图（居中显示总票数）与单项微进度条 |
   | DangerCloseModal | 投票提前结束二次确认 | 警示色双重确认弹窗，明确提示操作不可逆 |
   | NotificationDropdown | 用户消息与系统公告 | 顶栏铃铛徽标、通知下拉列表、未读统计与一键清空已读 |
+  | ElectionCard / ElectionPhaseBadge | 选举摘要与计算阶段 | 候选人数、登记／投票时间、个人登记与已投状态 |
+  | ElectionRegisterPage | 证件登记表 | 先查询已有登记；已有记录时展示状态而不重复提交 |
+  | ElectionBallotPage | 候选人单选与确认 | 二次确认；成功后复制随机 UUID 回执 |
+  | ElectionResultPage | 规模与候选人结果 | 根据后端返回决定实时／最终结果，不在前端绕过权限 |
+  | AdminElectionCreatePage | 选举、登记窗口与候选人表单 | 校验四段时间顺序和至少两名候选人 |
+  | AdminElectionDetailPage | 管理动作 | 发布、冻结名册、提前关闭；当前没有独立编辑路由 |
+  | AdminElectionRegistrationsPage | 状态筛选与审核 | APPROVED／REJECTED 人工决定 |
   | ShareCardModal / generate-share-card | 已取得的最终结果 | 浏览器生成 PNG 卡片 |
   | export-excel | 已取得的结果与可选详情 | XLSX 概况与结果明细，无额外导出 API |
 
@@ -97,9 +114,12 @@
   | 两类 CSRF | 内存中的独立 auth / guest 槽位 | 不互相替代 |
   | 表单字段 | PollForm 本地 React state | 保存成功后以服务端结果为准 |
   | 列表过滤与分页 | 对应页面 state（管理与审计含300ms防抖） | 变更过滤条件后防抖重新请求 |
-  | 通知状态 | useNotifications 本地状态与徽标计算 | 手动标为已读或轮询更新 |
+  | 通知状态 | useNotifications 从投票／选举接口生成，本地保存已读 ID | 用户切换时恢复；当前没有定时轮询或服务端推送 |
   | 参与状态 | usePollAccess + 后端 has_voted / receipt | 提交不确定时重新读取，禁止自动重投 |
   | 结果数据 | PollResultPage 请求结果 | 进行中提供手动刷新；非持续自动推送 |
+  | 选举上下文状态 | election detail 的 phase、can_register、can_vote、can_view_results、next_action | 每次关键操作后重新读取服务端状态 |
+  | 选民登记 | my_registration_status / user_registration_status | 页面先查已有记录，避免重复显示登记表 |
+  | 选举通知 | useNotifications 从当前选举状态生成 | 顶栏下拉与未读状态沿用通知中心 |
 
 * 参与状态流转
 
@@ -135,6 +155,18 @@
   | GET 网络故障或 SERVICE_UNAVAILABLE | 最多额外重试2次，默认间隔200ms |
   | 写请求网络中断 | 不自动重试，结果可能未知 |
   | 非法信封／响应缺数据 | ApiClientError 的 parse 类错误 |
+
+* 选举页面状态
+
+  | 后端阶段 | 主要界面动作 |
+  | --- | --- |
+  | DRAFT | 仅管理员列表／详情可见；可发布 |
+  | REGISTRATION_SCHEDULED | 显示登记开始时间 |
+  | REGISTRATION_OPEN | 登录用户可登记；已登记者查看审核状态 |
+  | REVIEWING | 等待管理员完成复核并冻结名册 |
+  | VOTING_SCHEDULED | 合资格选民等待投票开始 |
+  | VOTING_OPEN | 具有 ISSUED 凭证的选民可投一名候选人 |
+  | CLOSED | 显示最终票数、投票率、弃权数与胜者／并列结果 |
 
 * 卡片与结果
 
