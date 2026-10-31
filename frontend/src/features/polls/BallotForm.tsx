@@ -57,6 +57,7 @@ export function BallotForm({
   const [notice, setNotice] = useState<MessageKey | null>(null);
   const [failure, setFailure] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
   let activeIds = selectedIds;
   if (pollKey !== poll.id) {
     activeIds = [];
@@ -203,8 +204,42 @@ export function BallotForm({
           </div>
           <div style={{ marginTop: 12 }}>
             <span style={{ fontSize: "0.85rem", color: "#065f46", fontWeight: 600 }}>{t("ballot.receipt")}</span>
-            <br />
-            <span className="receipt-id-box">{receipt.receipt_id}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4, flexWrap: "wrap" }}>
+              <span className="receipt-id-box" style={{ margin: 0 }}>{receipt.receipt_id}</span>
+              <button
+                type="button"
+                className={`receipt-copy-btn ${copied ? "copied" : ""}`}
+                aria-label={copied ? t("common.copied") : t("common.copy")}
+                onClick={() => {
+                  if (!receipt.receipt_id) return;
+                  void navigator.clipboard.writeText(receipt.receipt_id).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  });
+                }}
+              >
+                {copied ? (
+                  <>
+                    <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor" aria-hidden="true">
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span>{t("common.copied")}</span>
+                  </>
+                ) : (
+                  <>
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    <span>{t("common.copy")}</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
           <p style={{ margin: "8px 0 0", fontSize: "0.85rem", color: "#047857" }}>
             {t("ballot.submitted", { time: formatHongKong(receipt.submitted_at), zone: t("common.hkt") })}

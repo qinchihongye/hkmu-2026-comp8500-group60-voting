@@ -26,8 +26,8 @@ describe("PollSortDropdown", () => {
     // 菜单选项出现
     expect(screen.getByRole("menuitemradio", { name: /Most popular/i })).toBeInTheDocument();
     expect(screen.getByRole("menuitemradio", { name: /Closing soon/i })).toBeInTheDocument();
-    expect(screen.getByRole("menuitemradio", { name: /Start time/i })).toBeInTheDocument();
     expect(screen.getByRole("menuitemradio", { name: /Recently created/i })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitemradio", { name: /Start time/i })).not.toBeInTheDocument();
 
     // 点击选择“Most popular”
     await user.click(screen.getByRole("menuitemradio", { name: /Most popular/i }));
@@ -50,17 +50,17 @@ describe("PollSortDropdown", () => {
 
     const btn = screen.getByRole("button", { name: /Sort by: Closing soon/i });
     await user.click(btn);
-    expect(screen.getByRole("menuitemradio", { name: /Start time/i })).toBeInTheDocument();
+    expect(screen.getByRole("menuitemradio", { name: /Closing soon/i })).toBeInTheDocument();
 
     // 按 Escape 键关闭
     fireEvent.keyDown(document, { key: "Escape" });
-    expect(screen.queryByRole("menuitemradio", { name: /Start time/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("menuitemradio", { name: /Closing soon/i })).not.toBeInTheDocument();
 
     // 再次打开并点击外部关闭
     await user.click(btn);
-    expect(screen.getByRole("menuitemradio", { name: /Start time/i })).toBeInTheDocument();
+    expect(screen.getByRole("menuitemradio", { name: /Closing soon/i })).toBeInTheDocument();
     await user.click(screen.getByTestId("outside"));
-    expect(screen.queryByRole("menuitemradio", { name: /Start time/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("menuitemradio", { name: /Closing soon/i })).not.toBeInTheDocument();
   });
 });
 

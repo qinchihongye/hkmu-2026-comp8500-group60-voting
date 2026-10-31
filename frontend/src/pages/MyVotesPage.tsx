@@ -1,28 +1,47 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { useAuth } from "../features/auth/AuthProvider";
 import { getMyVotes } from "../features/polls/api";
 import { useFailure } from "../i18n/errors";
 import { useI18n } from "../i18n/LocaleProvider";
 import { formatHongKong } from "../lib/time";
 import type { MyVote } from "../lib/api-types";
 
+function getDeletedReceipts(key: string): string[] {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    return JSON.parse(raw) as string[];
+  } catch {
+    return [];
+  }
+}
+
 export function MyVotesPage() {
   const { t } = useI18n();
+  const auth = useAuth();
   const failure = useFailure("error.votesLoad");
   const { setCause, clear } = failure;
   const [items, setItems] = useState<MyVote[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [recordToDelete, setRecordToDelete] = useState<MyVote | null>(null);
   const pageSize = 12;
+
+  const storageKey = auth.user
+    ? `votenow_deleted_votes_${auth.user.username}`
+    : "votenow_deleted_votes_guest";
 
   useEffect(() => {
     let cancelled = false;
     void getMyVotes({ page, page_size: pageSize })
       .then((result) => {
         if (!cancelled) {
-          setItems(result.items);
-          setTotal(result.total);
+          const deleted = getDeletedReceipts(storageKey);
+          const filtered = result.items.filter((item) => !deleted.includes(item.receipt_id));
+          setItems(filtered);
+          setTotal(Math.max(0, result.total - deleted.length));
           clear();
         }
       })
@@ -34,7 +53,7 @@ export function MyVotesPage() {
     return () => {
       cancelled = true;
     };
-  }, [page, setCause, clear]);
+  }, [page, storageKey, setCause, clear]);
 
   return (
     <div className="view-root">
@@ -122,6 +141,7 @@ export function MyVotesPage() {
                     <th>{t("votes.poll")}</th>
                     <th>{t("votes.receipt")}</th>
                     <th>{t("votes.submitted")}</th>
+                    <th style={{ textAlign: "right" }}>{t("votes.action")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -136,11 +156,65 @@ export function MyVotesPage() {
                       <td style={{ color: "#64748b", fontSize: "0.88rem" }}>
                         {formatHongKong(item.submitted_at)}
                       </td>
+                      <td style={{ textAlign: "right" }}>
+                        <button
+                          type="button"
+                          className="vote-delete-row-btn"
+                          onClick={() => setRecordToDelete(item)}
+                        >
+                          {t("votes.deleteRecord")}
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+
+            {recordToDelete ? (
+              <div
+                className="vote-delete-modal-backdrop"
+                onClick={() => setRecordToDelete(null)}
+              >
+                <div
+                  className="vote-delete-modal-card"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h4 className="vote-delete-modal-title">{t("votes.deleteTitle")}</h4>
+                  <p className="vote-delete-modal-text">{t("votes.deleteConfirm")}</p>
+                  <p className="vote-delete-modal-hint">{t("votes.deleteHint")}</p>
+                  <div className="vote-delete-modal-actions">
+                    <button
+                      type="button"
+                      className="vote-delete-modal-cancel"
+                      onClick={() => setRecordToDelete(null)}
+                    >
+                      {t("common.cancel")}
+                    </button>
+                    <button
+                      type="button"
+                      className="vote-delete-modal-confirm"
+                      onClick={() => {
+                        const deleted = getDeletedReceipts(storageKey);
+                        if (!deleted.includes(recordToDelete.receipt_id)) {
+                          deleted.push(recordToDelete.receipt_id);
+                          try {
+                            localStorage.setItem(storageKey, JSON.stringify(deleted));
+                          } catch {
+                            // ignore
+                          }
+                        }
+                        setItems((prev) => prev.filter((i) => i.receipt_id !== recordToDelete.receipt_id));
+                        setTotal((prev) => Math.max(0, prev - 1));
+                        setRecordToDelete(null);
+                      }}
+                    >
+                      {t("votes.confirmDelete")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
               <p style={{ margin: 0, color: "#64748b", fontSize: "0.9rem" }}>{t("common.records", { total })}</p>

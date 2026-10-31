@@ -728,6 +728,14 @@ def _filter_clauses(filters: PollListFilters, now: datetime) -> list[object]:
     clauses: list[object] = []
     if filters.status is not None:
         clauses.append(_status_clause(filters.status, now))
+    elif filters.sort_by == "ends_at":
+        # 即将截止仅包含尚未结束的有效投票，不包含已结束的内容
+        clauses.append(
+            and_(
+                Poll.lifecycle == PollLifecycle.PUBLISHED,
+                Poll.ends_at > now,
+            )
+        )
     search = _title_search(filters.text)
     if search is not None:
         clauses.append(search)
@@ -827,26 +835,9 @@ def _ordered(
             )
         )
     elif sort == "ends_at":
-        if now is not None:
-            is_closed = case(
-                (
-                    or_(
-                        Poll.lifecycle == PollLifecycle.CLOSED,
-                        and_(Poll.lifecycle == PollLifecycle.PUBLISHED, Poll.ends_at <= now),
-                    ),
-                    1,
-                ),
-                else_=0,
-            )
-            statement = select(Poll).order_by(
-                is_closed.asc(),
-                Poll.ends_at.asc(),
-                Poll.id.desc(),
-            )
-        else:
-            statement = select(Poll).order_by(Poll.ends_at.asc(), Poll.id.desc())
+        statement = select(Poll).order_by(Poll.ends_at.asc(), Poll.id.desc())
     elif sort == "starts_at":
-        statement = select(Poll).order_by(Poll.starts_at.desc(), Poll.id.desc())
+        statement = select(Poll).order_by(Poll.starts_at.asc(), Poll.id.desc())
     else:
         statement = select(Poll).order_by(Poll.created_at.desc(), Poll.id.desc())
 

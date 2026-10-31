@@ -5,6 +5,7 @@ prompt.txt
 /test-results/
 /docs/ppt_sample/
 /docs/ppt-gpt
+/docs/superpowers/
 
 # 本地环境与密钥
 .env

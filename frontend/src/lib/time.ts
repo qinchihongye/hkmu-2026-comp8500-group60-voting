@@ -1,3 +1,5 @@
+import type { Locale } from "../i18n/messages";
+
 const hongKong = "Asia/Hong_Kong";
 
 export function hongKongParts(date: Date): { date: string; time: string } {
@@ -64,33 +66,34 @@ export function defaultPollWindow(now = new Date()): {
   };
 }
 
-export function formatHongKongDateTimeParts(iso: string, locale: "en" | "zh"): { date: string; time: string } {
+export function formatHongKongDateTimeParts(iso: string, locale: Locale): { date: string; time: string } {
   const d = new Date(iso);
-  const formatter = new Intl.DateTimeFormat(locale === "zh" ? "zh-HK" : "en-GB", {
+  const isZh = locale !== "en";
+  const formatter = new Intl.DateTimeFormat(isZh ? "zh-HK" : "en-GB", {
     timeZone: hongKong,
     year: "numeric",
-    month: locale === "zh" ? "2-digit" : "short",
+    month: isZh ? "2-digit" : "short",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
   });
   const parts = Object.fromEntries(formatter.formatToParts(d).map((p) => [p.type, p.value]));
-  const dateStr = locale === "zh"
+  const dateStr = isZh
     ? `${parts.year}-${parts.month}-${parts.day}`
     : `${parts.day} ${parts.month} ${parts.year}`;
   const timeStr = `${parts.hour}:${parts.minute}`;
   return { date: dateStr, time: timeStr };
 }
 
-export function formatDuration(startIso: string, endIso: string, locale: "en" | "zh"): string {
+export function formatDuration(startIso: string, endIso: string, locale: Locale): string {
   const diffMs = Math.max(0, new Date(endIso).getTime() - new Date(startIso).getTime());
   const totalMinutes = Math.round(diffMs / 60000);
   const days = Math.floor(totalMinutes / (60 * 24));
   const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
   const minutes = totalMinutes % 60;
 
-  if (locale === "zh") {
+  if (locale !== "en") {
     if (days > 0 && hours > 0) return `${days}天${hours}小时`;
     if (days > 0) return `${days}天`;
     if (hours > 0 && minutes > 0) return `${hours}小时${minutes}分`;

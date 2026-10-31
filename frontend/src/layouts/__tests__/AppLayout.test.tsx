@@ -1,5 +1,6 @@
 import { cleanup, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it } from "vitest";
 
 import { emptyPage, guestOk, installFetch, meAnonymous, renderRoute, sessionOf } from "../../test/fixtures";
 
@@ -40,42 +41,30 @@ describe("AppLayout", () => {
     expect(within(adminNav).getByRole("link", { name: "Create poll" })).toBeInTheDocument();
   });
 
-  it("已登录把语言开关放进账户菜单，未登录顶栏不显示语言开关", async () => {
+  it("顶栏独立展示语言切换按钮，支持英语、简体中文和繁体中文切换", async () => {
     renderAs(meAnonymous, "/overview");
-    expect(document.querySelector(".locale-switch")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Language" })).not.toBeInTheDocument();
+    const langBtn = await screen.findByRole("button", { name: "Language" });
+    expect(langBtn).toBeInTheDocument();
+    expect(langBtn).toHaveTextContent("En");
     expect(screen.getByRole("link", { name: "Log in" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Sign up" })).toBeInTheDocument();
-    cleanup();
-
-    renderAs(() => sessionOf("USER"));
-    const account = await screen.findByRole("button", { name: "Account menu" });
-    expect(document.querySelector(".locale-switch")).toBeNull();
-    const menu = screen.getByRole("menu", { name: "Account" });
-    const language = within(menu).getByRole("button", { name: "Language" });
-    expect(language).toHaveTextContent("English");
-    expect(within(menu).queryByRole("group", { name: "Language" })).not.toBeInTheDocument();
 
     const user = userEvent.setup();
-    await user.click(account);
-    expect(account).toHaveAttribute("aria-expanded", "true");
-    await user.click(language);
-    await user.click(within(menu).getByRole("option", { name: "中文" }));
-    expect(account).toHaveAttribute("aria-expanded", "true");
-    expect(screen.queryByRole("option", { name: "中文" })).not.toBeInTheDocument();
-    const chineseMenu = screen.getByRole("menu", { name: "用户选项" });
-    expect(within(chineseMenu).getByRole("button", { name: "语言" })).toHaveTextContent("中文");
-    expect(within(chineseMenu).getByRole("button", { name: "退出登录" })).toBeInTheDocument();
+    await user.click(langBtn);
+    expect(screen.getByRole("option", { name: /English/i })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /简体中文/i })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /繁体中文/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("option", { name: /简体中文/i }));
+    expect(langBtn).toHaveTextContent("简");
     expect(localStorage.getItem("voting_locale")).toBe("zh");
+
+    await user.click(langBtn);
+    await user.click(screen.getByRole("option", { name: /繁体中文/i }));
+    expect(langBtn).toHaveTextContent("繁");
+    expect(localStorage.getItem("voting_locale")).toBe("zh-TW");
+
     cleanup();
     localStorage.clear();
-
-    renderAs(() => sessionOf("ADMIN"));
-    const adminMenu = await screen.findByRole("menu", { name: "Account" });
-    const adminLanguage = within(adminMenu).getByRole("button", { name: "Language" });
-    const supervision = within(adminMenu).getByRole("link", { name: "Supervision" });
-    const logout = within(adminMenu).getByRole("button", { name: "Log out" });
-    expect(adminLanguage.compareDocumentPosition(supervision) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(supervision.compareDocumentPosition(logout) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

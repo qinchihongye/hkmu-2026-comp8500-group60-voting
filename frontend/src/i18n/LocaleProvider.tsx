@@ -17,7 +17,7 @@ const LocaleContext = createContext<LocaleContextValue | null>(null);
 function readLocale(): Locale {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "en" || stored === "zh") {
+    if (stored === "en" || stored === "zh" || stored === "zh-TW") {
       return stored;
     }
   } catch {
@@ -30,7 +30,8 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(readLocale);
 
   useEffect(() => {
-    document.documentElement.lang = locale === "zh" ? "zh-Hans" : "en";
+    document.documentElement.lang =
+      locale === "zh" ? "zh-Hans" : locale === "zh-TW" ? "zh-Hant" : "en";
   }, [locale]);
 
   const setLocale = useCallback((next: Locale) => {

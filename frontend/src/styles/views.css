@@ -304,6 +304,35 @@
   margin: 4px 0 8px;
 }
 
+.receipt-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  height: 32px;
+}
+
+.receipt-copy-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+.receipt-copy-btn.copied {
+  background: #d1fae5;
+  border-color: #10b981;
+  color: #065f46;
+}
+
 /* =========================================================
    RESULTS PROGRESS PANELS
    ========================================================= */
@@ -1443,4 +1472,122 @@
 .admin-action-select:focus {
   border-color: #1363df;
   box-shadow: 0 0 0 3px rgba(19, 99, 223, 0.12);
+}
+
+/* =========================================================
+   VOTE RECORD DELETE & MODAL
+   ========================================================= */
+.vote-delete-row-btn {
+  border: 1px solid #fee2e2;
+  background: #fef2f2;
+  color: #ef4444;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vote-delete-row-btn:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.vote-delete-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 1050;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  animation: fadeIn 0.15s ease;
+}
+
+.vote-delete-modal-card {
+  width: 360px;
+  max-width: 92vw;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
+  animation: scaleUp 0.18s ease;
+}
+
+.vote-delete-modal-title {
+  margin: 0 0 10px 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.vote-delete-modal-text {
+  margin: 0 0 8px 0;
+  font-size: 0.95rem;
+  color: #334155;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.vote-delete-modal-hint {
+  margin: 0 0 22px 0;
+  font-size: 0.85rem;
+  color: #059669;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.vote-delete-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.vote-delete-modal-cancel {
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vote-delete-modal-cancel:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.vote-delete-modal-confirm {
+  padding: 7px 18px;
+  border-radius: 8px;
+  border: 1px solid #fca5a5;
+  background: #fee2e2;
+  color: #dc2626;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vote-delete-modal-confirm:hover {
+  background: #fecaca;
+  border-color: #f87171;
+  color: #b91c1c;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }

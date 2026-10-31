@@ -14,13 +14,12 @@ export function PollSortDropdown({ value, onChange }: PollSortDropdownProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const options: Array<{ key: PollSortBy; icon: string; label: string }> = [
-    { key: "popularity", icon: "🔥", label: t("polls.sortPopularity") },
-    { key: "ends_at", icon: "⏳", label: t("polls.sortEndsAt") },
-    { key: "starts_at", icon: "🚀", label: t("polls.sortStartsAt") },
     { key: "created_at", icon: "🆕", label: t("polls.sortCreatedAt") },
+    { key: "ends_at", icon: "⏳", label: t("polls.sortEndsAt") },
+    { key: "popularity", icon: "🔥", label: t("polls.sortPopularity") },
   ];
 
-  const currentOption = options.find((opt) => opt.key === value) ?? options[3];
+  const currentOption = options.find((opt) => opt.key === value) ?? options[0];
 
   useEffect(() => {
     if (!open) return;

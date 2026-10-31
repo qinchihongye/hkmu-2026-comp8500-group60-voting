@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
-import { AuthLocaleMenu } from "../components/AuthLocaleMenu";
+import { LanguageDropdown } from "../components/LanguageDropdown";
 import { useAuth } from "../features/auth/AuthProvider";
 import { useI18n } from "../i18n/LocaleProvider";
 import { GlobalAnnouncementTicker } from "./GlobalAnnouncementTicker";
@@ -328,6 +328,9 @@ export function AppLayout() {
                   ) : null}
                 </div>
 
+                {/* Standalone Language Switcher (En / 简 / 繁) */}
+                <LanguageDropdown />
+
                 {/* User Dropdown Trigger Button */}
                 <div style={{ position: "relative" }} ref={userMenuRef}>
                   <button
@@ -390,11 +393,6 @@ export function AppLayout() {
                     </div>
                   </div>
 
-                  <div className="topbar-dropdown-divider" />
-                  <div className="topbar-dropdown-locale">
-                    <AuthLocaleMenu layout="inline" />
-                  </div>
-
                   {isAdmin ? (
                     <>
                       <div className="topbar-dropdown-divider" />
@@ -449,6 +447,7 @@ export function AppLayout() {
             </div>
             ) : (
               <div className="topbar-auth-links">
+                <LanguageDropdown />
                 <Link to="/login" className="topbar-login-link">
                   {t("nav.logIn")}
                 </Link>

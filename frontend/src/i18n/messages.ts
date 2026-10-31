@@ -1,5 +1,12 @@
+import { toTraditionalChinese } from "./traditional";
+
 export const en = {
-  locale: { group: "Language" },
+  locale: {
+    group: "Language",
+    en: "English",
+    zh: "简体中文",
+    zhTW: "繁体中文",
+  },
   nav: {
     skip: "Skip to content",
     home: "Home",
@@ -36,6 +43,7 @@ export const en = {
     pageOf: "Page {page} of {pages} · {total} polls",
     records: "{total} records",
     events: "{total} events",
+    copy: "Copy",
     copied: "Copied",
     cancel: "Cancel",
     saving: "Saving...",
@@ -255,6 +263,12 @@ export const en = {
     receipt: "Receipt",
     submitted: "Submitted",
     empty: "No named votes yet.",
+    action: "Action",
+    deleteRecord: "Delete",
+    deleteTitle: "Delete Record",
+    deleteConfirm: "Are you sure you want to delete this vote record?",
+    deleteHint: "Only removed from your record list, receipt remains valid",
+    confirmDelete: "Confirm Delete",
   },
   admin: {
     title: "Supervision",
@@ -466,7 +480,12 @@ type StringTree<T> = {
 };
 
 export const zh: StringTree<typeof en> = {
-  locale: { group: "语言" },
+  locale: {
+    group: "语言",
+    en: "English",
+    zh: "简体中文",
+    zhTW: "繁体中文",
+  },
   nav: {
     skip: "跳到主要内容",
     home: "首页",
@@ -503,6 +522,7 @@ export const zh: StringTree<typeof en> = {
     pageOf: "第 {page} / {pages} 页 · 共 {total} 场",
     records: "共 {total} 条记录",
     events: "共 {total} 条",
+    copy: "复制",
     copied: "已复制",
     cancel: "取消",
     saving: "正在保存...",
@@ -722,6 +742,12 @@ export const zh: StringTree<typeof en> = {
     receipt: "回执",
     submitted: "提交时间",
     empty: "还没有记名投票记录。",
+    action: "操作",
+    deleteRecord: "删除记录",
+    deleteTitle: "删除记录",
+    deleteConfirm: "是否删除该条投票记录？",
+    deleteHint: "仅从你的记录列表中移除，回执依然有效",
+    confirmDelete: "确认删除",
   },
   admin: {
     title: "监督",
@@ -931,19 +957,22 @@ type Paths<T, P extends string = ""> = {
 }[keyof T & string];
 
 export type MessageKey = Paths<typeof en>;
-export type Locale = "en" | "zh";
+export type Locale = "en" | "zh" | "zh-TW";
 
 export function translate(locale: Locale, key: MessageKey, vars?: Record<string, string | number>): string {
-  const table = locale === "zh" ? zh : en;
+  const table = locale === "en" ? en : zh;
   const value = key.split(".").reduce<unknown>((node, part) => {
     if (typeof node === "object" && node !== null && part in node) {
       return (node as Record<string, unknown>)[part];
     }
     return undefined;
   }, table);
-  const text = typeof value === "string" ? value : key;
-  if (!vars) {
-    return text;
+  let text = typeof value === "string" ? value : key;
+  if (vars) {
+    text = text.replace(/\{(\w+)\}/g, (_, name: string) => String(vars[name] ?? ""));
   }
-  return text.replace(/\{(\w+)\}/g, (_, name: string) => String(vars[name] ?? ""));
+  if (locale === "zh-TW") {
+    return toTraditionalChinese(text);
+  }
+  return text;
 }
