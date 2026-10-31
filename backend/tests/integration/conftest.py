@@ -37,6 +37,13 @@ APPLICATION_TABLES = frozenset(
         "demo_poll_fixtures",
         "vote_selections",
         "votes",
+        "election_configs",
+        "election_candidates",
+        "voter_identities",
+        "election_registrations",
+        "eligibility_review_events",
+        "election_voter_credentials",
+        "election_ballots",
     }
 )
 

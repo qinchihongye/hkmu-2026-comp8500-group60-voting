@@ -1,0 +1,424 @@
+.election-ballot-page {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 8px 12px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+.ballot-breadcrumb {
+  margin-bottom: 2px;
+}
+
+.back-link {
+  color: #64748b;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+  transition: color 0.15s ease;
+}
+
+.back-link:hover {
+  color: #1363df;
+}
+
+.ballot-booth-card,
+.ballot-receipt-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 18px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 16px -2px rgba(15, 23, 42, 0.06);
+}
+
+.booth-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.official-stamp-pill {
+  align-self: flex-start;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.booth-title {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+
+.booth-subtitle {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.b2-privacy-notice {
+  display: flex;
+  gap: 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 14px 16px;
+  border-radius: 10px;
+}
+
+.notice-shield {
+  font-size: 1.3rem;
+}
+
+.notice-body strong {
+  display: block;
+  font-size: 0.92rem;
+  color: #1e40af;
+  margin-bottom: 2px;
+}
+
+.notice-body p {
+  font-size: 0.84rem;
+  color: #1d4ed8;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.candidate-selection-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.selection-prompt {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.candidate-radio-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.candidate-radio-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.candidate-radio-card:hover {
+  border-color: #93c5fd;
+  background: #f8fafc;
+}
+
+.candidate-radio-card.selected {
+  border-color: #1363df;
+  background: #f0f7ff;
+  box-shadow: 0 0 0 1px #1363df;
+}
+
+.radio-indicator {
+  margin-top: 3px;
+}
+
+.radio-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  color: #1363df;
+  font-size: 0.75rem;
+}
+
+.candidate-radio-card.selected .radio-circle {
+  border-color: #1363df;
+}
+
+.candidate-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.candidate-code-pill {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #64748b;
+  font-family: monospace;
+}
+
+.candidate-card-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.candidate-card-statement {
+  font-size: 0.88rem;
+  color: #475569;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.booth-submit-row {
+  margin-top: 10px;
+}
+
+.btn-cast-ballot {
+  width: 100%;
+  background: #1363df;
+  color: #ffffff;
+  border: none;
+  padding: 14px;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(19, 99, 223, 0.25);
+  transition: all 0.15s ease;
+}
+
+.btn-cast-ballot:hover:not(:disabled) {
+  background: #0f52ba;
+  box-shadow: 0 6px 18px rgba(19, 99, 223, 0.35);
+}
+
+.btn-cast-ballot:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ballot-error-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+
+/* Modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+
+.confirm-modal-box {
+  background: #ffffff;
+  border-radius: 16px;
+  max-width: 440px;
+  width: 100%;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.modal-warning-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.modal-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.modal-desc {
+  font-size: 0.92rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0 0 24px 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.btn-modal-cancel {
+  flex: 1;
+  padding: 11px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.btn-modal-confirm {
+  flex: 1;
+  padding: 11px;
+  border-radius: 8px;
+  border: none;
+  background: #1363df;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+/* Receipt View */
+.receipt-success-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 18px;
+  border-radius: 12px;
+}
+
+.success-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #059669;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.success-text h2 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #065f46;
+  margin: 0 0 2px 0;
+}
+
+.submitted-at-text {
+  font-size: 0.85rem;
+  color: #047857;
+  margin: 0;
+}
+
+.receipt-box-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #f8fafc;
+  padding: 18px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.receipt-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.receipt-id-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.receipt-code {
+  font-family: monospace;
+  font-size: 1rem;
+  color: #0f172a;
+  font-weight: 700;
+  overflow-x: auto;
+}
+
+.copy-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.copy-btn.copied {
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #a7f3d0;
+}
+
+.receipt-hint {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.receipt-actions-row {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-primary {
+  flex: 1;
+  background: #1363df;
+  color: #ffffff;
+  border: none;
+  padding: 11px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  padding: 11px 20px;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}

@@ -17,8 +17,11 @@ class ApiCode(IntEnum):
     RESULTS_NOT_AVAILABLE = 40303
     POLL_PASSWORD_INVALID = 40304
     POLL_ACCESS_REQUIRED = 40305
+    ELECTION_RESULTS_NOT_AVAILABLE = 40306
+    NOT_ELIGIBLE = 40307
     NOT_FOUND = 40400
     POLL_NOT_FOUND = 40401
+    ELECTION_NOT_FOUND = 40402
     METHOD_NOT_ALLOWED = 40500
     ALREADY_VOTED = 40901
     POLL_NOT_OPEN = 40902
@@ -26,10 +29,20 @@ class ApiCode(IntEnum):
     STALE_POLL_VERSION = 40904
     USERNAME_TAKEN = 40905
     POLL_CAPACITY_REACHED = 40906
+    REGISTRATION_NOT_OPEN = 40910
+    ALREADY_REGISTERED = 40911
+    IDENTITY_DOCUMENT_DUPLICATE = 40912
+    ELIGIBILITY_REVIEW_REQUIRED = 40913
+    ROSTER_NOT_FROZEN = 40914
+    ROSTER_ALREADY_FROZEN = 40915
+    PENDING_REVIEWS_EXIST = 40916
+    ELECTION_NOT_OPEN = 40917
+    ELECTION_ALREADY_VOTED = 40918
     UNSUPPORTED_MEDIA_TYPE = 41500
     VALIDATION_ERROR = 42201
     INVALID_OPTION = 42202
     INVALID_SELECTION_COUNT = 42203
+    INVALID_CANDIDATE = 42204
     TOO_MANY_ATTEMPTS = 42901
     INTERNAL_ERROR = 50000
     POLL_PARSE_INVALID_OUTPUT = 50201
@@ -58,8 +71,11 @@ _DEFAULT_MESSAGES: dict[ApiCode, str] = {
     ApiCode.RESULTS_NOT_AVAILABLE: "结果尚未公布",
     ApiCode.POLL_PASSWORD_INVALID: "投票密码错误",
     ApiCode.POLL_ACCESS_REQUIRED: "需要先完成本场访问验证",
+    ApiCode.ELECTION_RESULTS_NOT_AVAILABLE: "当前无法查看候选人票数",
+    ApiCode.NOT_ELIGIBLE: "未获得本场选举投票资格",
     ApiCode.NOT_FOUND: "资源不存在",
     ApiCode.POLL_NOT_FOUND: "投票不存在",
+    ApiCode.ELECTION_NOT_FOUND: "选举不存在",
     ApiCode.METHOD_NOT_ALLOWED: "请求方法不被允许",
     ApiCode.ALREADY_VOTED: "你已参与本次投票",
     ApiCode.POLL_NOT_OPEN: "当前不能参与这次投票",
@@ -67,10 +83,20 @@ _DEFAULT_MESSAGES: dict[ApiCode, str] = {
     ApiCode.STALE_POLL_VERSION: "投票已被其他人更新，请刷新后重试",
     ApiCode.USERNAME_TAKEN: "用户名已被使用",
     ApiCode.POLL_CAPACITY_REACHED: "This poll has reached its ballot limit.",
+    ApiCode.REGISTRATION_NOT_OPEN: "当前不在登记窗口期",
+    ApiCode.ALREADY_REGISTERED: "你已提交过本场选举登记",
+    ApiCode.IDENTITY_DOCUMENT_DUPLICATE: "该证件已绑定其他账户",
+    ApiCode.ELIGIBILITY_REVIEW_REQUIRED: "资格待管理员人工复核",
+    ApiCode.ROSTER_NOT_FROZEN: "选举名册尚未冻结，暂不能投票",
+    ApiCode.ROSTER_ALREADY_FROZEN: "名册已冻结，禁止修改或复核",
+    ApiCode.PENDING_REVIEWS_EXIST: "尚有待复核选民，无法冻结名册",
+    ApiCode.ELECTION_NOT_OPEN: "当前不在投票窗口期",
+    ApiCode.ELECTION_ALREADY_VOTED: "本凭证已完成投票，不可重复投票",
     ApiCode.UNSUPPORTED_MEDIA_TYPE: "不支持的内容类型",
     ApiCode.VALIDATION_ERROR: "请求参数不合法",
     ApiCode.INVALID_OPTION: "选项不属于这次投票",
     ApiCode.INVALID_SELECTION_COUNT: "The number of selected options is not allowed.",
+    ApiCode.INVALID_CANDIDATE: "所选候选人不属于该场选举",
     ApiCode.TOO_MANY_ATTEMPTS: "尝试次数过多，请稍后再试",
     ApiCode.INTERNAL_ERROR: "服务内部错误",
     ApiCode.POLL_PARSE_INVALID_OUTPUT: "Poll text recognition returned an unusable result.",

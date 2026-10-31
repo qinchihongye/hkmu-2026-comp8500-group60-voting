@@ -11,6 +11,7 @@ from src.main.python.algorithms.audit_module.audit_service import AuditService
 from src.main.python.algorithms.poll_module.poll_service import effective_status
 from src.main.python.config.logger_config import get_logger, request_id_var
 from src.main.python.constants.enums import (
+    ActivityType,
     AuditAction,
     IdentityMode,
     PollLifecycle,
@@ -92,7 +93,11 @@ class VoteService:
         """
         with self._factory() as session:
             try:
-                poll = session.scalar(select(Poll).where(Poll.id == poll_id).with_for_update())
+                poll = session.scalar(
+                    select(Poll)
+                    .where(Poll.id == poll_id, Poll.activity_type == ActivityType.POLL)
+                    .with_for_update()
+                )
                 if poll is None or poll.lifecycle == PollLifecycle.DRAFT:
                     raise _missing()
                 now = self._clock.now()
@@ -163,6 +168,7 @@ class VoteService:
         clauses = [
             Vote.voter_id == principal.user_id,
             Vote.identity_mode == IdentityMode.NAMED,
+            Poll.activity_type == ActivityType.POLL,
             _history_visible(context, now),
         ]
         with self._factory() as session:

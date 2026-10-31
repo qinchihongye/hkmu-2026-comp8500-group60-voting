@@ -13,6 +13,57 @@ class UserRole(StrEnum):
     ADMIN = "ADMIN"
 
 
+class ActivityType(StrEnum):
+    """活动类型：普通投票或选举。"""
+
+    POLL = "POLL"
+    ELECTION = "ELECTION"
+
+
+class ElectionPhase(StrEnum):
+    """选举对外展示的细分有效阶段。"""
+
+    DRAFT = "DRAFT"
+    REGISTRATION_SCHEDULED = "REGISTRATION_SCHEDULED"
+    REGISTRATION_OPEN = "REGISTRATION_OPEN"
+    REVIEWING = "REVIEWING"
+    VOTING_SCHEDULED = "VOTING_SCHEDULED"
+    VOTING_OPEN = "VOTING_OPEN"
+    CLOSED = "CLOSED"
+
+
+class DocumentType(StrEnum):
+    """选民证件类型。"""
+
+    RESIDENT_ID = "RESIDENT_ID"
+    HK_MACAU_PERMIT = "HK_MACAU_PERMIT"
+    STUDENT_ID = "STUDENT_ID"
+
+
+class RegistrationStatus(StrEnum):
+    """选民登记审核状态。"""
+
+    PENDING = "PENDING"
+    NEEDS_REVIEW = "NEEDS_REVIEW"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+
+
+class CredentialStatus(StrEnum):
+    """内部一次性凭证状态。"""
+
+    ISSUED = "ISSUED"
+    CONSUMED = "CONSUMED"
+
+
+class ReviewActorType(StrEnum):
+    """审核主体。"""
+
+    MODEL = "MODEL"
+    ADMIN = "ADMIN"
+    SYSTEM = "SYSTEM"
+
+
 class IdentityMode(StrEnum):
     """记名方式。"""
 
@@ -59,3 +110,4 @@ class AuditAction(StrEnum):
     PUBLISH = "PUBLISH"
     CLOSE = "CLOSE"
     VOTE_NAMED = "VOTE_NAMED"
+    FREEZE_ROSTER = "FREEZE_ROSTER"

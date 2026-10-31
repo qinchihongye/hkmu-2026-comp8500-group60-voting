@@ -1,0 +1,78 @@
+.election-phase-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+}
+
+.phase-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.badge-draft {
+  background: #f1f5f9;
+  color: #475569;
+}
+.badge-draft .phase-dot {
+  background: #94a3b8;
+}
+
+.badge-reg-sched {
+  background: #fffbeb;
+  color: #b45309;
+}
+.badge-reg-sched .phase-dot {
+  background: #f59e0b;
+}
+
+.badge-reg-open {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.badge-reg-open .phase-dot {
+  background: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.badge-reviewing {
+  background: #faf5ff;
+  color: #7e22ce;
+}
+.badge-reviewing .phase-dot {
+  background: #a855f7;
+}
+
+.badge-vote-sched {
+  background: #fefce8;
+  color: #a16207;
+}
+.badge-vote-sched .phase-dot {
+  background: #eab308;
+}
+
+.badge-vote-open {
+  background: #ecfdf5;
+  color: #047857;
+}
+.badge-vote-open .phase-dot {
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+}
+
+.badge-closed {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+.badge-closed .phase-dot {
+  background: #94a3b8;
+}
+

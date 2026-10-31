@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from src.main.python.fileds.response.vote_response import VoteReceipt
 
@@ -90,6 +90,7 @@ class PollDetail(PollSummary):
         passcode_entry_path: 密码页路径。不含访问密码；不需要时为空。
     """
 
+    ballot_count: int | None = Field(default=None, exclude=True)
     description: str | None
     options: list[OptionPublic]
     has_voted: bool

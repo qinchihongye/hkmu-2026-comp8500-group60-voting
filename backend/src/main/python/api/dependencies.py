@@ -7,6 +7,15 @@ from src.main.python.algorithms.demo_module.demo_catalog_service import (
     DemoCatalogService,
     DemoListFilters,
 )
+from src.main.python.algorithms.election_module.election_ballot_service import (
+    ElectionBallotService,
+)
+from src.main.python.algorithms.election_module.election_result_service import (
+    ElectionResultService,
+)
+from src.main.python.algorithms.election_module.election_service import ElectionService
+from src.main.python.algorithms.election_module.eligibility_service import EligibilityService
+from src.main.python.algorithms.election_module.roster_service import RosterService
 from src.main.python.algorithms.guest_module.guest_service import GuestService
 from src.main.python.algorithms.poll_access_module.poll_access_service import PollAccessService
 from src.main.python.algorithms.poll_import_module.poll_text_parse_service import (
@@ -161,6 +170,14 @@ def require_auth_csrf(request: Request) -> Principal:
     return active.principal
 
 
+def require_admin_csrf(request: Request) -> Principal:
+    """要求有效管理员会话并核对 CSRF。"""
+    principal = require_auth_csrf(request)
+    if principal.role != UserRole.ADMIN:
+        raise AppError(403, ApiCode.FORBIDDEN, ApiCode.FORBIDDEN.default_message)
+    return principal
+
+
 def poll_text_parse_service_for(request: Request) -> PollTextParseService:
     """按当前应用状态构造文字识别服务。
 
@@ -295,3 +312,47 @@ def demo_catalog_service_for(request: Request) -> DemoCatalogService:
         request.app.state.clock,
         settings.demo_polls_enabled,
     )
+
+
+def election_service_for(request: Request) -> ElectionService:
+    """Build election domain service from current application state."""
+    return ElectionService(
+        request.app.state.session_factory,
+        request.app.state.clock,
+    )
+
+
+def eligibility_service_for(request: Request) -> EligibilityService:
+    """Build voter eligibility service from current application state."""
+    settings: Settings = request.app.state.settings
+    return EligibilityService(
+        request.app.state.session_factory,
+        request.app.state.clock,
+        settings.identity_fingerprint_hmac_key,
+    )
+
+
+def roster_service_for(request: Request) -> RosterService:
+    """Build roster service from current application state."""
+    return RosterService(
+        request.app.state.session_factory,
+        request.app.state.clock,
+    )
+
+
+def election_ballot_service_for(request: Request) -> ElectionBallotService:
+    """Build election ballot service from current application state."""
+    return ElectionBallotService(
+        request.app.state.session_factory,
+        request.app.state.clock,
+    )
+
+
+def election_result_service_for(request: Request) -> ElectionResultService:
+    """Build election result service from current application state."""
+    return ElectionResultService(
+        request.app.state.session_factory,
+        request.app.state.clock,
+    )
+
+

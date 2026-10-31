@@ -10,7 +10,13 @@ from sqlalchemy.orm import Session, sessionmaker
 from src.main.python.algorithms.poll_module.poll_service import effective_status, results_access
 from src.main.python.config.logger_config import get_logger
 from src.main.python.config.server_config import Settings
-from src.main.python.constants.enums import IdentityMode, PollLifecycle, PollStatus, Visibility
+from src.main.python.constants.enums import (
+    ActivityType,
+    IdentityMode,
+    PollLifecycle,
+    PollStatus,
+    Visibility,
+)
 from src.main.python.constants.error_codes import ApiCode
 from src.main.python.database.models import DemoPollFixture, Poll, PollAccessGrant, PollOption, Vote
 from src.main.python.fileds.context import GuestContext, PollAccessContext, Principal
@@ -82,7 +88,12 @@ class PollAccessService:
         """
         with self._factory() as session:
             try:
-                poll = session.scalar(select(Poll).where(Poll.share_code == share_code))
+                poll = session.scalar(
+                    select(Poll).where(
+                        Poll.share_code == share_code,
+                        Poll.activity_type == ActivityType.POLL,
+                    )
+                )
             except SQLAlchemyError:
                 raise _unavailable() from None
             if poll is None or poll.lifecycle not in {
@@ -126,7 +137,11 @@ class PollAccessService:
             raise _gate(429, ApiCode.TOO_MANY_ATTEMPTS, blocked)
         with self._factory() as session:
             try:
-                poll = session.scalar(select(Poll).where(Poll.id == poll_id).with_for_update())
+                poll = session.scalar(
+                    select(Poll)
+                    .where(Poll.id == poll_id, Poll.activity_type == ActivityType.POLL)
+                    .with_for_update()
+                )
                 if not _can_unlock(poll):
                     raise _missing()
                 if poll.visibility != Visibility.PRIVATE:
@@ -177,7 +192,9 @@ class PollAccessService:
         with self._factory() as session:
             try:
                 poll = session.scalar(
-                    select(Poll).where(Poll.id == poll_id).with_for_update(read=True)
+                    select(Poll)
+                    .where(Poll.id == poll_id, Poll.activity_type == ActivityType.POLL)
+                    .with_for_update(read=True)
                 )
                 if poll is None or poll.lifecycle == PollLifecycle.DRAFT:
                     raise _missing()

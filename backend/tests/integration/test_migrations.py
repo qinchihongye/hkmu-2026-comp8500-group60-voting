@@ -12,6 +12,7 @@ from tests.integration.conftest import (
     assert_safe_test_database,
     database_pair,
     downgrade_base,
+    truncate_application_tables,
     upgrade_head,
 )
 
@@ -65,6 +66,7 @@ def test_empty_database_upgrades_downgrades_and_returns_to_head(
     """空库可以升到头部，降回初始结构后再升回去。"""
     test_url, dev_url = database_targets
     assert_safe_test_database(test_url, dev_url)
+    truncate_application_tables(migrated_engine)
     _assert_schema(migrated_engine)
     try:
         downgrade_base(test_url, dev_url)
@@ -104,7 +106,83 @@ def _assert_schema(engine: Engine) -> None:
     assert columns["demo_fixture_users"] == {"fixture_key", "user_id"}
     assert "vote_limit" in columns["polls"]
     assert "selection_mode" in columns["polls"]
+    assert "activity_type" in columns["polls"]
+    assert columns["election_configs"] == {
+        "poll_id",
+        "registration_starts_at",
+        "registration_ends_at",
+        "roster_frozen_at",
+        "eligible_voter_count",
+        "created_at",
+        "updated_at",
+    }
+    assert columns["election_candidates"] == {
+        "poll_option_id",
+        "poll_id",
+        "candidate_code",
+        "statement",
+        "created_at",
+    }
+    assert columns["voter_identities"] == {
+        "id",
+        "user_id",
+        "version",
+        "document_type",
+        "issuer",
+        "document_fingerprint",
+        "document_suffix",
+        "fingerprint_key_version",
+        "created_at",
+        "updated_at",
+    }
+    assert columns["election_registrations"] == {
+        "id",
+        "poll_id",
+        "user_id",
+        "identity_id",
+        "legal_name_snapshot",
+        "status",
+        "model_score",
+        "model_reason_codes",
+        "model_version",
+        "reviewed_by",
+        "reviewed_at",
+        "submitted_at",
+        "updated_at",
+    }
+    assert columns["eligibility_review_events"] == {
+        "id",
+        "registration_id",
+        "actor_type",
+        "actor_id",
+        "from_status",
+        "to_status",
+        "score",
+        "reason_codes",
+        "model_version",
+        "review_note",
+        "request_id",
+        "created_at",
+    }
+    assert columns["election_voter_credentials"] == {
+        "id",
+        "poll_id",
+        "registration_id",
+        "status",
+        "issued_at",
+        "consumed_at",
+    }
+    assert columns["election_ballots"] == {
+        "id",
+        "receipt_id",
+        "poll_id",
+        "candidate_option_id",
+        "submitted_at",
+    }
     assert "user_id" not in columns["guest_sessions"]
+    assert "user_id" not in columns["election_ballots"]
+    assert "registration_id" not in columns["election_ballots"]
+    assert "credential_id" not in columns["election_ballots"]
     assert _nullable(engine, "audit_events", "receipt_id") == "YES"
     assert _nullable(engine, "votes", "receipt_id") == "NO"
     assert _audit_foreign_tables(engine) == {"polls", "users"}
@@ -115,6 +193,17 @@ def _assert_schema(engine: Engine) -> None:
     assert delete_actions["fk_votes_poll_mode"] == "r"
     assert delete_actions["fk_demo_poll_fixtures_poll_id_polls"] == "r"
     assert delete_actions["fk_demo_fixture_users_user_id_users"] == "r"
+    assert delete_actions["fk_election_configs_poll_id_polls"] == "r"
+    assert delete_actions["fk_election_candidates_option_poll"] == "r"
+    assert delete_actions["fk_voter_identities_user_id_users"] == "r"
+    assert delete_actions["fk_election_registrations_poll_id_polls"] == "r"
+    assert delete_actions["fk_election_registrations_user_id_users"] == "r"
+    assert delete_actions["fk_election_registrations_user_identity"] == "r"
+    assert delete_actions["fk_election_registrations_reviewed_by_users"] == "r"
+    assert delete_actions["fk_eligibility_review_events_reg_id"] == "r"
+    assert delete_actions["fk_eligibility_review_events_actor_id_users"] == "r"
+    assert delete_actions["fk_election_voter_credentials_reg"] == "r"
+    assert delete_actions["fk_election_ballots_candidate"] == "r"
     assert set(delete_actions.values()) == {"r"}
 
     indexes = _index_definitions(engine)
@@ -122,8 +211,15 @@ def _assert_schema(engine: Engine) -> None:
     assert "NAMED" in indexes["uq_votes_named_poll_voter"]
     assert "UNIQUE" in indexes["uq_votes_anon_poll_browser"]
     assert "ANONYMOUS" in indexes["uq_votes_anon_poll_browser"]
+    assert "ix_polls_activity_lifecycle_starts" in indexes
+    assert "ix_election_registrations_poll_status_sub" in indexes
+    assert "ix_eligibility_review_events_reg_created" in indexes
+    assert "ix_election_voter_credentials_poll_status" in indexes
+    assert "ix_election_ballots_poll_submitted" in indexes
+    assert "ix_election_ballots_poll_candidate" in indexes
     assert _constraint_names(engine) >= {
         "ck_audit_events_action",
+        "ck_polls_activity_type",
         "ck_polls_time_window",
         "ck_polls_visibility_password",
         "ck_polls_selection_mode",
@@ -137,6 +233,39 @@ def _assert_schema(engine: Engine) -> None:
         "uq_poll_options_poll_id_position",
         "uq_polls_id_identity_mode",
         "uq_votes_poll_id_id",
+        "ck_election_configs_reg_window",
+        "ck_election_configs_freeze",
+        "fk_election_configs_poll_id_polls",
+        "fk_election_candidates_option_poll",
+        "uq_election_candidates_poll_option",
+        "uq_election_candidates_poll_code",
+        "fk_voter_identities_user_id_users",
+        "uq_voter_identities_fingerprint",
+        "uq_voter_identities_user_version",
+        "uq_voter_identities_user_id",
+        "ck_voter_identities_doc_type",
+        "ck_voter_identities_version",
+        "fk_election_registrations_poll_id_polls",
+        "fk_election_registrations_user_id_users",
+        "fk_election_registrations_user_identity",
+        "fk_election_registrations_reviewed_by_users",
+        "uq_election_registrations_poll_user",
+        "uq_election_registrations_poll_id",
+        "ck_election_registrations_status",
+        "ck_election_registrations_score",
+        "ck_election_registrations_review_meta",
+        "fk_eligibility_review_events_reg_id",
+        "fk_eligibility_review_events_actor_id_users",
+        "ck_eligibility_review_events_actor_type",
+        "ck_eligibility_review_events_to_status",
+        "ck_eligibility_review_events_actor",
+        "ck_eligibility_review_events_score",
+        "fk_election_voter_credentials_reg",
+        "uq_election_voter_credentials_poll_reg",
+        "ck_election_credentials_status_val",
+        "ck_election_credentials_status",
+        "uq_election_ballots_receipt_id",
+        "fk_election_ballots_candidate",
     }
     assert "ix_votes_option_id" not in indexes
     assert "fk_votes_poll_option" not in delete_actions

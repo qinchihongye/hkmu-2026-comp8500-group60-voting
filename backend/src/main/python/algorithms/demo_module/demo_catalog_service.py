@@ -3,10 +3,11 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.main.python.algorithms.poll_module.poll_service import effective_status
+from src.main.python.constants.enums import ActivityType
 from src.main.python.constants.error_codes import ApiCode
 from src.main.python.database.models import DemoPollFixture, Poll, Vote
 from src.main.python.fileds.response.demo_response import DemoPollSummary
@@ -122,7 +123,7 @@ def _count(clauses: list[object]) -> object:
         计数语句。
     """
     statement = select(func.count()).select_from(DemoPollFixture).join(
-        Poll, Poll.id == DemoPollFixture.poll_id
+        Poll, and_(Poll.id == DemoPollFixture.poll_id, Poll.activity_type == ActivityType.POLL)
     )
     if clauses:
         statement = statement.where(*clauses)
@@ -141,7 +142,13 @@ def _page(clauses: list[object], filters: DemoListFilters) -> object:
     """
     statement = (
         select(DemoPollFixture, Poll)
-        .join(Poll, Poll.id == DemoPollFixture.poll_id)
+        .join(
+            Poll,
+            and_(
+                Poll.id == DemoPollFixture.poll_id,
+                Poll.activity_type == ActivityType.POLL,
+            ),
+        )
         .order_by(DemoPollFixture.display_order.asc())
     )
     if clauses:

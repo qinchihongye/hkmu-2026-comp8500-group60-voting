@@ -51,6 +51,7 @@ class Settings(BaseSettings):
     poll_access_ttl_minutes: int = 60
     cookie_secure: bool = False
     anon_voter_hmac_key: str = ""
+    identity_fingerprint_hmac_key: str = Field(default="", alias="IDENTITY_FINGERPRINT_HMAC_KEY")
     poll_text_parse_enabled: bool = False
     openai_api_key: str = ""
     openai_base_url: str = ""
@@ -95,6 +96,24 @@ class Settings(BaseSettings):
             return value
         if len(value.encode("utf-8")) < 32:
             raise ValueError("ANON_VOTER_HMAC_KEY 至少需要 32 字节")
+        return value
+
+    @field_validator("identity_fingerprint_hmac_key")
+    @classmethod
+    def check_identity_fingerprint_hmac_key(cls, value: str) -> str:
+        """检查选民身份指纹密钥。必填且至少 32 字节。
+
+        Args:
+            value: 环境中的密钥字符串。
+
+        Returns:
+            通过检查的原字符串。
+
+        Raises:
+            ValueError: 密钥为空或不足 32 字节。
+        """
+        if not value or len(value.encode("utf-8")) < 32:
+            raise ValueError("IDENTITY_FINGERPRINT_HMAC_KEY 必填且至少需要 32 字节")
         return value
 
     @field_validator("poll_text_parse_thinking")
@@ -160,17 +179,23 @@ class Settings(BaseSettings):
         return text
 
     @model_validator(mode="after")
-    def database_urls_differ(self) -> "Settings":
-        """拒绝开发库与测试库使用同一连接串。
+    def validate_settings(self) -> "Settings":
+        """拒绝开发库与测试库使用同一连接串，拒绝身份密钥与匿名密钥复用。
 
         Returns:
             当前配置对象。
 
         Raises:
-            ValueError: 两个数据库连接串相同。
+            ValueError: 两个数据库连接串相同，或密钥复用。
         """
         if self.database_url == self.test_database_url:
             raise ValueError("TEST_DATABASE_URL 必须与 DATABASE_URL 不同")
+        if (
+            self.anon_voter_hmac_key
+            and self.identity_fingerprint_hmac_key
+            and self.identity_fingerprint_hmac_key == self.anon_voter_hmac_key
+        ):
+            raise ValueError("IDENTITY_FINGERPRINT_HMAC_KEY 不能与 ANON_VOTER_HMAC_KEY 相同")
         return self
 
 

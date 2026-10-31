@@ -25,7 +25,7 @@ class AuditEvent(Base):
     __tablename__ = "audit_events"
     __table_args__ = (
         CheckConstraint(
-            "action IN ('CREATE', 'UPDATE', 'PUBLISH', 'CLOSE', 'VOTE_NAMED')",
+            "action IN ('CREATE', 'UPDATE', 'PUBLISH', 'CLOSE', 'VOTE_NAMED', 'FREEZE_ROSTER')",
             name="ck_audit_events_action",
         ),
         Index("ix_audit_events_actor_id", "actor_id"),

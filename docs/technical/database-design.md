@@ -44,6 +44,13 @@
   | poll_options | 投票选项及排序 | id |
   | votes | 一次提交的一份父选票、身份去重信息和回执 | id |
   | vote_selections | 选票选择明细，支持一票多选 | vote_id, option_id |
+  | election_configs | 选举配置：登记窗口、名册冻结与合资格人数 | poll_id |
+  | election_candidates | 选举候选人拓展表：候选人代号与政纲 | poll_option_id |
+  | voter_identities | 选民不可变证件版本（加盐 HMAC 指纹，不存明文号码） | id |
+  | election_registrations | 选民登记快照、模型评分与审核结果 | id |
+  | eligibility_review_events | 资格审核不可变事件流（只追加不更新） | id |
+  | election_voter_credentials | 内部一次性投票资格凭证（ISSUED -> CONSUMED 单向） | id |
+  | election_ballots | 匿名选举选票（彻底分离：无 user_id、无凭据 ID、无外键关联身份） | id |
   | alembic_version | 记录已应用迁移版本 | version_num |
 
 ## 字段与建表语句

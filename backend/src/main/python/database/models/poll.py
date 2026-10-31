@@ -52,6 +52,10 @@ class Poll(Base):
         CheckConstraint("identity_mode IN ('NAMED', 'ANONYMOUS')", name="ck_polls_identity_mode"),
         CheckConstraint("visibility IN ('PUBLIC', 'PRIVATE')", name="ck_polls_visibility"),
         CheckConstraint(
+            "activity_type IN ('POLL', 'ELECTION')",
+            name="ck_polls_activity_type",
+        ),
+        CheckConstraint(
             "lifecycle IN ('DRAFT', 'PUBLISHED', 'CLOSED')",
             name="ck_polls_lifecycle",
         ),
@@ -79,9 +83,13 @@ class Poll(Base):
             name="ck_polls_selection_mode",
         ),
         Index("ix_polls_creator_id", "creator_id"),
+        Index("ix_polls_activity_lifecycle_starts", "activity_type", "lifecycle", "starts_at"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    activity_type: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="POLL", server_default="POLL"
+    )
     title: Mapped[str] = mapped_column(String(120), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     identity_mode: Mapped[str] = mapped_column(String(16), nullable=False)

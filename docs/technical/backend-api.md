@@ -49,6 +49,21 @@
   | GET | /api/v1/admin/polls/{poll_id} | 账户 Cookie + ADMIN | ManagePollDetail | 200 |
   | GET | /api/v1/admin/audit-events | 账户 Cookie + ADMIN | Page_AuditEventPublic_ | 200 |
   | GET | /api/v1/demo-polls | 账户 Cookie | Page_DemoPollSummary_ | 200 |
+  | GET | /api/v1/elections | 无 | Page_ElectionSummary_ | 200 |
+  | GET | /api/v1/elections/{election_id} | 无 | ElectionDetail | 200 |
+  | POST | /api/v1/elections/{election_id}/registrations | Origin + 账户 CSRF | VoterRegistrationSummary | 201 |
+  | GET | /api/v1/me/election-registrations | 账户 Cookie | Page_VoterRegistrationSummary_ | 200 |
+  | POST | /api/v1/elections/{election_id}/ballots | Origin + 账户 CSRF | BallotReceiptResponse | 201 |
+  | GET | /api/v1/elections/{election_id}/results | 按实时结果权限矩阵 | ElectionResultResponse | 200 |
+  | GET | /api/v1/admin/elections | 账户 Cookie + ADMIN | Page_ElectionSummary_ | 200 |
+  | GET | /api/v1/admin/elections/{election_id} | 账户 Cookie + ADMIN | ElectionDetail | 200 |
+  | POST | /api/v1/admin/elections | Origin + 账户 CSRF + ADMIN | ElectionDetail | 201 |
+  | PATCH | /api/v1/admin/elections/{election_id} | Origin + 账户 CSRF + ADMIN | ElectionDetail | 200 |
+  | POST | /api/v1/admin/elections/{election_id}/publish | Origin + 账户 CSRF + ADMIN | ElectionDetail | 200 |
+  | POST | /api/v1/admin/elections/{election_id}/freeze-roster | Origin + 账户 CSRF + ADMIN | RosterFreezeResponse | 200 |
+  | POST | /api/v1/admin/elections/{election_id}/close | Origin + 账户 CSRF + ADMIN | ElectionDetail | 200 |
+  | GET | /api/v1/admin/elections/{election_id}/registrations | 账户 Cookie + ADMIN | Page_VoterRegistrationSummary_ | 200 |
+  | POST | /api/v1/admin/elections/{election_id}/registrations/{reg_id}/review | Origin + 账户 CSRF + ADMIN | VoterRegistrationSummary | 200 |
 
 ## 请求与响应公共约定
 

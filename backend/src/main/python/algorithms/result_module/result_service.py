@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from src.main.python.algorithms.poll_module.poll_service import effective_status, results_access
 from src.main.python.config.logger_config import get_logger
 from src.main.python.constants.enums import (
+    ActivityType,
     IdentityMode,
     PollLifecycle,
     PollStatus,
@@ -62,7 +63,9 @@ class ResultService:
         with self._factory() as session:
             try:
                 poll = session.scalar(
-                    select(Poll).where(Poll.id == poll_id).with_for_update(read=True)
+                    select(Poll)
+                    .where(Poll.id == poll_id, Poll.activity_type == ActivityType.POLL)
+                    .with_for_update(read=True)
                 )
                 if poll is None or poll.lifecycle == PollLifecycle.DRAFT:
                     raise _missing()

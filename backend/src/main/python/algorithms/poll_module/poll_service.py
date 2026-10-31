@@ -3,13 +3,14 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import Select, and_, case, func, or_, select
+from sqlalchemy import Select, and_, func, or_, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.main.python.algorithms.audit_module.audit_service import AuditService
 from src.main.python.config.logger_config import get_logger, request_id_var
 from src.main.python.constants.enums import (
+    ActivityType,
     AuditAction,
     IdentityMode,
     PollLifecycle,
@@ -153,6 +154,7 @@ class PollService:
         with self._factory() as session:
             try:
                 poll = Poll(
+                    activity_type=ActivityType.POLL.value,
                     title=payload.title,
                     description=payload.description,
                     identity_mode=payload.identity_mode.value,
@@ -392,6 +394,7 @@ class PollService:
             AppError: 搜索过长或数据库不可用。
         """
         clauses = [
+            Poll.activity_type == ActivityType.POLL,
             Poll.visibility == Visibility.PUBLIC,
             Poll.lifecycle != PollLifecycle.DRAFT,
         ]
@@ -414,7 +417,11 @@ class PollService:
         Raises:
             AppError: 搜索过长或数据库不可用。
         """
-        return self._page([Poll.creator_id == principal.user_id], filters, _manage_summary)
+        return self._page(
+            [Poll.activity_type == ActivityType.POLL, Poll.creator_id == principal.user_id],
+            filters,
+            _manage_summary,
+        )
 
     def get_owned(self, principal: Principal, poll_id: int) -> ManagePollDetail:
         """读取自己的一场投票。别人的投票按不存在处理。
@@ -434,7 +441,11 @@ class PollService:
                 poll = session.get(Poll, poll_id)
             except SQLAlchemyError:
                 raise _unavailable() from None
-            if poll is None or poll.creator_id != principal.user_id:
+            if (
+                poll is None
+                or poll.activity_type != ActivityType.POLL
+                or poll.creator_id != principal.user_id
+            ):
                 raise _missing()
             return _manage_detail(session, poll, self._clock.now(), principal)
 
@@ -456,7 +467,7 @@ class PollService:
             AppError: 不是管理员，或数据库不可用。
         """
         _require_admin(principal)
-        return self._page([], filters, _manage_summary)
+        return self._page([Poll.activity_type == ActivityType.POLL], filters, _manage_summary)
 
     def get_admin(self, principal: Principal, poll_id: int) -> ManagePollDetail:
         """读取任意一场投票的管理详情。写权限仍然只看创建者。
@@ -477,7 +488,7 @@ class PollService:
                 poll = session.get(Poll, poll_id)
             except SQLAlchemyError:
                 raise _unavailable() from None
-            if poll is None:
+            if poll is None or poll.activity_type != ActivityType.POLL:
                 raise _missing()
             return _manage_detail(session, poll, self._clock.now(), principal)
 
@@ -499,7 +510,11 @@ class PollService:
                 poll = session.get(Poll, poll_id)
             except SQLAlchemyError:
                 raise _unavailable() from None
-            if poll is None or poll.creator_id != principal.user_id:
+            if (
+                poll is None
+                or poll.activity_type != ActivityType.POLL
+                or poll.creator_id != principal.user_id
+            ):
                 raise _missing()
             _require_shareable(poll)
             return _share_link(self._public_base_url, poll)
@@ -673,7 +688,11 @@ def _lock_owned(session: Session, principal: Principal, poll_id: int) -> Poll:
     Raises:
         AppError: 投票不存在，或调用者不是创建者。
     """
-    poll = session.scalar(select(Poll).where(Poll.id == poll_id).with_for_update())
+    poll = session.scalar(
+        select(Poll)
+        .where(Poll.id == poll_id, Poll.activity_type == ActivityType.POLL)
+        .with_for_update()
+    )
     if poll is None:
         raise _missing()
     if poll.creator_id != principal.user_id:

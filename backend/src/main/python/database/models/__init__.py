@@ -4,6 +4,15 @@ from src.main.python.database.models.access_grant import PollAccessGrant
 from src.main.python.database.models.audit import AuditEvent
 from src.main.python.database.models.base import Base
 from src.main.python.database.models.demo_fixture import DemoFixtureUser, DemoPollFixture
+from src.main.python.database.models.election import (
+    ElectionBallot,
+    ElectionCandidate,
+    ElectionConfig,
+    ElectionRegistration,
+    ElectionVoterCredential,
+    EligibilityReviewEvent,
+    VoterIdentity,
+)
 from src.main.python.database.models.guest import GuestSession
 from src.main.python.database.models.poll import Poll, PollOption
 from src.main.python.database.models.session import AuthSession
@@ -17,6 +26,12 @@ __all__ = [
     "Base",
     "DemoFixtureUser",
     "DemoPollFixture",
+    "ElectionBallot",
+    "ElectionCandidate",
+    "ElectionConfig",
+    "ElectionRegistration",
+    "ElectionVoterCredential",
+    "EligibilityReviewEvent",
     "GuestSession",
     "Poll",
     "PollAccessGrant",
@@ -24,4 +39,5 @@ __all__ = [
     "User",
     "Vote",
     "VoteSelection",
+    "VoterIdentity",
 ]

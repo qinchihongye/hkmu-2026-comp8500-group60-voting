@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from src.main.python.algorithms.poll_module.poll_service import _assign_share_code
 from src.main.python.config.logger_config import get_logger
 from src.main.python.constants.enums import (
+    ActivityType,
     IdentityMode,
     PollLifecycle,
     SelectionMode,
@@ -774,6 +775,7 @@ def _insert_demo_poll(
     start = anchor + timedelta(hours=spec.start_offset_hours)
     end = anchor + timedelta(hours=spec.end_offset_hours)
     poll = Poll(
+        activity_type=ActivityType.POLL.value,
         title=spec.title,
         description=spec.description,
         identity_mode=spec.identity_mode,

@@ -46,6 +46,7 @@ def build_settings(**overrides: object) -> Settings:
         "public_base_url": "http://localhost:5173",
         "cookie_secure": False,
         "anon_voter_hmac_key": "k" * 32,
+        "identity_fingerprint_hmac_key": "i" * 32,
         "poll_text_parse_enabled": False,
         "openai_api_key": "",
         "openai_base_url": "",

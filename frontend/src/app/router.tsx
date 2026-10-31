@@ -3,11 +3,21 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { RequireAuth } from "../features/auth/RequireAuth";
 import { AppLayout } from "../layouts/AppLayout";
 import { AdminAuditPage } from "../pages/AdminAuditPage";
+import { AdminElectionCreatePage } from "../pages/AdminElectionCreatePage";
+import { AdminElectionDetailPage } from "../pages/AdminElectionDetailPage";
+import { AdminElectionRegistrationsPage } from "../pages/AdminElectionRegistrationsPage";
+import { AdminElectionsPage } from "../pages/AdminElectionsPage";
 import { AdminPollDetailPage } from "../pages/AdminPollDetailPage";
 import { AdminPollsPage } from "../pages/AdminPollsPage";
 import { DashboardPage } from "../pages/DashboardPage";
+import { ElectionBallotPage } from "../pages/ElectionBallotPage";
+import { ElectionDetailPage } from "../pages/ElectionDetailPage";
+import { ElectionRegisterPage } from "../pages/ElectionRegisterPage";
+import { ElectionResultPage } from "../pages/ElectionResultPage";
+import { ElectionsPage } from "../pages/ElectionsPage";
 import { ForbiddenPage } from "../pages/ForbiddenPage";
 import { LoginPage } from "../pages/LoginPage";
+import { MyElectionRegistrationsPage } from "../pages/MyElectionRegistrationsPage";
 import { MyPollsPage } from "../pages/MyPollsPage";
 import { MyVotesPage } from "../pages/MyVotesPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
@@ -33,6 +43,12 @@ export function AppRouter() {
         <Route path="/s/:shareCode" element={<ShareEntryPage />} />
         <Route path="/s/:shareCode/access" element={<PollAccessPage />} />
         <Route path="/s/:shareCode/results" element={<PollResultPage />} />
+        <Route path="/elections" element={<ElectionsPage />} />
+        <Route path="/elections/:id" element={<ElectionDetailPage />} />
+        <Route path="/elections/:id/register" element={<RequireAuth><ElectionRegisterPage /></RequireAuth>} />
+        <Route path="/elections/:id/vote" element={<RequireAuth><ElectionBallotPage /></RequireAuth>} />
+        <Route path="/elections/:id/results" element={<ElectionResultPage />} />
+        <Route path="/my-election-registrations" element={<RequireAuth><MyElectionRegistrationsPage /></RequireAuth>} />
         <Route path="/my-polls" element={<RequireAuth><MyPollsPage /></RequireAuth>} />
         <Route path="/my-polls/new" element={<RequireAuth><PollEditPage /></RequireAuth>} />
         <Route path="/my-polls/:id" element={<RequireAuth><PollWorkspacePage /></RequireAuth>} />
@@ -40,6 +56,10 @@ export function AppRouter() {
         <Route path="/my-votes" element={<RequireAuth><MyVotesPage /></RequireAuth>} />
         <Route path="/admin/polls" element={<RequireAuth role="ADMIN"><AdminPollsPage /></RequireAuth>} />
         <Route path="/admin/polls/:id" element={<RequireAuth role="ADMIN"><AdminPollDetailPage /></RequireAuth>} />
+        <Route path="/admin/elections" element={<RequireAuth role="ADMIN"><AdminElectionsPage /></RequireAuth>} />
+        <Route path="/admin/elections/new" element={<RequireAuth role="ADMIN"><AdminElectionCreatePage /></RequireAuth>} />
+        <Route path="/admin/elections/:id" element={<RequireAuth role="ADMIN"><AdminElectionDetailPage /></RequireAuth>} />
+        <Route path="/admin/elections/:id/registrations" element={<RequireAuth role="ADMIN"><AdminElectionRegistrationsPage /></RequireAuth>} />
         <Route path="/admin/audit" element={<RequireAuth role="ADMIN"><AdminAuditPage /></RequireAuth>} />
         <Route path="/403" element={<ForbiddenPage />} />
         <Route path="*" element={<NotFoundPage />} />
