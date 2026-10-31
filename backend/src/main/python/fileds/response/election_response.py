@@ -39,6 +39,9 @@ class ElectionSummary(BaseModel):
     roster_frozen_at: datetime | None = None
     eligible_voter_count: int | None = None
     created_at: datetime
+    my_registration_status: RegistrationStatus | None = None
+    user_registration_status: RegistrationStatus | None = None
+    has_voted: bool = False
 
 
 class ElectionDetail(BaseModel):
@@ -65,6 +68,7 @@ class ElectionDetail(BaseModel):
 
     # Contextual fields for current caller
     user_registration_status: RegistrationStatus | None = None
+    my_registration_status: RegistrationStatus | None = None
     has_voted: bool = False
     can_register: bool = False
     can_vote: bool = False

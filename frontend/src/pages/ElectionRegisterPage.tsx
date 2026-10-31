@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { registerVoter } from "../features/elections/api";
-import type { DocumentType, VoterRegistrationSummary } from "../features/elections/types";
+import { getPublicElection, registerVoter } from "../features/elections/api";
+import type { DocumentType, RegistrationStatus, VoterRegistrationSummary } from "../features/elections/types";
 import { useI18n } from "../i18n/LocaleProvider";
 import "./ElectionRegisterPage.css";
 
@@ -16,8 +16,30 @@ export function ElectionRegisterPage() {
   const [issuer, setIssuer] = useState("HKMU");
   const [docNumber, setDocNumber] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
+  const [alreadyRegisteredStatus, setAlreadyRegisteredStatus] = useState<RegistrationStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<VoterRegistrationSummary | null>(null);
+
+  useEffect(() => {
+    if (!electionId) {
+      setChecking(false);
+      return;
+    }
+    getPublicElection(electionId)
+      .then((data) => {
+        const regStatus = data.my_registration_status || data.user_registration_status;
+        if (regStatus) {
+          setAlreadyRegisteredStatus(regStatus);
+        }
+      })
+      .catch(() => {
+        // non-blocking
+      })
+      .finally(() => {
+        setChecking(false);
+      });
+  }, [electionId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +64,11 @@ export function ElectionRegisterPage() {
       });
       setResult(res);
     } catch (err: any) {
-      setError(err.message || t("error.validation"));
+      if (err.code === 40911 || (err.message && err.message.toLowerCase().includes("already registered"))) {
+        setAlreadyRegisteredStatus("APPROVED");
+      } else {
+        setError(err.message || t("error.validation"));
+      }
     } finally {
       setLoading(false);
     }
@@ -65,7 +91,11 @@ export function ElectionRegisterPage() {
               <p className="register-subtitle">{t("election.registration.subtitle")}</p>
             </header>
 
-            {result ? (
+            {checking ? (
+              <div style={{ padding: "40px 0", textAlign: "center", color: "#64748b" }}>
+                {t("common.loading")}
+              </div>
+            ) : result ? (
               <div className="register-success-view">
                 <div className={`result-alert-box status-${result.status.toLowerCase()}`}>
                   <div className="result-alert-icon">
@@ -113,6 +143,44 @@ export function ElectionRegisterPage() {
                   >
                     {t("polls.viewDetails")}
                   </button>
+                </div>
+              </div>
+            ) : alreadyRegisteredStatus ? (
+              <div className="register-success-view">
+                <div className={`result-alert-box status-${alreadyRegisteredStatus.toLowerCase()}`}>
+                  <div className="result-alert-icon">✓</div>
+                  <div className="result-alert-text">
+                    <h3>{t("election.registration.alreadyRegisteredTitle")}</h3>
+                    <p>
+                      {t("election.registration.alreadyRegisteredDesc", {
+                        status: t(`election.status.${alreadyRegisteredStatus}` as any),
+                      })}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="register-success-actions" style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
+                  <button
+                    type="button"
+                    className="btn-submit"
+                    onClick={() => navigate(`/elections/${electionId}`)}
+                  >
+                    {t("polls.viewDetails")}
+                  </button>
+                  <Link
+                    to="/my-election-registrations"
+                    className="btn-submit"
+                    style={{
+                      background: "#f1f5f9",
+                      color: "#334155",
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {t("election.registration.myRegistrationsTitle")}
+                  </Link>
                 </div>
               </div>
             ) : (

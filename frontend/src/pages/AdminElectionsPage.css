@@ -9,7 +9,7 @@
 .btn-create-election {
   background: #1363df;
   color: #ffffff;
-  padding: 10px 20px;
+  padding: 10px 22px;
   border-radius: 12px;
   font-size: 0.92rem;
   font-weight: 700;
@@ -19,27 +19,54 @@
   gap: 8px;
   box-shadow: 0 4px 14px rgba(19, 99, 223, 0.25);
   transition: all 0.15s ease;
+  min-height: 42px;
 }
 
 .btn-create-election:hover {
   background: #0f52ba;
   box-shadow: 0 6px 18px rgba(19, 99, 223, 0.35);
   color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .admin-elections-table-wrapper {
   overflow-x: auto;
   width: 100%;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 16px -2px rgba(15, 23, 42, 0.05);
+  -webkit-overflow-scrolling: touch;
 }
 
 .admin-elections-table {
   width: 100%;
+  border-collapse: collapse;
   white-space: nowrap;
 }
 
-.admin-elections-table th,
-.admin-elections-table td {
+.admin-elections-table th {
   padding: 14px 18px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.admin-elections-table td {
+  padding: 16px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.9rem;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.admin-elections-table tr:last-child td {
+  border-bottom: none;
 }
 
 .admin-elections-table tr:hover td {
@@ -50,7 +77,7 @@
   font-family: monospace;
   font-size: 0.85rem;
   color: #64748b;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .col-title a {
@@ -68,8 +95,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   font-size: 0.75rem;
   font-weight: 800;
@@ -78,16 +105,19 @@
 .live-status-pill.enabled {
   background: #ecfdf5;
   color: #059669;
+  border: 1px solid #a7f3d0;
 }
 
 .live-status-pill.disabled {
   background: #f1f5f9;
   color: #94a3b8;
+  border: 1px solid #e2e8f0;
 }
 
 .col-dates {
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   color: #64748b;
+  font-variant-numeric: tabular-nums;
 }
 
 .col-actions {
@@ -100,14 +130,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 5px 12px;
-  border-radius: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
   font-size: 0.82rem;
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
   cursor: pointer;
   border: 1px solid transparent;
   transition: all 0.15s ease;
+  white-space: nowrap;
+  min-height: 32px;
 }
 
 .btn-view {
@@ -142,33 +174,33 @@
 }
 
 .btn-freeze {
-  background: #fef3c7;
+  background: #fffbeb;
   color: #b45309;
   border-color: #fde68a;
 }
 
 .btn-freeze:hover {
-  background: #fde68a;
+  background: #fef3c7;
 }
 
 .btn-close {
-  background: #fee2e2;
+  background: #fef2f2;
   color: #b91c1c;
   border-color: #fecaca;
 }
 
 .btn-close:hover {
-  background: #fecaca;
+  background: #fee2e2;
 }
 
 .admin-success-banner {
   background: #ecfdf5;
   border: 1px solid #a7f3d0;
   color: #047857;
-  padding: 10px 14px;
-  border-radius: 10px;
+  padding: 12px 18px;
+  border-radius: 12px;
   font-size: 0.88rem;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   font-weight: 600;
 }
 
@@ -176,9 +208,27 @@
   background: #fef2f2;
   border: 1px solid #fecaca;
   color: #dc2626;
-  padding: 10px 14px;
-  border-radius: 10px;
+  padding: 12px 18px;
+  border-radius: 12px;
   font-size: 0.88rem;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .admin-page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-create-election {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .admin-elections-table th,
+  .admin-elections-table td {
+    padding: 12px 14px;
+  }
 }

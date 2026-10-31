@@ -41,6 +41,7 @@ export interface ElectionSummary {
   allow_live_results: boolean;
   candidate_count: number;
   my_registration_status?: RegistrationStatus | null;
+  user_registration_status?: RegistrationStatus | null;
   has_voted?: boolean;
 }
 
@@ -57,6 +58,7 @@ export interface ElectionDetail {
   allow_live_results: boolean;
   candidates: CandidatePublic[];
   my_registration_status?: RegistrationStatus | null;
+  user_registration_status?: RegistrationStatus | null;
   has_voted?: boolean;
 }
 
@@ -70,7 +72,8 @@ export interface RegisterVoterPayload {
 export interface VoterRegistrationSummary {
   id: number;
   poll_id: number;
-  poll_title: string;
+  poll_title?: string;
+  election_title?: string;
   document_type: DocumentType;
   issuer: string;
   document_suffix: string;

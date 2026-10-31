@@ -1,22 +1,30 @@
 .elections-filter-tabs {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding: 4px 2px 10px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.elections-filter-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .filter-tab-btn {
   background: #f1f5f9;
   color: #475569;
   border: 1px solid transparent;
-  padding: 7px 18px;
-  border-radius: 20px;
+  padding: 8px 20px;
+  border-radius: 9999px;
   font-size: 0.88rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .filter-tab-btn:hover {
@@ -27,14 +35,14 @@
 .filter-tab-btn.active {
   background: #1363df;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(19, 99, 223, 0.25);
+  box-shadow: 0 4px 14px rgba(19, 99, 223, 0.3);
 }
 
 .elections-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 20px;
-  padding-bottom: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 22px;
+  padding-bottom: 32px;
 }
 
 .elections-pagination {
@@ -43,25 +51,28 @@
   justify-content: center;
   gap: 16px;
   margin-top: 24px;
-  padding-top: 16px;
+  padding-top: 20px;
   border-top: 1px solid #f1f5f9;
+  flex-wrap: wrap;
 }
 
 .pagination-btn {
-  padding: 6px 14px;
+  padding: 8px 18px;
   background: #ffffff;
   border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
   color: #334155;
   cursor: pointer;
   transition: all 0.15s ease;
+  min-height: 38px;
 }
 
 .pagination-btn:hover:not(:disabled) {
   background: #f8fafc;
   border-color: #94a3b8;
+  color: #0f172a;
 }
 
 .pagination-btn:disabled {
@@ -70,7 +81,32 @@
 }
 
 .pagination-info {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   color: #64748b;
-  font-weight: 500;
+  font-weight: 600;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .elections-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .filter-tab-btn {
+    padding: 7px 16px;
+    font-size: 0.84rem;
+  }
+
+  .elections-pagination {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .pagination-info {
+    order: -1;
+    width: 100%;
+    text-align: center;
+    margin-bottom: 6px;
+  }
 }

@@ -1,11 +1,11 @@
 .admin-election-detail-page {
   width: 100%;
-  max-width: 960px;
+  max-width: 1020px;
   margin: 0 auto;
   padding: 8px 12px 64px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 22px;
   box-sizing: border-box;
 }
 
@@ -18,35 +18,40 @@
   text-decoration: none;
   font-weight: 600;
   font-size: 0.92rem;
-  transition: color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s ease, transform 0.15s ease;
 }
 
 .back-link:hover {
   color: #1363df;
+  transform: translateX(-2px);
 }
 
 .admin-detail-header-card {
   background: #ffffff;
   border: 1px solid rgba(226, 232, 240, 0.85);
-  border-radius: 18px;
-  padding: 30px;
+  border-radius: 20px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 16px -2px rgba(15, 23, 42, 0.06);
+  gap: 18px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 6px 20px -3px rgba(15, 23, 42, 0.06);
 }
 
 .header-badge-row {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .official-stamp-pill {
   background: #f1f5f9;
   color: #475569;
   border: 1px solid #e2e8f0;
-  padding: 3px 10px;
+  padding: 4px 10px;
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 700;
@@ -58,10 +63,10 @@
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   color: #64748b;
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   font-family: monospace;
 }
 
@@ -86,21 +91,23 @@
   align-items: center;
   gap: 10px;
   border-top: 1px solid #f1f5f9;
-  padding-top: 18px;
+  padding-top: 20px;
   flex-wrap: wrap;
 }
 
 .ctrl-btn {
   display: inline-flex;
   align-items: center;
-  padding: 8px 18px;
-  border-radius: 8px;
+  justify-content: center;
+  padding: 9px 20px;
+  border-radius: 10px;
   font-size: 0.88rem;
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
   border: 1px solid transparent;
   transition: all 0.15s ease;
+  min-height: 40px;
 }
 
 .btn-publish {
@@ -111,6 +118,8 @@
 
 .btn-publish:hover {
   background: #0f52ba;
+  box-shadow: 0 6px 16px rgba(19, 99, 223, 0.35);
+  color: #ffffff;
 }
 
 .btn-review {
@@ -134,13 +143,13 @@
 }
 
 .btn-close {
-  background: #fee2e2;
+  background: #fef2f2;
   color: #b91c1c;
   border-color: #fecaca;
 }
 
 .btn-close:hover {
-  background: #fca5a5;
+  background: #fee2e2;
 }
 
 .btn-results {
@@ -157,17 +166,17 @@
 .detail-meta-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: 16px;
 }
 
 .meta-card {
   background: #ffffff;
   border: 1px solid rgba(226, 232, 240, 0.85);
-  border-radius: 14px;
-  padding: 18px;
+  border-radius: 16px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
@@ -180,10 +189,10 @@
 }
 
 .meta-val {
-  font-size: 0.86rem;
+  font-size: 0.88rem;
   color: #1e293b;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .tag-enabled {
@@ -199,7 +208,7 @@
 .admin-candidates-section {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .section-title {
@@ -211,19 +220,44 @@
 
 .candidates-table-card {
   overflow-x: auto;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  -webkit-overflow-scrolling: touch;
 }
 
 .candidates-table {
   width: 100%;
+  border-collapse: collapse;
 }
 
-.candidates-table th,
+.candidates-table th {
+  padding: 14px 18px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+}
+
 .candidates-table td {
-  padding: 12px 18px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.9rem;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.candidates-table tr:last-child td {
+  border-bottom: none;
 }
 
 .col-code {
-  width: 100px;
+  width: 110px;
 }
 
 .candidate-code-tag {
@@ -245,10 +279,36 @@
 .col-statement {
   color: #64748b;
   font-size: 0.88rem;
+  line-height: 1.4;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  .admin-detail-header-card {
+    padding: 22px 18px;
+    border-radius: 16px;
+  }
+
+  .header-title {
+    font-size: 1.45rem;
+  }
+
+  .admin-control-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ctrl-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
   .detail-meta-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .candidates-table th,
+  .candidates-table td {
+    padding: 12px 14px;
   }
 }

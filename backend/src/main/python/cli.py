@@ -120,6 +120,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_new_demo_round()
     if args == ["ensure-demo-polls"]:
         return _run_ensure_demo_polls()
+    if args == ["seed-elections"]:
+        return _run_seed_elections()
     logger.error("未知命令")
     return 2
 
@@ -372,6 +374,26 @@ def _round_payload(
         selection_mode=SelectionMode.SINGLE,
         options=[OptionInput(label="同意"), OptionInput(label="反对")],
     )
+
+
+def _run_seed_elections() -> int:
+    """初始化 4 个涵盖不同阶段的真实选举场景及样本选民。"""
+    from src.main.python.algorithms.election_module.demo_election_seed import (
+        seed_realistic_elections,
+    )
+
+    settings = get_settings()
+    factory = create_session_factory(settings.database_url)
+    hmac_key = (settings.anon_voter_hmac_key or "default-election-hmac-key-for-dev-32b").encode("utf-8")
+    try:
+        eids = seed_realistic_elections(factory, hmac_key)
+        logger.info("已成功初始化演示选举场景: %s", eids)
+        return 0
+    except Exception as exc:
+        logger.exception("初始化演示选举失败: %s", exc)
+        return 1
+    finally:
+        dispose_session_factory(factory)
 
 
 if __name__ == "__main__":

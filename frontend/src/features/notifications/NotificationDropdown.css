@@ -226,6 +226,26 @@
   color: #7c3aed;
 }
 
+.notif-icon-election-approved {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.notif-icon-election-rejected {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.notif-icon-election-pending {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.notif-icon-election-voting {
+  background: #eff6ff;
+  color: #1363df;
+}
+
 /* Content */
 .notif-content {
   flex: 1;

@@ -429,7 +429,9 @@ class ElectionService:
             self._populate_voter_context(detail, user_id, session)
             return detail
 
-    def list_public_elections(self, page: int = 1, page_size: int = 20) -> Page[ElectionSummary]:
+    def list_public_elections(
+        self, page: int = 1, page_size: int = 20, user_id: int | None = None
+    ) -> Page[ElectionSummary]:
         """List published / closed elections for public."""
         now = self._clock.now()
         with self._factory() as session:
@@ -452,6 +454,32 @@ class ElectionService:
                 .limit(page_size)
                 .offset(offset)
             ).all()
+
+            user_reg_map: dict[int, RegistrationStatus] = {}
+            user_voted_map: dict[int, bool] = {}
+            if user_id is not None and rows:
+                poll_ids = [p.id for p, _ in rows]
+                regs = session.execute(
+                    select(ElectionRegistration).where(
+                        ElectionRegistration.poll_id.in_(poll_ids),
+                        ElectionRegistration.user_id == user_id,
+                    )
+                ).scalars().all()
+                reg_id_to_poll_id: dict[int, int] = {}
+                for r in regs:
+                    user_reg_map[r.poll_id] = RegistrationStatus(r.status)
+                    reg_id_to_poll_id[r.id] = r.poll_id
+
+                if reg_id_to_poll_id:
+                    consumed_creds = session.execute(
+                        select(ElectionVoterCredential.poll_id).where(
+                            ElectionVoterCredential.poll_id.in_(poll_ids),
+                            ElectionVoterCredential.registration_id.in_(list(reg_id_to_poll_id.keys())),
+                            ElectionVoterCredential.status == CredentialStatus.CONSUMED.value,
+                        )
+                    ).scalars().all()
+                    for p_id in consumed_creds:
+                        user_voted_map[p_id] = True
 
             results: list[ElectionSummary] = []
             for poll, config in rows:
@@ -476,6 +504,9 @@ class ElectionService:
                         roster_frozen_at=config.roster_frozen_at,
                         eligible_voter_count=config.eligible_voter_count,
                         created_at=poll.created_at,
+                        my_registration_status=user_reg_map.get(poll.id),
+                        user_registration_status=user_reg_map.get(poll.id),
+                        has_voted=user_voted_map.get(poll.id, False),
                     )
                 )
             return Page(items=results, page=page, page_size=page_size, total=total)
@@ -585,6 +616,7 @@ class ElectionService:
 
         if reg is not None:
             detail.user_registration_status = RegistrationStatus(reg.status)
+            detail.my_registration_status = detail.user_registration_status
             if reg.status == RegistrationStatus.APPROVED.value:
                 cred = session.execute(
                     select(ElectionVoterCredential).where(

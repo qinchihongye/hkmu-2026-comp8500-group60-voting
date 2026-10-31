@@ -3,32 +3,43 @@
   flex-direction: column;
   gap: 16px;
   width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
   box-sizing: border-box;
 }
 
 .registration-card {
   background: #ffffff;
   border: 1px solid rgba(226, 232, 240, 0.85);
-  border-radius: 16px;
-  padding: 22px 24px;
+  border-radius: 18px;
+  padding: 24px 28px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 16px -2px rgba(15, 23, 42, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.registration-card:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px -2px rgba(15, 23, 42, 0.08);
 }
 
 .reg-card-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 14px;
 }
 
 .reg-poll-title {
-  font-size: 1.15rem;
-  font-weight: 700;
+  font-size: 1.2rem;
+  font-weight: 800;
   color: #0f172a;
   margin: 0;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
 }
 
 .reg-poll-title a {
@@ -43,28 +54,31 @@
 
 .reg-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
   background: #f8fafc;
-  padding: 14px 18px;
-  border-radius: 10px;
+  padding: 16px 20px;
+  border-radius: 12px;
   border: 1px solid #f1f5f9;
 }
 
 .reg-meta-item {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
-  font-size: 0.86rem;
+  font-size: 0.88rem;
+  flex-wrap: wrap;
 }
 
 .reg-meta-item .label {
   color: #64748b;
+  font-weight: 500;
+  font-size: 0.82rem;
 }
 
 .reg-meta-item .val {
   color: #0f172a;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .reg-card-footer {
@@ -72,54 +86,102 @@
   align-items: center;
   justify-content: space-between;
   border-top: 1px solid #f1f5f9;
-  padding-top: 12px;
+  padding-top: 14px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .reg-date {
   font-size: 0.82rem;
   color: #94a3b8;
+  font-weight: 500;
 }
 
 .status-pill {
-  padding: 4px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
   border-radius: 9999px;
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 .status-approved {
   background: #ecfdf5;
   color: #059669;
+  border: 1px solid #a7f3d0;
 }
 
 .status-needs_review,
 .status-pending {
-  background: #fef3c7;
+  background: #fffbeb;
   color: #d97706;
+  border: 1px solid #fde68a;
 }
 
 .status-rejected {
   background: #fef2f2;
   color: #dc2626;
+  border: 1px solid #fecaca;
 }
 
 .btn-outline {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 14px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.86rem;
+  font-weight: 700;
   color: #1363df;
   border: 1px solid #cbd5e1;
   text-decoration: none;
   background: #ffffff;
   transition: all 0.15s ease;
+  min-height: 38px;
 }
 
 .btn-outline:hover {
   background: #eff6ff;
   border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+@media (max-width: 640px) {
+  .registration-card {
+    padding: 18px 16px;
+    border-radius: 14px;
+    gap: 14px;
+  }
+
+  .reg-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .reg-poll-title {
+    font-size: 1.05rem;
+  }
+
+  .reg-card-grid {
+    grid-template-columns: 1fr;
+    padding: 12px 14px;
+    gap: 8px;
+  }
+
+  .reg-card-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .btn-outline {
+    width: 100%;
+    min-height: 44px;
+  }
 }

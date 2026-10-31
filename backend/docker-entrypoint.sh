@@ -7,6 +7,7 @@ set -e
 # 固定示例只在 DEMO_POLLS_ENABLED=true 时补齐缺失目录，不改已有投票。
 /app/backend/.venv/bin/python -m alembic upgrade head
 /app/backend/.venv/bin/python -m src.main.python.cli seed-demo
+/app/backend/.venv/bin/python -m src.main.python.cli seed-elections
 if [ "${DEMO_POLLS_ENABLED:-false}" = "true" ]; then
   /app/backend/.venv/bin/python -m src.main.python.cli ensure-demo-polls
 fi

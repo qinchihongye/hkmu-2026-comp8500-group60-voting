@@ -5,7 +5,7 @@
   padding: 8px 12px 64px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 22px;
   box-sizing: border-box;
 }
 
@@ -16,9 +16,12 @@
 .back-link {
   color: #64748b;
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.92rem;
   transition: color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .back-link:hover {
@@ -27,56 +30,57 @@
 
 .detail-header-card {
   background: #ffffff;
-  border: 1px solid rgba(226, 232, 240, 0.85);
-  border-radius: 18px;
-  padding: 32px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 20px;
+  padding: 34px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 16px -2px rgba(15, 23, 42, 0.06);
+  gap: 20px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04), 0 6px 20px -2px rgba(15, 23, 42, 0.06);
 }
 
 .detail-badge-row {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .official-stamp-pill {
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
+  background: #eff6ff;
+  color: #1363df;
+  border: 1px solid #bfdbfe;
   padding: 3px 10px;
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .detail-title {
-  font-size: 1.85rem;
+  font-size: clamp(1.4rem, 3.5vw, 1.95rem);
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.025em;
   margin: 0;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .detail-description {
   font-size: 0.98rem;
   color: #475569;
-  line-height: 1.6;
+  line-height: 1.65;
   margin: 0;
 }
 
 .detail-timeline-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 14px;
   background: #f8fafc;
-  padding: 16px;
-  border-radius: 12px;
+  padding: 18px 20px;
+  border-radius: 14px;
   border: 1px solid #f1f5f9;
 }
 
@@ -87,15 +91,15 @@
 }
 
 .timeline-label {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 700;
   color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
 .timeline-val {
-  font-size: 0.86rem;
+  font-size: 0.88rem;
   color: #1e293b;
   font-weight: 600;
   line-height: 1.4;
@@ -124,7 +128,7 @@
   align-items: center;
   justify-content: space-between;
   border-top: 1px solid #f1f5f9;
-  padding-top: 18px;
+  padding-top: 20px;
   gap: 16px;
   flex-wrap: wrap;
 }
@@ -133,16 +137,17 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .panel-title {
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: #0f172a;
 }
 
 .status-pill {
-  padding: 4px 12px;
+  padding: 5px 14px;
   border-radius: 9999px;
   font-size: 0.78rem;
   font-weight: 700;
@@ -152,61 +157,73 @@
 .status-approved {
   background: #ecfdf5;
   color: #059669;
+  border: 1px solid #a7f3d0;
 }
 
 .status-needs_review,
 .status-pending {
   background: #fef3c7;
   color: #d97706;
+  border: 1px solid #fde68a;
 }
 
 .status-rejected {
   background: #fef2f2;
   color: #dc2626;
+  border: 1px solid #fecaca;
 }
 
 .status-unregistered {
   background: #f1f5f9;
   color: #64748b;
+  border: 1px solid #e2e8f0;
 }
 
 .status-voted {
   background: #ecfdf5;
   color: #059669;
+  border: 1px solid #a7f3d0;
 }
 
 .voter-actions {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 9px 20px;
-  border-radius: 10px;
-  font-size: 0.9rem;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-size: 0.92rem;
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 42px;
+  box-sizing: border-box;
 }
 
 .btn-primary {
   background: #1363df;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(19, 99, 223, 0.25);
+  box-shadow: 0 4px 14px rgba(19, 99, 223, 0.25);
+  border: 1px solid transparent;
 }
 
 .btn-primary:hover {
   background: #0f52ba;
   color: #ffffff;
+  box-shadow: 0 6px 18px rgba(19, 99, 223, 0.35);
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background: #f1f5f9;
+  background: #f8fafc;
   color: #334155;
   border: 1px solid #cbd5e1;
 }
@@ -220,11 +237,11 @@
 .detail-candidates-section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .section-title {
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.02em;
@@ -233,19 +250,26 @@
 
 .candidates-list-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 18px;
 }
 
 .candidate-card {
   background: #ffffff;
   border: 1px solid rgba(226, 232, 240, 0.85);
-  border-radius: 14px;
-  padding: 20px;
+  border-radius: 16px;
+  padding: 22px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.candidate-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -2px rgba(19, 99, 223, 0.08);
+  border-color: #93c5fd;
 }
 
 .candidate-header {
@@ -255,25 +279,62 @@
 }
 
 .candidate-code-tag {
-  background: #f1f5f9;
-  color: #475569;
+  background: #eff6ff;
+  color: #1d4ed8;
   font-size: 0.78rem;
   font-weight: 700;
-  padding: 3px 8px;
+  padding: 3px 9px;
   border-radius: 6px;
   font-family: monospace;
+  border: 1px solid #bfdbfe;
 }
 
 .candidate-name {
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: 1.08rem;
+  font-weight: 800;
   color: #0f172a;
   margin: 0;
 }
 
 .candidate-statement {
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   color: #64748b;
-  line-height: 1.5;
+  line-height: 1.55;
   margin: 0;
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  .detail-header-card {
+    padding: 20px 18px;
+    border-radius: 16px;
+  }
+
+  .detail-timeline-grid {
+    grid-template-columns: 1fr;
+    padding: 14px;
+  }
+
+  .detail-voter-panel {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .voter-status-info {
+    justify-content: space-between;
+  }
+
+  .voter-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .action-btn {
+    width: 100%;
+  }
+
+  .candidates-list-grid {
+    grid-template-columns: 1fr;
+  }
 }

@@ -26,8 +26,10 @@ export function ElectionCard({ election }: Props) {
   };
 
   const renderAction = () => {
+    const regStatus = election.my_registration_status || election.user_registration_status;
+
     if (election.phase === "REGISTRATION_OPEN") {
-      if (!election.my_registration_status) {
+      if (!regStatus) {
         return (
           <Link to={`/elections/${election.id}/register`} className="election-btn election-btn-primary">
             {t("election.actions.registerNow")}
@@ -35,9 +37,14 @@ export function ElectionCard({ election }: Props) {
         );
       }
       return (
-        <span className="election-status-tag tag-registered">
-          {t("election.actions.alreadyRegistered")}
-        </span>
+        <div className="election-action-group">
+          <span className="election-status-tag tag-registered">
+            {t("election.actions.alreadyRegistered")}
+          </span>
+          <Link to={`/elections/${election.id}`} className="election-btn election-btn-outline">
+            {t("polls.viewDetails")}
+          </Link>
+        </div>
       );
     }
 
@@ -52,11 +59,23 @@ export function ElectionCard({ election }: Props) {
           </div>
         );
       }
-      if (election.my_registration_status === "APPROVED") {
+      if (regStatus === "APPROVED") {
         return (
           <Link to={`/elections/${election.id}/vote`} className="election-btn election-btn-emerald">
             {t("election.actions.goVote")}
           </Link>
+        );
+      }
+      if (regStatus) {
+        return (
+          <div className="election-action-group">
+            <span className="election-status-tag tag-registered">
+              {t(`election.status.${regStatus}` as any)}
+            </span>
+            <Link to={`/elections/${election.id}`} className="election-btn election-btn-outline">
+              {t("polls.viewDetails")}
+            </Link>
+          </div>
         );
       }
     }

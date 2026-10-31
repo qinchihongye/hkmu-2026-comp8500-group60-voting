@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
+import { getMyElectionRegistrations, getPublicElections } from "../elections/api";
 import type { NotificationItem } from "./notification-types";
 
 const STORAGE_PREFIX = "voting_notification_reads_";
@@ -127,6 +128,93 @@ export function useNotifications() {
             read: false,
           });
         }
+
+        // 4. Election registration notifications (Approved / Rejected / Pending review)
+        if (user?.id) {
+          try {
+            const regRes = await getMyElectionRegistrations({ page: 1, page_size: 10 });
+            const regs = regRes?.items ?? [];
+            for (const reg of regs) {
+              if (reg.status === "APPROVED") {
+                generated.push({
+                  id: `election-reg-approved-${reg.id}`,
+                  type: "election_approved",
+                  titleKey: "notifications.electionApprovedTitle",
+                  titleFallback: "Voter Registration Approved",
+                  pollTitle: reg.election_title || reg.poll_title,
+                  messageKey: "notifications.electionApprovedDesc",
+                  messageFallback:
+                    "Your voter registration has been approved. You are eligible to cast a ballot once voting opens.",
+                  pollId: reg.poll_id,
+                  targetUrl: `/elections/${reg.poll_id}`,
+                  timestamp: reg.reviewed_at || reg.submitted_at || new Date().toISOString(),
+                  read: false,
+                });
+              } else if (reg.status === "REJECTED") {
+                generated.push({
+                  id: `election-reg-rejected-${reg.id}`,
+                  type: "election_rejected",
+                  titleKey: "notifications.electionRejectedTitle",
+                  titleFallback: "Voter Registration Rejected",
+                  pollTitle: reg.election_title || reg.poll_title,
+                  messageKey: "notifications.electionRejectedDesc",
+                  messageFallback:
+                    "Your voter registration was not approved. Click to view registration details.",
+                  pollId: reg.poll_id,
+                  targetUrl: "/my-election-registrations",
+                  timestamp: reg.reviewed_at || reg.submitted_at || new Date().toISOString(),
+                  read: false,
+                });
+              } else if (reg.status === "NEEDS_REVIEW" || reg.status === "PENDING") {
+                generated.push({
+                  id: `election-reg-pending-${reg.id}`,
+                  type: "election_pending",
+                  titleKey: "notifications.electionPendingTitle",
+                  titleFallback: "Registration Under Review",
+                  pollTitle: reg.election_title || reg.poll_title,
+                  messageKey: "notifications.electionPendingDesc",
+                  messageFallback:
+                    "Your voter registration has been submitted and is currently awaiting manual review.",
+                  pollId: reg.poll_id,
+                  targetUrl: "/my-election-registrations",
+                  timestamp: reg.submitted_at || new Date().toISOString(),
+                  read: false,
+                });
+              }
+            }
+          } catch {
+            // Non-blocking
+          }
+
+          // 5. Approved elections where voting has opened
+          try {
+            const elecRes = await getPublicElections({ page: 1, page_size: 10 });
+            const elections = elecRes?.items ?? [];
+            for (const el of elections) {
+              const regStatus = el.my_registration_status || (el as any).user_registration_status;
+              if (regStatus === "APPROVED" && el.phase === "VOTING_OPEN" && !el.has_voted) {
+                generated.push({
+                  id: `election-voting-open-${el.id}`,
+                  type: "election_voting_open",
+                  titleKey: "notifications.electionVotingOpenTitle",
+                  titleFallback: "Official Voting is Open",
+                  pollTitle: el.title,
+                  messageKey: "notifications.electionVotingOpenDesc",
+                  messageFallback:
+                    "Voting is now officially open! Enter the secret ballot booth to cast your vote.",
+                  pollId: el.id,
+                  targetUrl: `/elections/${el.id}/vote`,
+                  timestamp: el.starts_at || new Date().toISOString(),
+                  read: false,
+                });
+              }
+            }
+          } catch {
+            // Non-blocking
+          }
+        }
+
+        generated.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
         if (!cancelled && generated.length > 0) {
           setDynamicNotifications(generated);

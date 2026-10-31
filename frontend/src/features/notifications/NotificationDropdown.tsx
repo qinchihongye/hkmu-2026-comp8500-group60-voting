@@ -75,6 +75,50 @@ function renderTypeIcon(type: NotificationType) {
           </svg>
         </span>
       );
+    case "election_approved":
+      // Verified check badge (emerald)
+      return (
+        <span className="notif-icon-badge notif-icon-election-approved">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            <path d="m9 12 2 2 4-4" />
+          </svg>
+        </span>
+      );
+    case "election_rejected":
+      // Alert circle badge (rose/red)
+      return (
+        <span className="notif-icon-badge notif-icon-election-rejected">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="15" y1="9" x2="9" y2="15" />
+            <line x1="9" y1="9" x2="15" y2="15" />
+          </svg>
+        </span>
+      );
+    case "election_pending":
+      // Clock / review badge (amber)
+      return (
+        <span className="notif-icon-badge notif-icon-election-pending">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+        </span>
+      );
+    case "election_voting_open":
+      // Ballot box / Vote active (royal blue)
+      return (
+        <span className="notif-icon-badge notif-icon-election-voting">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 20V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14" />
+            <path d="M2 20h20" />
+            <path d="M14 12v.01" />
+            <path d="M12 16h.01" />
+            <path d="m9 10 2 2 4-4" />
+          </svg>
+        </span>
+      );
     case "system":
     default:
       // Shield / Security Check (indigo/purple)
