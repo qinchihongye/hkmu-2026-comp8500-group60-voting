@@ -61,7 +61,21 @@ function wrapText(
       if (currentLine !== "") {
         lines.push(currentLine);
       }
-      currentLine = token;
+      // If single token is wider than maxWidth, break character-by-character
+      if (ctx.measureText(token).width > maxWidth) {
+        let subToken = "";
+        for (const char of token) {
+          if (ctx.measureText(subToken + char).width <= maxWidth) {
+            subToken += char;
+          } else {
+            if (subToken !== "") lines.push(subToken);
+            subToken = char;
+          }
+        }
+        currentLine = subToken;
+      } else {
+        currentLine = token;
+      }
     }
   }
   if (currentLine !== "") {
@@ -151,9 +165,10 @@ export function generateShareCardImage(
         return;
       }
 
-      // 2.1 Measure Full-Width Poll Title (Width available = contentWidth - 48 = 680px!)
+      // 2.1 Measure Full-Width Poll Title (Balanced safe width: 580px, leaves plenty of right padding!)
+      const titleMaxW = Math.min(580, contentWidth - 96);
       mctx.font = "bold 18px 'Georgia', 'PingFang SC', serif, sans-serif";
-      const wrappedTitle = wrapText(mctx, title, contentWidth - 48);
+      const wrappedTitle = wrapText(mctx, title, titleMaxW);
       const titleH = wrappedTitle.length * 26;
       const heroCardH = 40 + titleH + 16 + 1 + 16 + 64; // Tag row + Title + gap + divider + gap + 4-col metrics
 
@@ -336,7 +351,7 @@ export function generateShareCardImage(
       ctx.fillStyle = results.is_final ? "#047857" : "#1d4ed8";
       ctx.fillText(statusText, stPillX + 10, heroY + 27);
 
-      // Full-Width Title (680px available, NEVER CROSSES BORDER!)
+      // Full-Width Title (Safe 580px width, NEVER CROSSES BORDER OR COLLIDES!)
       ctx.font = "bold 18px 'Georgia', 'PingFang SC', serif, sans-serif";
       ctx.fillStyle = "#1c1917";
       let curTitleY = heroY + 52;
@@ -354,23 +369,29 @@ export function generateShareCardImage(
       ctx.lineTo(width - pad - 24, heroInnerDivY);
       ctx.stroke();
 
-      // Bottom 4-Column Balanced Grid
+      // Bottom 4-Column Balanced Grid (Stacked 2-line structure, zero overlap!)
       const metricsY = heroInnerDivY + 20;
 
-      // Col 1: Format
+      // Col 1: Format (Split into 2 distinct lines to prevent any collision)
       const col1X = pad + 24;
       ctx.font = "bold 9px -apple-system, BlinkMacSystemFont, sans-serif";
       ctx.fillStyle = "#78716c";
       ctx.letterSpacing = "0.5px";
       ctx.fillText(isZh ? "选票类型" : "BALLOT FORMAT", col1X, metricsY);
       ctx.letterSpacing = "0px";
-      ctx.font = "600 12px -apple-system, BlinkMacSystemFont, sans-serif";
-      ctx.fillStyle = "#1c1917";
-      const formatStr = `${isSingle ? (isZh ? "单选投票" : "Single Choice") : (isZh ? "多选投票" : "Multiple Choice")} · ${isNamed ? (isZh ? "实名认证" : "Named Ballot") : (isZh ? "匿名无痕" : "Secret Ballot")}`;
-      ctx.fillText(formatStr, col1X, metricsY + 18);
 
-      // Col 2: Voting Period (Full timestamp, NO TRUNCATION!)
-      const col2X = pad + 190;
+      const formatLine1 = isSingle ? (isZh ? "单选投票" : "Single Choice") : (isZh ? "多选投票" : "Multiple Choice");
+      const formatLine2 = isNamed ? (isZh ? "实名认证" : "Named Ballot") : (isZh ? "匿名无痕" : "Secret Ballot (Anonymous)");
+
+      ctx.font = "600 11px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillStyle = "#1c1917";
+      ctx.fillText(formatLine1, col1X, metricsY + 17);
+      ctx.font = "500 11px -apple-system, BlinkMacSystemFont, sans-serif";
+      ctx.fillStyle = "#64748b";
+      ctx.fillText(formatLine2, col1X, metricsY + 31);
+
+      // Col 2: Voting Period (Shifted to pad + 205 for 80px+ clearance)
+      const col2X = pad + 205;
       ctx.font = "bold 9px -apple-system, BlinkMacSystemFont, sans-serif";
       ctx.fillStyle = "#78716c";
       ctx.letterSpacing = "0.5px";
@@ -483,7 +504,7 @@ export function generateShareCardImage(
               : `Achieved plurality with ${sortedOptions[0]!.count} of ${totalSelections} choices (${sortedOptions[0]!.percentage.toFixed(1)}% of vote share)`);
         ctx.font = "500 11px -apple-system, BlinkMacSystemFont, sans-serif";
         ctx.fillStyle = "#b45309";
-        ctx.fillText(winSub, pad + 48, winY + 46);
+        ctx.fillText(truncateText(ctx, winSub, contentWidth - 170), pad + 48, winY + 46);
 
         ctx.font = "bold 22px 'Georgia', serif, sans-serif";
         ctx.fillStyle = "#b45309";
@@ -702,7 +723,8 @@ export function generateShareCardImage(
 
           ctx.fillStyle = "#44403c";
           ctx.font = "500 10px -apple-system, BlinkMacSystemFont, sans-serif";
-          const shortName = opt.label.length > 8 ? opt.label.slice(0, 7) + "..." : opt.label;
+          const maxLegTextW = Math.floor(chartW / 2 - 46);
+          const shortName = truncateText(ctx, opt.label, maxLegTextW);
           ctx.fillText(shortName, colX + 11, curY);
 
           ctx.fillStyle = opt.count === topCount && topCount > 0 ? "#064e3b" : "#78716c";
