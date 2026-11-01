@@ -116,7 +116,7 @@ export function AdminElectionCreatePage() {
               {/* Basic Info */}
               <div className="form-group">
                 <label className="form-label" htmlFor="electionTitle">
-                  {t("common.searchTitle")} *
+                  {t("form.title")} *
                 </label>
                 <input
                   id="electionTitle"

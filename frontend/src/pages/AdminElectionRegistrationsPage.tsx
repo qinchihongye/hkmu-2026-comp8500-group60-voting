@@ -179,7 +179,7 @@ export function AdminElectionRegistrationsPage() {
                   <th>{t("election.registration.issuer")}</th>
                   <th>{t("common.status")}</th>
                   <th>Score</th>
-                  <th>{t("action.all")}</th>
+                  <th>{t("admin.actionsCol")}</th>
                 </tr>
               </thead>
               <tbody>

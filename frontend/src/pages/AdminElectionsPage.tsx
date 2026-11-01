@@ -65,7 +65,7 @@ export function AdminElectionsPage() {
   };
 
   return (
-    <div className="view-root">
+    <div className="view-root admin-view-root">
       <header className="view-header admin-page-header">
         <div className="header-text-group">
           <h1 className="view-title">{t("election.admin.title")}</h1>
@@ -147,13 +147,13 @@ export function AdminElectionsPage() {
             <table className="saas-table admin-elections-table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>{t("common.searchTitle")}</th>
-                  <th>{t("common.status")}</th>
-                  <th>{t("polls.liveResults")}</th>
-                  <th>{t("election.admin.candidatesTitle")}</th>
-                  <th>{t("election.admin.votingWindow")}</th>
-                  <th>{t("action.all")}</th>
+                  <th className="col-id">ID</th>
+                  <th className="col-title">{t("admin.titleCol")}</th>
+                  <th className="col-phase">{t("common.status")}</th>
+                  <th className="col-live">{t("polls.liveResults")}</th>
+                  <th className="col-candidates">{t("election.admin.candidatesTitle")}</th>
+                  <th className="col-dates">{t("election.admin.votingWindow")}</th>
+                  <th className="col-actions-header">{t("admin.actionsCol")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -163,20 +163,23 @@ export function AdminElectionsPage() {
                     <td className="col-title">
                       <Link to={`/admin/elections/${elec.id}`}>{elec.title}</Link>
                     </td>
-                    <td>
+                    <td className="col-phase">
                       <ElectionPhaseBadge phase={elec.phase} />
                     </td>
-                    <td>
+                    <td className="col-live">
                       {elec.allow_live_results ? (
                         <span className="live-status-pill enabled">✓</span>
                       ) : (
                         <span className="live-status-pill disabled">✕</span>
                       )}
                     </td>
-                    <td>{elec.candidate_count}</td>
+                    <td className="col-candidates">{elec.candidate_count}</td>
                     <td className="col-dates">
-                      {new Date(elec.starts_at).toLocaleDateString()} ~{" "}
-                      {new Date(elec.ends_at).toLocaleDateString()}
+                      <div className="election-dates-box">
+                        <span>{new Date(elec.starts_at).toLocaleDateString()}</span>
+                        <span className="date-sep">~</span>
+                        <span>{new Date(elec.ends_at).toLocaleDateString()}</span>
+                      </div>
                     </td>
                     <td className="col-actions">
                       <Link to={`/admin/elections/${elec.id}`} className="table-btn btn-view">
