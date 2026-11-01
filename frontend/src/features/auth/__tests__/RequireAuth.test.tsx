@@ -21,6 +21,24 @@ describe("RequireAuth", () => {
     expect(await screen.findByRole("heading", { name: "You cannot view this page" })).toBeInTheDocument();
   });
 
+  it("普通用户访问 /admin/elections 及子路由被拒绝并重定向到 403", async () => {
+    routeFetch(() => sessionOf("USER"));
+    renderRoute("/admin/elections");
+    expect(await screen.findByRole("heading", { name: "You cannot view this page" })).toBeInTheDocument();
+  });
+
+  it("普通用户访问 /admin/elections/1/registrations 被拒绝并重定向到 403", async () => {
+    routeFetch(() => sessionOf("USER"));
+    renderRoute("/admin/elections/1/registrations");
+    expect(await screen.findByRole("heading", { name: "You cannot view this page" })).toBeInTheDocument();
+  });
+
+  it("匿名用户访问 /admin/elections 重定向到登录页", async () => {
+    routeFetch(meAnonymous);
+    renderRoute("/admin/elections");
+    expect(await screen.findByRole("heading", { name: "Log in" })).toBeInTheDocument();
+  });
+
   it("普通用户可以打开我创建的", async () => {
     routeFetch(() => sessionOf("USER"));
     renderRoute("/my-polls");

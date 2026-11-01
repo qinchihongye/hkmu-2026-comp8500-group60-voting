@@ -51,13 +51,21 @@ def _election_payload(client: TestClient, **overrides: object) -> dict[str, obje
 
 
 def test_election_admin_permissions_guard(auth_client: TestClient) -> None:
-    """Guest and non-admin users cannot access admin election endpoints."""
+    """Guest and non-admin users cannot access any admin election endpoints."""
     # Guest access
     guest_resp = post_json(auth_client, "/api/v1/admin/elections", _election_payload(auth_client))
     error_body(guest_resp, 401, int(ApiCode.UNAUTHENTICATED))
 
     guest_get = auth_client.get("/api/v1/admin/elections")
     error_body(guest_get, 401, int(ApiCode.UNAUTHENTICATED))
+
+    error_body(auth_client.get("/api/v1/admin/elections/1"), 401, int(ApiCode.UNAUTHENTICATED))
+    error_body(patch_json(auth_client, "/api/v1/admin/elections/1", {"title": "Hack"}), 401, int(ApiCode.UNAUTHENTICATED))
+    error_body(post_json(auth_client, "/api/v1/admin/elections/1/publish", {}), 401, int(ApiCode.UNAUTHENTICATED))
+    error_body(post_json(auth_client, "/api/v1/admin/elections/1/freeze-roster", {}), 401, int(ApiCode.UNAUTHENTICATED))
+    error_body(post_json(auth_client, "/api/v1/admin/elections/1/close", {}), 401, int(ApiCode.UNAUTHENTICATED))
+    error_body(auth_client.get("/api/v1/admin/elections/1/registrations"), 401, int(ApiCode.UNAUTHENTICATED))
+    error_body(post_json(auth_client, "/api/v1/admin/elections/1/registrations/1/review", {"decision": "APPROVED"}), 401, int(ApiCode.UNAUTHENTICATED))
 
     # Regular user access
     csrf = register_and_login(auth_client, "regular_voter")
@@ -68,6 +76,14 @@ def test_election_admin_permissions_guard(auth_client: TestClient) -> None:
 
     user_get = auth_client.get("/api/v1/admin/elections")
     error_body(user_get, 403, int(ApiCode.FORBIDDEN))
+
+    error_body(auth_client.get("/api/v1/admin/elections/1"), 403, int(ApiCode.FORBIDDEN))
+    error_body(patch_json(auth_client, "/api/v1/admin/elections/1", {"title": "Hack"}, csrf=csrf), 403, int(ApiCode.FORBIDDEN))
+    error_body(post_json(auth_client, "/api/v1/admin/elections/1/publish", {}, csrf=csrf), 403, int(ApiCode.FORBIDDEN))
+    error_body(post_json(auth_client, "/api/v1/admin/elections/1/freeze-roster", {}, csrf=csrf), 403, int(ApiCode.FORBIDDEN))
+    error_body(post_json(auth_client, "/api/v1/admin/elections/1/close", {}, csrf=csrf), 403, int(ApiCode.FORBIDDEN))
+    error_body(auth_client.get("/api/v1/admin/elections/1/registrations"), 403, int(ApiCode.FORBIDDEN))
+    error_body(post_json(auth_client, "/api/v1/admin/elections/1/registrations/1/review", {"decision": "APPROVED"}, csrf=csrf), 403, int(ApiCode.FORBIDDEN))
 
 
 def test_election_creation_and_database_persistence(auth_client: TestClient) -> None:

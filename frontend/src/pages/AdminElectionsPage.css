@@ -34,19 +34,94 @@
   max-width: 1240px;
 }
 
+.table-scroll-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding: 0 4px;
+}
+
+.scroll-hint-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  user-select: none;
+}
+
+.scroll-arrow-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scroll-arrow-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.scroll-arrow-btn:hover {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+  transform: translateY(-1px);
+}
+
 .admin-elections-table-wrapper {
   overflow-x: auto;
+  overflow-y: hidden;
   width: 100%;
   border-radius: 16px;
   background: #ffffff;
   border: 1px solid rgba(226, 232, 240, 0.85);
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 16px -2px rgba(15, 23, 42, 0.05);
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+.admin-elections-table-wrapper::-webkit-scrollbar {
+  height: 10px;
+}
+
+.admin-elections-table-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-bottom-left-radius: 16px;
+}
+
+.admin-elections-table-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+  border: 2px solid #f1f5f9;
+}
+
+.admin-elections-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .admin-elections-table {
   width: 100%;
-  border-collapse: collapse;
+  min-width: 1260px;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .admin-elections-table th {
@@ -68,10 +143,7 @@
   font-size: 0.88rem;
   color: #1e293b;
   vertical-align: middle;
-}
-
-.admin-elections-table tr:last-child td {
-  border-bottom: none;
+  background: #ffffff;
 }
 
 .admin-elections-table tr:hover td {
@@ -83,13 +155,13 @@
   font-size: 0.82rem;
   color: #64748b;
   font-weight: 700;
-  width: 50px;
+  width: 60px;
+  min-width: 60px;
   white-space: nowrap;
 }
 
 .col-title {
-  min-width: 200px;
-  max-width: 320px;
+  min-width: 260px;
   line-height: 1.45;
 }
 
@@ -107,19 +179,22 @@
 
 .col-phase {
   white-space: nowrap;
-  width: 130px;
+  width: 140px;
+  min-width: 140px;
 }
 
 .col-live {
   text-align: center;
   width: 90px;
+  min-width: 90px;
   white-space: nowrap;
 }
 
 .col-candidates {
   text-align: center;
   font-weight: 600;
-  width: 80px;
+  width: 110px;
+  min-width: 110px;
   white-space: nowrap;
 }
 
@@ -128,13 +203,14 @@
   color: #64748b;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  min-width: 170px;
+  min-width: 240px;
+  width: 240px;
 }
 
 .election-dates-box {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .election-dates-box .date-sep {
@@ -145,16 +221,40 @@
   white-space: nowrap;
   text-align: right;
   padding-right: 20px !important;
+  position: sticky;
+  right: 0;
+  background: #f8fafc;
+  box-shadow: -8px 0 16px -6px rgba(15, 23, 42, 0.12);
+  border-left: 1px solid #e2e8f0;
+  z-index: 10;
+  width: 320px;
+  min-width: 320px;
 }
 
 .col-actions {
-  display: flex;
+  white-space: nowrap;
+  text-align: right;
+  padding-right: 20px !important;
+  position: sticky;
+  right: 0;
+  background: #ffffff;
+  box-shadow: -8px 0 16px -6px rgba(15, 23, 42, 0.12);
+  border-left: 1px solid #f1f5f9;
+  z-index: 5;
+  width: 320px;
+  min-width: 320px;
+}
+
+.col-actions-group {
+  display: inline-flex;
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
   white-space: nowrap;
-  min-width: 160px;
-  padding-right: 20px !important;
+}
+
+.admin-elections-table tr:hover .col-actions {
+  background: #f8fafc;
 }
 
 .table-btn {

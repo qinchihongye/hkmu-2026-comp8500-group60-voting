@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Request, Response
 
 from src.main.python.api.dependencies import (
     election_ballot_service_for,
+    election_service_for,
     eligibility_service_for,
     require_auth_csrf,
 )
@@ -66,6 +67,10 @@ def cast_election_ballot(
     receipt = election_ballot_service_for(request).cast_ballot(
         poll_id=election_id,
         user_id=principal.user_id,
+        candidate_option_id=payload.data.candidate_option_id,
+    )
+    election_service_for(request).check_and_trigger_threshold(
+        poll_id=election_id,
         candidate_option_id=payload.data.candidate_option_id,
     )
     return success_body(request, receipt)

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useAuth } from "../features/auth/AuthProvider";
 import { getPublicElection } from "../features/elections/api";
 import { ElectionPhaseBadge } from "../features/elections/ElectionPhaseBadge";
 import type { ElectionDetail } from "../features/elections/types";
@@ -9,6 +10,7 @@ import "./ElectionDetailPage.css";
 export function ElectionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useI18n();
+  const { user } = useAuth();
   const [election, setElection] = useState<ElectionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +68,9 @@ export function ElectionDetailPage() {
     }
   };
 
+  const isPendingFreeze =
+    election.phase === "REVIEWING" && new Date(election.starts_at).getTime() <= Date.now();
+
   return (
     <div className="view-root">
       <div className="view-scroll-frame">
@@ -78,8 +83,48 @@ export function ElectionDetailPage() {
 
           <header className="detail-header-card">
             <div className="detail-badge-row">
-              <span className="official-stamp-pill">{t("election.badge")}</span>
-              <ElectionPhaseBadge phase={election.phase} />
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                <span className="official-stamp-pill">{t("election.badge")}</span>
+                {isPendingFreeze ? (
+                  <span className="pending-freeze-pill" style={{
+                    fontSize: "0.72rem",
+                    fontWeight: 700,
+                    color: "#b45309",
+                    background: "#fffbeb",
+                    border: "1px solid #fde68a",
+                    padding: "3px 9px",
+                    borderRadius: "6px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}>
+                    ⏳ {t("election.pendingFreezeBadge")}
+                  </span>
+                ) : null}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                {user?.role === "ADMIN" ? (
+                  <Link
+                    to={`/admin/elections/${election.id}`}
+                    style={{
+                      fontSize: "0.78rem",
+                      fontWeight: 700,
+                      color: "#1d4ed8",
+                      background: "#eff6ff",
+                      border: "1px solid #bfdbfe",
+                      padding: "4px 10px",
+                      borderRadius: "6px",
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    ⚙️ {t("election.actions.manageElection")}
+                  </Link>
+                ) : null}
+                <ElectionPhaseBadge phase={election.phase} />
+              </div>
             </div>
             <h1 className="detail-title">{election.title}</h1>
             {election.description ? (
@@ -120,7 +165,47 @@ export function ElectionDetailPage() {
                   )}
                 </span>
               </div>
+
+              {election.winning_threshold ? (
+                <div className="timeline-box">
+                  <span className="timeline-label">{t("election.admin.winningThreshold")}</span>
+                  <span className="timeline-val">
+                    <span className="live-tag enabled" style={{ background: "#ecfdf5", color: "#047857", borderColor: "#a7f3d0" }}>
+                      🏆 {t("election.results.votes", { count: election.winning_threshold })}
+                    </span>
+                  </span>
+                </div>
+              ) : null}
             </div>
+
+            {isPendingFreeze ? (
+              <div
+                className="election-detail-pending-banner"
+                style={{
+                  background: "#fffbeb",
+                  border: "1px solid #fde68a",
+                  borderRadius: "12px",
+                  padding: "14px 18px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "14px",
+                  color: "#92400e",
+                  marginTop: "16px",
+                  fontSize: "0.92rem",
+                  lineHeight: "1.5",
+                }}
+              >
+                <span style={{ fontSize: "1.5rem", flexShrink: 0 }}>🔔</span>
+                <div>
+                  <div style={{ fontWeight: 700, marginBottom: "2px", fontSize: "0.96rem" }}>
+                    {t("election.pendingFreezeBadge")}
+                  </div>
+                  <div style={{ fontWeight: 500, color: "#b45309" }}>
+                    {t("election.pendingFreezeNotice")}
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             {/* Voter Status & Next Step Action */}
             <div className="detail-voter-panel">
@@ -137,6 +222,23 @@ export function ElectionDetailPage() {
                 )}
                 {election.has_voted ? (
                   <span className="status-pill status-voted">{t("election.actions.alreadyVoted")}</span>
+                ) : null}
+                {election.my_registration_status ? (
+                  <Link
+                    to="/elections?view=my_registrations"
+                    style={{
+                      fontSize: "0.82rem",
+                      fontWeight: 600,
+                      color: "#2563eb",
+                      textDecoration: "none",
+                      marginLeft: "6px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "2px",
+                    }}
+                  >
+                    {t("election.actions.viewMyRegistrations")} →
+                  </Link>
                 ) : null}
               </div>
 

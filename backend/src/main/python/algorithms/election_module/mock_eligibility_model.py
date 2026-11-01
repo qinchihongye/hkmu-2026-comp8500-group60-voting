@@ -208,8 +208,8 @@ def _evaluate_student_id(doc: str, issuer: str, version: str) -> ModelResult:
             normalized_issuer=issuer,
         )
 
-    # HKMU demo format: 8-10 characters, issuer contains recognized university keyword
-    recognized_keywords = {"HKMU", "UNIVERSITY", "COLLEGE", "ACADEMY", "OUHK"}
+    # Demo format: 8-10 characters, issuer contains recognized university keyword
+    recognized_keywords = {"FTU", "HKMU", "UNIVERSITY", "COLLEGE", "ACADEMY", "OUHK", "未来科技大学", "科技大学"}
     has_recognized_issuer = any(k in issuer for k in recognized_keywords)
 
     if len(doc) <= 10 and has_recognized_issuer:

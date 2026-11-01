@@ -111,6 +111,7 @@ def _assert_schema(engine: Engine) -> None:
         "poll_id",
         "registration_starts_at",
         "registration_ends_at",
+        "winning_threshold",
         "roster_frozen_at",
         "eligible_voter_count",
         "created_at",

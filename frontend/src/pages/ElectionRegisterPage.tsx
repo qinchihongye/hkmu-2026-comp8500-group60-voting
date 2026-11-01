@@ -14,7 +14,7 @@ export function ElectionRegisterPage() {
 
   const [legalName, setLegalName] = useState("");
   const [docType, setDocType] = useState<DocumentType>("STUDENT_ID");
-  const [issuer, setIssuer] = useState("HKMU");
+  const [issuer, setIssuer] = useState("FTU");
   const [docNumber, setDocNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -136,7 +136,7 @@ export function ElectionRegisterPage() {
                   </div>
                 </div>
 
-                <div className="register-success-actions">
+                <div className="register-success-actions" style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
                   <button
                     type="button"
                     className="btn-submit"
@@ -144,6 +144,20 @@ export function ElectionRegisterPage() {
                   >
                     {t("polls.viewDetails")}
                   </button>
+                  <Link
+                    to="/elections?view=my_registrations"
+                    className="btn-submit"
+                    style={{
+                      background: "#f1f5f9",
+                      color: "#334155",
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {t("election.registration.myRegistrationsTitle")}
+                  </Link>
                 </div>
               </div>
             ) : alreadyRegisteredStatus ? (

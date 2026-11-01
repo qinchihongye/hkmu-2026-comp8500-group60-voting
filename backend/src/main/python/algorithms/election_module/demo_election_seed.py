@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import NamedTuple
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.main.python.algorithms.election_module.eligibility_service import (
@@ -59,7 +59,7 @@ DEMO_VOTERS: tuple[DemoVoterSpec, ...] = (
         display_name="陈晓明 (Chan Hiu Ming)",
         password="Password123!",
         doc_type=DocumentType.STUDENT_ID,
-        issuer="HKMU",
+        issuer="FTU",
         doc_number="s1234567",
         status=RegistrationStatus.APPROVED,
         reason_codes=["STUDENT_ID_VALID", "ISSUER_RECOGNIZED"],
@@ -71,7 +71,7 @@ DEMO_VOTERS: tuple[DemoVoterSpec, ...] = (
         display_name="李嘉慧 (Li Ka Wai)",
         password="Password123!",
         doc_type=DocumentType.STUDENT_ID,
-        issuer="HKMU",
+        issuer="FTU",
         doc_number="s2345678",
         status=RegistrationStatus.APPROVED,
         reason_codes=["STUDENT_ID_VALID", "ISSUER_RECOGNIZED"],
@@ -95,7 +95,7 @@ DEMO_VOTERS: tuple[DemoVoterSpec, ...] = (
         display_name="张伟客 (Cheung Wai)",
         password="Password123!",
         doc_type=DocumentType.HK_MACAU_PERMIT,
-        issuer="HKMU",
+        issuer="FTU",
         doc_number="W123",
         status=RegistrationStatus.REJECTED,
         reason_codes=["PERMIT_FORMAT_INVALID", "NAME_MISMATCH"],
@@ -107,7 +107,7 @@ DEMO_VOTERS: tuple[DemoVoterSpec, ...] = (
         display_name="赵子龙 (Chiu Tsz Lung)",
         password="Password123!",
         doc_type=DocumentType.RESIDENT_ID,
-        issuer="HKMU",
+        issuer="FTU",
         doc_number="110101199801018888",
         status=RegistrationStatus.NEEDS_REVIEW,
         reason_codes=["BORDERLINE_SCORE", "MANUAL_VERIFICATION_REQUIRED"],
@@ -167,9 +167,65 @@ def seed_realistic_elections(session_factory: sessionmaker[Session], hmac_key: b
         now = datetime.now(timezone.utc)
 
         # -------------------------------------------------------------
+        # Rename any legacy real-world demo names to anonymized fictional names
+        # -------------------------------------------------------------
+        legacy_renames = [
+            (
+                "2026/2027 香港都会大学全日制学生会干事会换届选举",
+                "2026/2027 未来科技大学全日制学生会干事会换届选举",
+                (
+                    "未来科技大学（FTU）学生会二零二六至二零二七年度干事会换届选举。"
+                    "面向全校已注册学生开放选民资格登记。本场选举由系统采用 B2 密码学架构，"
+                    "实现选民身份与选票彻底解耦，保障神圣投票权。"
+                ),
+            ),
+            (
+                "2026年度 香港计算机学会学术专业委员会联合主席选举",
+                "2026年度 前沿计算科学学会学术专业委员会联合主席选举",
+                (
+                    "前沿计算科学学会（FCSS）学术与产学研合作委员会联合主席选举。"
+                    "选民登记已截止，选民资格名册已由系统管理员完成复核并正式冻结，"
+                    "已向全体合资格选民签发一次性不可逆投票凭证，等待正式开票。"
+                ),
+            ),
+            (
+                "2026 何文田学术创新园区入驻联合会理事选举",
+                "2026 智谷高新学术创新园区入驻联合会理事选举",
+                (
+                    "智谷高新创新科研园区第一届入驻学术机构与企业联合理事会选举。"
+                    "名册已冻结，正式投票正在进行中。符合资格的选民可凭系统加密签发的一次性凭证"
+                    "进入秘密投票亭进行无记名投票。开启了实时结果查看权限。"
+                ),
+            ),
+            (
+                "2026香港都会大学学术委员会教员代表差额选举",
+                "2026未来科技大学学术委员会教员代表差额选举",
+                (
+                    "未来科技大学（FTU）2026学年学术委员会教职员代表选举。投票已圆满结束，"
+                    "计票与加密审计日志已正式封存并由系统审计中心认证，公布最终获胜代表。"
+                ),
+            ),
+            (
+                "何文田村村长选取",
+                "智谷科技村村代表选举",
+                "智谷科技村社区居民与代表委员会换届选举。",
+            ),
+        ]
+        for old_title, new_title, new_desc in legacy_renames:
+            legacy_p = session.execute(
+                select(Poll).where(Poll.title == old_title, Poll.activity_type == ActivityType.ELECTION.value)
+            ).scalar_one_or_none()
+            if legacy_p:
+                legacy_p.title = new_title
+                legacy_p.description = new_desc
+        session.execute(text("UPDATE voter_identities SET issuer = 'FTU' WHERE issuer = 'HKMU';"))
+        session.execute(text("UPDATE polls SET title = '智谷科技村村代表选举' WHERE title = '何文田村村长选取';"))
+        session.flush()
+
+        # -------------------------------------------------------------
         # Election 1: 资格登记中 (REGISTRATION_OPEN)
         # -------------------------------------------------------------
-        e1_title = "2026/2027 香港都会大学全日制学生会干事会换届选举"
+        e1_title = "2026/2027 未来科技大学全日制学生会干事会换届选举"
         e1_poll = session.execute(
             select(Poll).where(Poll.title == e1_title, Poll.activity_type == ActivityType.ELECTION.value)
         ).scalar_one_or_none()
@@ -183,7 +239,7 @@ def seed_realistic_elections(session_factory: sessionmaker[Session], hmac_key: b
             e1_poll = Poll(
                 title=e1_title,
                 description=(
-                    "香港都会大学学生会二零二六至二零二七年度干事会换届选举。"
+                    "未来科技大学（FTU）学生会二零二六至二零二七年度干事会换届选举。"
                     "面向全校已注册学生开放选民资格登记。本场选举由系统采用 B2 密码学架构，"
                     "实现选民身份与选票彻底解耦，保障神圣投票权。"
                 ),
@@ -254,7 +310,7 @@ def seed_realistic_elections(session_factory: sessionmaker[Session], hmac_key: b
         # -------------------------------------------------------------
         # Election 2: 名册已冻结/排期待开票 (VOTING_SCHEDULED)
         # -------------------------------------------------------------
-        e2_title = "2026年度 香港计算机学会学术专业委员会联合主席选举"
+        e2_title = "2026年度 前沿计算科学学会学术专业委员会联合主席选举"
         e2_poll = session.execute(
             select(Poll).where(Poll.title == e2_title, Poll.activity_type == ActivityType.ELECTION.value)
         ).scalar_one_or_none()
@@ -269,7 +325,7 @@ def seed_realistic_elections(session_factory: sessionmaker[Session], hmac_key: b
             e2_poll = Poll(
                 title=e2_title,
                 description=(
-                    "香港计算机学会（HKCS）学术与产学研合作委员会联合主席选举。"
+                    "前沿计算科学学会（FCSS）学术与产学研合作委员会联合主席选举。"
                     "选民登记已截止，选民资格名册已由系统管理员完成复核并正式冻结，"
                     "已向全体合资格选民签发一次性不可逆投票凭证，等待正式开票。"
                 ),
@@ -341,7 +397,7 @@ def seed_realistic_elections(session_factory: sessionmaker[Session], hmac_key: b
         # -------------------------------------------------------------
         # Election 3: 正式投票中 (VOTING_OPEN)
         # -------------------------------------------------------------
-        e3_title = "2026 何文田学术创新园区入驻联合会理事选举"
+        e3_title = "2026 智谷高新学术创新园区入驻联合会理事选举"
         e3_poll = session.execute(
             select(Poll).where(Poll.title == e3_title, Poll.activity_type == ActivityType.ELECTION.value)
         ).scalar_one_or_none()
@@ -356,7 +412,7 @@ def seed_realistic_elections(session_factory: sessionmaker[Session], hmac_key: b
             e3_poll = Poll(
                 title=e3_title,
                 description=(
-                    "何文田创新科研园第一届入驻学术机构与企业联合理事会选举。"
+                    "智谷高新创新科研园区第一届入驻学术机构与企业联合理事会选举。"
                     "名册已冻结，正式投票正在进行中。符合资格的选民可凭系统加密签发的一次性凭证"
                     "进入秘密投票亭进行无记名投票。开启了实时结果查看权限。"
                 ),
@@ -461,7 +517,7 @@ def seed_realistic_elections(session_factory: sessionmaker[Session], hmac_key: b
         # -------------------------------------------------------------
         # Election 4: 已结束 (CLOSED)
         # -------------------------------------------------------------
-        e4_title = "2026香港都会大学学术委员会教员代表差额选举"
+        e4_title = "2026未来科技大学学术委员会教员代表差额选举"
         e4_poll = session.execute(
             select(Poll).where(Poll.title == e4_title, Poll.activity_type == ActivityType.ELECTION.value)
         ).scalar_one_or_none()
@@ -476,7 +532,7 @@ def seed_realistic_elections(session_factory: sessionmaker[Session], hmac_key: b
             e4_poll = Poll(
                 title=e4_title,
                 description=(
-                    "2026学年大学学术委员会教职员代表选举。投票已圆满结束，"
+                    "未来科技大学（FTU）2026学年学术委员会教职员代表选举。投票已圆满结束，"
                     "计票与加密审计日志已正式封存并由系统审计中心认证，公布最终获胜代表。"
                 ),
                 creator_id=admin.id,
@@ -716,7 +772,7 @@ def _register_voters_for_election(
                 continue
 
             doc_no = f"s999000{eu.id}"
-            fp = compute_fingerprint(hmac_key, DocumentType.STUDENT_ID.value, "HKMU", doc_no)
+            fp = compute_fingerprint(hmac_key, DocumentType.STUDENT_ID.value, "FTU", doc_no)
             suf = compute_suffix(doc_no)
 
             ident = session.execute(
@@ -736,7 +792,7 @@ def _register_voters_for_election(
                     user_id=eu.id,
                     version=max_ver + 1,
                     document_type=DocumentType.STUDENT_ID.value,
-                    issuer="HKMU",
+                    issuer="FTU",
                     document_fingerprint=fp,
                     document_suffix=suf,
                     fingerprint_key_version=1,

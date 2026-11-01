@@ -22,6 +22,7 @@ export function AdminElectionCreatePage() {
   const [regEnd, setRegEnd] = useState(defaultRegEnd);
   const [voteStart, setVoteStart] = useState(defaultVoteStart);
   const [voteEnd, setVoteEnd] = useState(defaultVoteEnd);
+  const [winningThreshold, setWinningThreshold] = useState("");
   const [allowLiveResults, setAllowLiveResults] = useState(false);
   const [candidates, setCandidates] = useState<ElectionCandidateItem[]>([
     { candidate_code: "C_1", name: "", statement: "" },
@@ -83,6 +84,7 @@ export function AdminElectionCreatePage() {
         starts_at: new Date(voteStart).toISOString(),
         ends_at: new Date(voteEnd).toISOString(),
         allow_live_results: allowLiveResults,
+        winning_threshold: winningThreshold.trim() ? parseInt(winningThreshold.trim(), 10) : null,
         candidates: candidates.map((c) => ({
           candidate_code: c.candidate_code.trim(),
           name: c.name.trim(),
@@ -198,6 +200,26 @@ export function AdminElectionCreatePage() {
                     required
                   />
                 </div>
+              </div>
+
+              {/* Winning vote threshold */}
+              <div className="form-group" style={{ marginTop: "6px", marginBottom: "16px" }}>
+                <label className="form-label" htmlFor="winningThreshold">
+                  {t("election.admin.winningThreshold")}
+                </label>
+                <input
+                  id="winningThreshold"
+                  type="number"
+                  min="1"
+                  step="1"
+                  className="form-input"
+                  value={winningThreshold}
+                  onChange={(e) => setWinningThreshold(e.target.value)}
+                  placeholder={t("election.admin.winningThresholdPlaceholder")}
+                />
+                <p className="form-hint" style={{ marginTop: "6px", fontSize: "0.82rem", color: "#64748b" }}>
+                  {t("election.admin.winningThresholdHint")}
+                </p>
               </div>
 
               {/* Live results toggle */}

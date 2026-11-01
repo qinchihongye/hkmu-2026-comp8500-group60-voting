@@ -139,41 +139,64 @@ export function ElectionsPage() {
             <p className="view-subtitle">{t("election.subtitle")}</p>
           </div>
 
-          {authenticated ? (
-            <div className="elections-view-switcher" role="tablist" aria-label="Elections view switcher">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={currentView === "explore"}
-                className={`view-switch-btn ${currentView === "explore" ? "active" : ""}`}
-                onClick={() => handleViewChange("explore")}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            {user?.role === "ADMIN" ? (
+              <Link
+                to="/admin/elections"
+                style={{
+                  fontSize: "0.82rem",
+                  fontWeight: 600,
+                  color: "#1e40af",
+                  background: "#eff6ff",
+                  border: "1px solid #bfdbfe",
+                  padding: "7px 13px",
+                  borderRadius: "10px",
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
-                <span>{t("election.tabs.explore")}</span>
-              </button>
+                ⚙️ {t("election.admin.quickAdminTitle")}
+              </Link>
+            ) : null}
 
-              <button
-                type="button"
-                role="tab"
-                aria-selected={currentView === "my_registrations"}
-                className={`view-switch-btn ${currentView === "my_registrations" ? "active" : ""}`}
-                onClick={() => handleViewChange("my_registrations")}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="16" y1="13" x2="8" y2="13" />
-                  <line x1="16" y1="17" x2="8" y2="17" />
-                </svg>
-                <span>{t("election.tabs.myRegistrations")}</span>
-                {regCount != null && regCount > 0 ? (
-                  <span className="tab-count-badge">{regCount}</span>
-                ) : null}
-              </button>
-            </div>
-          ) : null}
+            {authenticated ? (
+              <div className="elections-view-switcher" role="tablist" aria-label="Elections view switcher">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={currentView === "explore"}
+                  className={`view-switch-btn ${currentView === "explore" ? "active" : ""}`}
+                  onClick={() => handleViewChange("explore")}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                  <span>{t("election.tabs.explore")}</span>
+                </button>
+
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={currentView === "my_registrations"}
+                  className={`view-switch-btn ${currentView === "my_registrations" ? "active" : ""}`}
+                  onClick={() => handleViewChange("my_registrations")}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                  </svg>
+                  <span>{t("election.tabs.myRegistrations")}</span>
+                  {regCount != null && regCount > 0 ? (
+                    <span className="tab-count-badge">{regCount}</span>
+                  ) : null}
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
 
         {/* Phase filters - only shown when in Explore view */}

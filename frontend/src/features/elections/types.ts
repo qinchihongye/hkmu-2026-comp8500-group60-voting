@@ -41,6 +41,7 @@ export interface ElectionSummary {
   starts_at: string;
   ends_at: string;
   allow_live_results: boolean;
+  winning_threshold?: number | null;
   candidate_count: number;
   my_registration_status?: RegistrationStatus | null;
   user_registration_status?: RegistrationStatus | null;
@@ -58,6 +59,7 @@ export interface ElectionDetail {
   starts_at: string;
   ends_at: string;
   allow_live_results: boolean;
+  winning_threshold?: number | null;
   candidates: CandidatePublic[];
   my_registration_status?: RegistrationStatus | null;
   user_registration_status?: RegistrationStatus | null;
@@ -118,6 +120,7 @@ export interface ElectionResultResponse {
   title: string;
   phase: ElectionPhase;
   allow_live_results: boolean;
+  winning_threshold?: number | null;
   scale: TurnoutScaleStats;
   candidate_results?: CandidateResultItem[] | null;
   winner_option_ids?: number[] | null;
@@ -132,6 +135,7 @@ export interface CreateElectionPayload {
   starts_at: string;
   ends_at: string;
   allow_live_results: boolean;
+  winning_threshold?: number | null;
   candidates: ElectionCandidateItem[];
 }
 
@@ -143,6 +147,7 @@ export interface UpdateElectionPayload {
   starts_at?: string;
   ends_at?: string;
   allow_live_results?: boolean;
+  winning_threshold?: number | null;
   candidates?: ElectionCandidateItem[];
 }
 

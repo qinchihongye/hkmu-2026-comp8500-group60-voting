@@ -95,11 +95,19 @@ export function ElectionCard({ election }: Props) {
     );
   };
 
+  const isPendingFreeze =
+    election.phase === "REVIEWING" && new Date(election.starts_at).getTime() <= Date.now();
+
   return (
     <article className="election-card">
       <div className="election-card-header">
         <div className="election-card-badge-row">
-          <span className="official-stamp-pill">{t("election.badge")}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <span className="official-stamp-pill">{t("election.badge")}</span>
+            {isPendingFreeze ? (
+              <span className="pending-freeze-pill">⏳ {t("election.pendingFreezeBadge")}</span>
+            ) : null}
+          </div>
           <ElectionPhaseBadge phase={election.phase} />
         </div>
         <h3 className="election-card-title">
@@ -127,12 +135,27 @@ export function ElectionCard({ election }: Props) {
             {formatDate(election.starts_at)} ~ {formatDate(election.ends_at)}
           </span>
         </div>
+        {election.winning_threshold ? (
+          <div className="election-meta-item">
+            <span className="meta-label">{t("election.admin.winningThreshold")}:</span>
+            <span className="meta-value" style={{ color: "#166534", fontWeight: 700 }}>
+              🏆 {t("election.results.votes", { count: election.winning_threshold })}
+            </span>
+          </div>
+        ) : null}
         {election.allow_live_results ? (
           <div className="election-meta-live">
             <span className="live-dot" /> {t("polls.liveResults")}
           </div>
         ) : null}
       </div>
+
+      {isPendingFreeze ? (
+        <div className="election-card-pending-notice">
+          <span className="notice-icon">⚠️</span>
+          <span>{t("election.pendingFreezeNotice")}</span>
+        </div>
+      ) : null}
 
       <div className="election-card-footer">
         <div className="election-user-status">

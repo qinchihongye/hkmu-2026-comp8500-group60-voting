@@ -104,6 +104,7 @@ class ElectionService:
                     poll_id=poll.id,
                     registration_starts_at=request.registration_starts_at,
                     registration_ends_at=request.registration_ends_at,
+                    winning_threshold=request.winning_threshold,
                     roster_frozen_at=None,
                     eligible_voter_count=None,
                     created_at=now,
@@ -195,6 +196,8 @@ class ElectionService:
 
                 config.registration_starts_at = reg_starts
                 config.registration_ends_at = reg_ends
+                if request.winning_threshold is not None:
+                    config.winning_threshold = request.winning_threshold
                 config.updated_at = now
 
                 if request.candidates is not None:
@@ -401,6 +404,7 @@ class ElectionService:
                         starts_at=poll.starts_at,
                         ends_at=poll.ends_at,
                         allow_live_results=poll.allow_live_results,
+                        winning_threshold=config.winning_threshold,
                         candidate_count=c_count,
                         roster_frozen_at=config.roster_frozen_at,
                         eligible_voter_count=config.eligible_voter_count,
@@ -500,6 +504,7 @@ class ElectionService:
                         starts_at=poll.starts_at,
                         ends_at=poll.ends_at,
                         allow_live_results=poll.allow_live_results,
+                        winning_threshold=config.winning_threshold,
                         candidate_count=c_count,
                         roster_frozen_at=config.roster_frozen_at,
                         eligible_voter_count=config.eligible_voter_count,
@@ -586,6 +591,7 @@ class ElectionService:
             starts_at=poll.starts_at,
             ends_at=poll.ends_at,
             allow_live_results=poll.allow_live_results,
+            winning_threshold=config.winning_threshold,
             candidates=candidates,
             roster_frozen_at=config.roster_frozen_at,
             eligible_voter_count=config.eligible_voter_count,
@@ -684,3 +690,56 @@ class ElectionService:
                 detail.next_action = "NOT_ELIGIBLE"
         elif detail.phase == ElectionPhase.CLOSED:
             detail.next_action = "VIEW_RESULTS"
+
+    def check_and_trigger_threshold(
+        self, poll_id: int, candidate_option_id: int
+    ) -> bool:
+        """If election has winning_threshold and candidate has reached it, auto close election."""
+        now = self._clock.now()
+        with self._factory() as session:
+            try:
+                poll = session.execute(
+                    select(Poll).where(
+                        Poll.id == poll_id,
+                        Poll.activity_type == ActivityType.ELECTION.value,
+                    ).with_for_update()
+                ).scalar_one_or_none()
+
+                if poll is None or poll.lifecycle == PollLifecycle.CLOSED:
+                    return False
+
+                config = session.execute(
+                    select(ElectionConfig).where(ElectionConfig.poll_id == poll_id).with_for_update()
+                ).scalar_one_or_none()
+
+                if config is None or config.winning_threshold is None:
+                    return False
+
+                from src.main.python.database.models.election import ElectionBallot
+                votes_for_candidate = session.execute(
+                    select(func.count(ElectionBallot.id)).where(
+                        ElectionBallot.poll_id == poll_id,
+                        ElectionBallot.candidate_option_id == candidate_option_id,
+                    )
+                ).scalar_one()
+
+                if votes_for_candidate >= config.winning_threshold:
+                    poll.lifecycle = PollLifecycle.CLOSED
+                    poll.closed_at = now
+                    poll.updated_at = now
+                    self._audit.record(
+                        session=session,
+                        actor_id=poll.creator_id,
+                        action=AuditAction.CLOSE,
+                        poll_id=poll.id,
+                        receipt_id=None,
+                        request_id=_request_id(),
+                        created_at=now,
+                    )
+                    session.commit()
+                    return True
+                return False
+            except Exception:
+                session.rollback()
+                raise
+

@@ -35,6 +35,7 @@ class ElectionSummary(BaseModel):
     starts_at: datetime
     ends_at: datetime
     allow_live_results: bool
+    winning_threshold: int | None = None
     candidate_count: int
     roster_frozen_at: datetime | None = None
     eligible_voter_count: int | None = None
@@ -59,6 +60,7 @@ class ElectionDetail(BaseModel):
     starts_at: datetime
     ends_at: datetime
     allow_live_results: bool
+    winning_threshold: int | None = None
     candidates: list[CandidatePublic]
     roster_frozen_at: datetime | None = None
     eligible_voter_count: int | None = None
@@ -174,6 +176,7 @@ class ElectionResultResponse(BaseModel):
     title: str
     phase: ElectionPhase
     allow_live_results: bool
+    winning_threshold: int | None = None
     scale: TurnoutScaleStats
     candidate_results: list[CandidateResultItem] | None = None
     winner_option_ids: list[int] | None = None

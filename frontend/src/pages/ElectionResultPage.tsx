@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useAuth } from "../features/auth/AuthProvider";
 import { getElectionResults } from "../features/elections/api";
 import { ElectionPhaseBadge } from "../features/elections/ElectionPhaseBadge";
 import type { ElectionResultResponse } from "../features/elections/types";
@@ -9,6 +10,7 @@ import "./ElectionResultPage.css";
 export function ElectionResultPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useI18n();
+  const { user } = useAuth();
   const electionId = id ? parseInt(id, 10) : 0;
 
   const [results, setResults] = useState<ElectionResultResponse | null>(null);
@@ -101,10 +103,36 @@ export function ElectionResultPage() {
     <div className="view-root">
       <div className="view-scroll-frame">
         <div className="election-result-page">
-          <div className="result-breadcrumb">
-            <Link to={`/elections/${electionId}`} className="back-link">
-              &larr; {t("election.actions.backToList")}
-            </Link>
+          <div className="result-breadcrumb" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Link to="/elections" className="back-link">
+                &larr; {t("election.actions.backToList")}
+              </Link>
+              <span style={{ color: "#94a3b8" }}>/</span>
+              <Link to={`/elections/${electionId}`} style={{ fontSize: "0.88rem", color: "#2563eb", textDecoration: "none" }}>
+                {t("election.actions.backToDetail")}
+              </Link>
+            </div>
+            {user?.role === "ADMIN" ? (
+              <Link
+                to={`/admin/elections/${electionId}`}
+                style={{
+                  fontSize: "0.78rem",
+                  fontWeight: 700,
+                  color: "#1d4ed8",
+                  background: "#eff6ff",
+                  border: "1px solid #bfdbfe",
+                  padding: "4px 10px",
+                  borderRadius: "6px",
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                ⚙️ {t("election.actions.manageElection")}
+              </Link>
+            ) : null}
           </div>
 
           <header className="result-header-card">
@@ -162,6 +190,11 @@ export function ElectionResultPage() {
                 <span className="winner-share-badge">
                   {winners[0].percentage}% ({winners[0].vote_count} {t("common.records", { total: winners[0].vote_count })})
                 </span>
+                {results.winning_threshold && winners.some((w) => w.vote_count >= results.winning_threshold!) ? (
+                  <div style={{ marginTop: 6, fontSize: "0.85rem", color: "#166534", fontWeight: 600 }}>
+                    ⚡ {t("election.wonByThreshold", { count: results.winning_threshold })}
+                  </div>
+                ) : null}
               </div>
             </section>
           ) : null}

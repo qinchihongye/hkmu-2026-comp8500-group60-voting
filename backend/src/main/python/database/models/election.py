@@ -53,6 +53,10 @@ class ElectionConfig(Base):
             "AND eligible_voter_count >= 0)",
             name="ck_election_configs_freeze",
         ),
+        CheckConstraint(
+            "winning_threshold IS NULL OR winning_threshold > 0",
+            name="ck_election_configs_winning_threshold",
+        ),
     )
 
     poll_id: Mapped[int] = mapped_column(
@@ -65,6 +69,7 @@ class ElectionConfig(Base):
     registration_ends_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
+    winning_threshold: Mapped[int | None] = mapped_column(Integer, nullable=True)
     roster_frozen_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

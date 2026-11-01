@@ -51,6 +51,7 @@ class CreateElectionRequest(BaseRequestData):
     registration_ends_at: datetime
     starts_at: datetime
     ends_at: datetime
+    winning_threshold: int | None = Field(default=None, ge=1, le=1000000)
     allow_live_results: bool
     candidates: list[CandidateInput] = Field(min_length=2)
 
@@ -92,6 +93,7 @@ class UpdateElectionRequest(BaseRequestData):
     registration_ends_at: datetime | None = None
     starts_at: datetime | None = None
     ends_at: datetime | None = None
+    winning_threshold: int | None = None
     allow_live_results: bool | None = None
     candidates: list[CandidateInput] | None = None
 

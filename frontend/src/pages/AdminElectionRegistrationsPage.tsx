@@ -104,11 +104,74 @@ export function AdminElectionRegistrationsPage() {
   return (
     <div className="view-root">
       <header className="view-header">
-        <div className="admin-breadcrumb" style={{ marginBottom: 8 }}>
-          <Link to={`/admin/elections/${electionId}`} className="back-link">
-            &larr; {election?.title || t("election.admin.title")}
+        <div className="admin-breadcrumb" style={{ marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Link to="/admin/elections" className="back-link">
+              &larr; {t("election.admin.title")}
+            </Link>
+            <span style={{ color: "#94a3b8" }}>/</span>
+            <Link to={`/admin/elections/${electionId}`} style={{ fontSize: "0.88rem", color: "#2563eb", textDecoration: "none" }}>
+              {election?.title || t("election.actions.backToDetail")}
+            </Link>
+          </div>
+          <Link
+            to={`/elections/${electionId}`}
+            style={{
+              fontSize: "0.78rem",
+              fontWeight: 600,
+              color: "#475569",
+              background: "#ffffff",
+              border: "1px solid #cbd5e1",
+              padding: "4px 10px",
+              borderRadius: "6px",
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            👁️ {t("election.admin.viewPublicPage")}
           </Link>
         </div>
+
+        {election?.phase === "REVIEWING" ? (
+          <div
+            style={{
+              background: "#eff6ff",
+              border: "1px solid #bfdbfe",
+              borderRadius: "10px",
+              padding: "10px 16px",
+              marginBottom: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+            }}
+          >
+            <div style={{ fontSize: "0.88rem", color: "#1e40af", display: "flex", alignItems: "center", gap: "8px" }}>
+              <span>ℹ️</span>
+              <span>{t("election.admin.freezePrompt")}</span>
+            </div>
+            <Link
+              to={`/admin/elections/${electionId}`}
+              style={{
+                padding: "6px 14px",
+                borderRadius: "6px",
+                fontSize: "0.82rem",
+                fontWeight: 600,
+                background: "#f59e0b",
+                color: "#ffffff",
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              {t("election.actions.freezeRoster")} &rarr;
+            </Link>
+          </div>
+        ) : null}
 
         <div className="registrations-header-row">
           <div>

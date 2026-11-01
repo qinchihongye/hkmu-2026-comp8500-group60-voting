@@ -244,6 +244,13 @@ export function AdminElectionDetailPage() {
               >
                 {t("election.actions.viewResults")}
               </Link>
+
+              <Link
+                to={`/elections/${election.id}`}
+                className="ctrl-btn btn-view"
+              >
+                👁️ {t("election.admin.viewPublicPage")}
+              </Link>
             </div>
           </header>
 
@@ -281,6 +288,15 @@ export function AdminElectionDetailPage() {
                 )}
               </span>
             </div>
+
+            {election.winning_threshold ? (
+              <div className="meta-card">
+                <span className="meta-label">{t("election.admin.winningThreshold")}</span>
+                <span className="meta-val">
+                  <span className="tag-enabled">🏆 {t("election.results.votes", { count: election.winning_threshold })}</span>
+                </span>
+              </div>
+            ) : null}
           </section>
 
           {/* Candidates List */}
