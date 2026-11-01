@@ -1,5 +1,6 @@
 """进程配置。值来自环境变量或仓库根目录 .env，不读取个人绝对路径。"""
 
+import json
 from pathlib import Path
 
 from pydantic import Field, field_validator, model_validator
@@ -66,7 +67,7 @@ class Settings(BaseSettings):
     @field_validator("allowed_origins", mode="before")
     @classmethod
     def split_origins(cls, value: object) -> object:
-        """把逗号分隔的来源字符串拆成列表。
+        """把来源字符串（支持 JSON 数组或逗号分隔）解析成列表。
 
         Args:
             value: 环境变量中的原始值。
@@ -75,7 +76,15 @@ class Settings(BaseSettings):
             去空白后的来源列表，或其他类型的原值。
         """
         if isinstance(value, str):
-            return [item.strip() for item in value.split(",") if item.strip()]
+            val = value.strip()
+            if val.startswith("[") and val.endswith("]"):
+                try:
+                    parsed = json.loads(val)
+                    if isinstance(parsed, list):
+                        return [str(item).strip() for item in parsed if str(item).strip()]
+                except Exception:
+                    pass
+            return [item.strip().strip("'\"") for item in val.split(",") if item.strip()]
         return value
 
     @field_validator("anon_voter_hmac_key")
