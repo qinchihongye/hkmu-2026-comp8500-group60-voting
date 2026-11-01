@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ConfirmActionModal } from "../components/ConfirmActionModal";
+import { InlineBanner } from "../components/InlineBanner";
 import {
   closeAdminElection,
   freezeAdminRoster,
@@ -17,6 +19,22 @@ export function AdminElectionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    variant: "primary" | "warning" | "danger";
+    loading: boolean;
+    onConfirm: () => Promise<void>;
+  }>({
+    open: false,
+    title: "",
+    message: "",
+    variant: "primary",
+    loading: false,
+    onConfirm: async () => {},
+  });
 
   const fetchElections = () => {
     setLoading(true);
@@ -31,37 +49,79 @@ export function AdminElectionsPage() {
     fetchElections();
   }, [t]);
 
-  const handlePublish = async (id: number) => {
-    if (!window.confirm(t("election.admin.publishPrompt"))) return;
-    try {
-      await publishAdminElection(id);
-      setActionMsg(t("election.admin.publishPrompt"));
-      fetchElections();
-    } catch (err: any) {
-      alert(err.message || t("error.internal"));
-    }
+  const handlePublish = (id: number) => {
+    setActionMsg(null);
+    setError(null);
+    setConfirmModal({
+      open: true,
+      title: t("election.actions.publish"),
+      message: t("election.admin.publishPrompt"),
+      confirmText: t("election.actions.publish"),
+      variant: "primary",
+      loading: false,
+      onConfirm: async () => {
+        try {
+          setConfirmModal((prev) => ({ ...prev, loading: true }));
+          await publishAdminElection(id);
+          setConfirmModal((prev) => ({ ...prev, open: false, loading: false }));
+          setActionMsg(t("election.admin.publishSuccess"));
+          fetchElections();
+        } catch (err: any) {
+          setConfirmModal((prev) => ({ ...prev, open: false, loading: false }));
+          setError(err.message || t("error.internal"));
+        }
+      },
+    });
   };
 
-  const handleFreeze = async (id: number) => {
-    if (!window.confirm(t("election.admin.freezePrompt"))) return;
-    try {
-      const res = await freezeAdminRoster(id);
-      alert(t("election.admin.freezeSuccess", { count: res.issued_credential_count }));
-      fetchElections();
-    } catch (err: any) {
-      alert(err.message || t("error.internal"));
-    }
+  const handleFreeze = (id: number) => {
+    setActionMsg(null);
+    setError(null);
+    setConfirmModal({
+      open: true,
+      title: t("election.actions.freezeRoster"),
+      message: t("election.admin.freezePrompt"),
+      confirmText: t("election.actions.freezeRoster"),
+      variant: "warning",
+      loading: false,
+      onConfirm: async () => {
+        try {
+          setConfirmModal((prev) => ({ ...prev, loading: true }));
+          const res = await freezeAdminRoster(id);
+          setConfirmModal((prev) => ({ ...prev, open: false, loading: false }));
+          setActionMsg(t("election.admin.freezeSuccess", { count: res.issued_credential_count }));
+          fetchElections();
+        } catch (err: any) {
+          setConfirmModal((prev) => ({ ...prev, open: false, loading: false }));
+          setError(err.message || t("error.internal"));
+        }
+      },
+    });
   };
 
-  const handleClose = async (id: number) => {
-    if (!window.confirm(t("election.admin.closePrompt"))) return;
-    try {
-      await closeAdminElection(id);
-      alert(t("election.admin.closeSuccess"));
-      fetchElections();
-    } catch (err: any) {
-      alert(err.message || t("error.internal"));
-    }
+  const handleClose = (id: number) => {
+    setActionMsg(null);
+    setError(null);
+    setConfirmModal({
+      open: true,
+      title: t("election.actions.earlyClose"),
+      message: t("election.admin.closePrompt"),
+      confirmText: t("election.actions.earlyClose"),
+      variant: "danger",
+      loading: false,
+      onConfirm: async () => {
+        try {
+          setConfirmModal((prev) => ({ ...prev, loading: true }));
+          await closeAdminElection(id);
+          setConfirmModal((prev) => ({ ...prev, open: false, loading: false }));
+          setActionMsg(t("election.admin.closeSuccess"));
+          fetchElections();
+        } catch (err: any) {
+          setConfirmModal((prev) => ({ ...prev, open: false, loading: false }));
+          setError(err.message || t("error.internal"));
+        }
+      },
+    });
   };
 
   return (
@@ -81,8 +141,20 @@ export function AdminElectionsPage() {
       </header>
 
       <div className="view-scroll-frame">
-        {actionMsg ? <div className="admin-success-banner">{actionMsg}</div> : null}
-        {error ? <div className="admin-error-banner">{error}</div> : null}
+        {actionMsg ? (
+          <InlineBanner
+            type="success"
+            message={actionMsg}
+            onClose={() => setActionMsg(null)}
+          />
+        ) : null}
+        {error ? (
+          <InlineBanner
+            type="error"
+            message={error}
+            onClose={() => setError(null)}
+          />
+        ) : null}
 
         {loading ? (
           <div className="saas-table-card" style={{ padding: 48, textAlign: "center", color: "#64748b" }}>
@@ -230,6 +302,18 @@ export function AdminElectionsPage() {
           </div>
         )}
       </div>
+
+      <ConfirmActionModal
+        open={confirmModal.open}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText={t("common.cancel")}
+        variant={confirmModal.variant}
+        loading={confirmModal.loading}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal((prev) => ({ ...prev, open: false }))}
+      />
     </div>
   );
 }

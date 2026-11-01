@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 
 from pwdlib import PasswordHash
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -267,18 +267,25 @@ class PollAccessService:
             return session.scalar(
                 select(Vote).where(Vote.poll_id == poll.id, Vote.voter_id == principal.user_id)
             )
-        if poll.identity_mode != IdentityMode.ANONYMOUS or guest is None:
+        if poll.identity_mode != IdentityMode.ANONYMOUS:
             return None
-        try:
-            digest = anonymous_voter_hash(
-                self._settings.anon_voter_hmac_key,
-                poll.id,
-                guest.raw_token,
-            )
-        except ValueError:
-            raise _unavailable() from None
+        conditions = []
+        if principal is not None:
+            conditions.append(Vote.voter_id == principal.user_id)
+        if guest is not None:
+            try:
+                digest = anonymous_voter_hash(
+                    self._settings.anon_voter_hmac_key,
+                    poll.id,
+                    guest.raw_token,
+                )
+                conditions.append(Vote.anonymous_voter_hash == digest)
+            except ValueError:
+                raise _unavailable() from None
+        if not conditions:
+            return None
         return session.scalar(
-            select(Vote).where(Vote.poll_id == poll.id, Vote.anonymous_voter_hash == digest)
+            select(Vote).where(Vote.poll_id == poll.id, or_(*conditions))
         )
 
 

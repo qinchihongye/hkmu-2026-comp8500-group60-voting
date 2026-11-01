@@ -91,8 +91,8 @@ def test_anonymous_vote_allows_different_browser_hashes(db_session: Session) -> 
     assert count == 2
 
 
-def test_anonymous_vote_rejects_voter_id(db_session: Session) -> None:
-    """匿名票不能带账户编号。"""
+def test_anonymous_vote_allows_voter_id_and_deduplicates(db_session: Session) -> None:
+    """已登录匿名票允许带账户编号并唯一防重，缺少浏览器凭据散列则拒绝。"""
     creator = add_user(db_session)
     voter = add_user(db_session, "voter")
     poll = add_poll(db_session, creator.id, identity_mode="ANONYMOUS")
@@ -104,6 +104,28 @@ def test_anonymous_vote_rejects_voter_id(db_session: Session) -> None:
         identity_mode="ANONYMOUS",
         voter_id=voter.id,
         anonymous_voter_hash="c" * 64,
+    )
+    db_session.flush()
+
+    # 同一账户在同一场匿名投票再次投票应命中唯一约束
+    add_vote(
+        db_session,
+        poll_id=poll.id,
+        option_id=option.id,
+        identity_mode="ANONYMOUS",
+        voter_id=voter.id,
+        anonymous_voter_hash="d" * 64,
+    )
+    _expect_rejected(db_session, "uq_votes_anon_poll_voter")
+
+    # 缺少散列则命中 ck_votes_identity
+    add_vote(
+        db_session,
+        poll_id=poll.id,
+        option_id=option.id,
+        identity_mode="ANONYMOUS",
+        voter_id=None,
+        anonymous_voter_hash=None,
     )
     _expect_rejected(db_session, "ck_votes_identity")
 

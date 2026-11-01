@@ -114,7 +114,7 @@ describe("PollForm", () => {
     expect(screen.getByLabelText("Ballot limit")).toHaveValue("");
     expect(screen.getByPlaceholderText("Unlimited")).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "Single choice" })).toBeChecked();
-    expect(screen.queryByText(/This browser is the credential/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Note: This is an anonymous ballot/)).not.toBeInTheDocument();
 
     await fillRequired();
     await userEvent.click(screen.getByTestId("save-poll"));

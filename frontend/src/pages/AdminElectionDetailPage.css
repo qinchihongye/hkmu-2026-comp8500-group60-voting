@@ -13,6 +13,28 @@
   margin-bottom: 2px;
 }
 
+.admin-success-banner {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.admin-error-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
 .back-link {
   color: #64748b;
   text-decoration: none;

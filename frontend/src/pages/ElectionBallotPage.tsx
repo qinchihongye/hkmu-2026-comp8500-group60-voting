@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { InlineBanner } from "../components/InlineBanner";
 import { castElectionBallot, getPublicElection } from "../features/elections/api";
 import type { BallotReceiptResponse, ElectionDetail } from "../features/elections/types";
 import { useI18n } from "../i18n/LocaleProvider";
@@ -174,7 +175,13 @@ export function ElectionBallotPage() {
                 </div>
               </div>
 
-              {error ? <div className="ballot-error-banner">{error}</div> : null}
+              {error ? (
+                <InlineBanner
+                  type="error"
+                  message={error}
+                  onClose={() => setError(null)}
+                />
+              ) : null}
 
               <div className="candidate-selection-container">
                 <label className="selection-prompt">{t("election.ballot.selectCandidate")}</label>

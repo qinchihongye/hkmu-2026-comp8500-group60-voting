@@ -285,8 +285,8 @@ def test_private_history_hides_expired_grant(auth_app: FastAPI, auth_client: Tes
             csrf=csrf,
         )
         visible = envelope(voter.get("/api/v1/me/votes"), 200)
-        assert visible["total"] == 2
-        assert "公开匿名" not in voter.get("/api/v1/me/votes").text
+        assert visible["total"] == 3
+        assert "公开匿名" in voter.get("/api/v1/me/votes").text
         assert envelope(voter.get(f"/api/v1/polls/{private_id}/results"), 200)["total_votes"] == 1
 
         clock_of(auth_client).advance(timedelta(minutes=61))
@@ -296,16 +296,16 @@ def test_private_history_hides_expired_grant(auth_app: FastAPI, auth_client: Tes
             int(ApiCode.POLL_NOT_FOUND),
         )
         hidden = envelope(voter.get("/api/v1/me/votes"), 200)
-        assert hidden["total"] == 1
-        assert hidden["items"][0]["poll_title"] == "公开记名"
-        assert hidden["items"][0]["receipt_id"] == public_receipt["receipt_id"]
+        assert hidden["total"] == 2
+        hidden_titles = {item["poll_title"] for item in hidden["items"]}
+        assert hidden_titles == {"公开记名", "公开匿名"}
         assert "私密记名" not in voter.get("/api/v1/me/votes").text
 
         unlock(voter, guest_csrf, private_id, share_code_of(auth_client, private_id))
         restored = envelope(voter.get("/api/v1/me/votes"), 200)
-        assert restored["total"] == 2
+        assert restored["total"] == 3
         titles = {item["poll_title"] for item in restored["items"]}
-        assert titles == {"私密记名", "公开记名"}
+        assert titles == {"私密记名", "公开记名", "公开匿名"}
         receipts = {item["receipt_id"] for item in restored["items"]}
         assert named_receipt["receipt_id"] in receipts
 

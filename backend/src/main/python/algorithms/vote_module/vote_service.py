@@ -37,7 +37,11 @@ from src.main.python.utils.error_handlers import AppError
 from src.main.python.utils.security_util import anonymous_voter_hash
 
 logger = get_logger("vote")
-_ALREADY_VOTED = {"uq_votes_named_poll_voter", "uq_votes_anon_poll_browser"}
+_ALREADY_VOTED = {
+    "uq_votes_named_poll_voter",
+    "uq_votes_anon_poll_browser",
+    "uq_votes_anon_poll_voter",
+}
 
 
 class VoteService:
@@ -113,7 +117,7 @@ class VoteService:
                 receipt_id = uuid4()
                 vote = _insert_vote(session, poll, context, self._hmac_key, receipt_id, now)
                 _insert_selections(session, vote, chosen)
-                if vote.voter_id is not None:
+                if vote.voter_id is not None and vote.identity_mode == IdentityMode.NAMED:
                     self._audit.record(
                         session,
                         vote.voter_id,
@@ -167,7 +171,6 @@ class VoteService:
         now = self._clock.now()
         clauses = [
             Vote.voter_id == principal.user_id,
-            Vote.identity_mode == IdentityMode.NAMED,
             Poll.activity_type == ActivityType.POLL,
             _history_visible(context, now),
         ]
@@ -288,11 +291,17 @@ def _existing_vote(
         return session.scalar(
             select(Vote).where(Vote.poll_id == poll.id, Vote.voter_id == principal.user_id)
         )
-    return session.scalar(
-        select(Vote).where(
-            Vote.poll_id == poll.id,
-            Vote.anonymous_voter_hash == _browser_hash(hmac_key, poll.id, context),
+    conditions = []
+    if context.principal is not None:
+        conditions.append(Vote.voter_id == context.principal.user_id)
+    if context.guest is not None:
+        conditions.append(
+            Vote.anonymous_voter_hash == _browser_hash(hmac_key, poll.id, context)
         )
+    if not conditions:
+        return None
+    return session.scalar(
+        select(Vote).where(Vote.poll_id == poll.id, or_(*conditions))
     )
 
 
@@ -344,11 +353,12 @@ def _insert_vote(
             submitted_at=now,
         )
     else:
+        voter_id = _lock_active_user(session, context) if context.principal is not None else None
         vote = Vote(
             receipt_id=receipt_id,
             poll_id=poll.id,
             identity_mode=IdentityMode.ANONYMOUS,
-            voter_id=None,
+            voter_id=voter_id,
             anonymous_voter_hash=_browser_hash(hmac_key, poll.id, context),
             submitted_at=now,
         )

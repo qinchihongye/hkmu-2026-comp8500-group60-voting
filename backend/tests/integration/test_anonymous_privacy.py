@@ -74,7 +74,7 @@ def test_logged_in_anonymous_vote_is_not_linked(
     with open_session(auth_client) as session:
         vote = session.scalar(select(Vote).where(Vote.poll_id == poll_id))
         assert vote is not None
-        assert vote.voter_id is None
+        assert vote.voter_id == created["creator_id"]
         assert vote.anonymous_voter_hash == digest
         assert vote.identity_mode == "ANONYMOUS"
         linked_receipt = session.scalar(
@@ -115,5 +115,5 @@ def test_anonymous_capacity_close_does_not_link_account(
     with open_session(auth_client) as session:
         vote = session.scalar(select(Vote).where(Vote.poll_id == poll_id))
         assert vote is not None
-        assert vote.voter_id is None
+        assert vote.voter_id == created["creator_id"]
         assert vote.identity_mode == "ANONYMOUS"

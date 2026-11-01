@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { ConfirmActionModal } from "../components/ConfirmActionModal";
+import { InlineBanner } from "../components/InlineBanner";
 import {
   closeAdminElection,
   freezeAdminRoster,
@@ -19,6 +21,25 @@ export function AdminElectionDetailPage() {
   const [election, setElection] = useState<ElectionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    variant: "primary" | "warning" | "danger";
+    loading: boolean;
+    onConfirm: () => Promise<void>;
+  }>({
+    open: false,
+    title: "",
+    message: "",
+    variant: "primary",
+    loading: false,
+    onConfirm: async () => {},
+  });
 
   const loadElection = () => {
     if (!electionId) return;
@@ -33,36 +54,79 @@ export function AdminElectionDetailPage() {
     loadElection();
   }, [electionId, t]);
 
-  const handlePublish = async () => {
-    if (!window.confirm(t("election.admin.publishPrompt"))) return;
-    try {
-      await publishAdminElection(electionId);
-      loadElection();
-    } catch (err: any) {
-      alert(err.message || t("error.internal"));
-    }
+  const handlePublish = () => {
+    setActionMsg(null);
+    setActionError(null);
+    setConfirmModal({
+      open: true,
+      title: t("election.actions.publish"),
+      message: t("election.admin.publishPrompt"),
+      confirmText: t("election.actions.publish"),
+      variant: "primary",
+      loading: false,
+      onConfirm: async () => {
+        try {
+          setConfirmModal((prev) => ({ ...prev, loading: true }));
+          await publishAdminElection(electionId);
+          setConfirmModal((prev) => ({ ...prev, open: false, loading: false }));
+          setActionMsg(t("election.admin.publishSuccess"));
+          loadElection();
+        } catch (err: any) {
+          setConfirmModal((prev) => ({ ...prev, open: false, loading: false }));
+          setActionError(err.message || t("error.internal"));
+        }
+      },
+    });
   };
 
-  const handleFreeze = async () => {
-    if (!window.confirm(t("election.admin.freezePrompt"))) return;
-    try {
-      const res = await freezeAdminRoster(electionId);
-      alert(t("election.admin.freezeSuccess", { count: res.issued_credential_count }));
-      loadElection();
-    } catch (err: any) {
-      alert(err.message || t("error.internal"));
-    }
+  const handleFreeze = () => {
+    setActionMsg(null);
+    setActionError(null);
+    setConfirmModal({
+      open: true,
+      title: t("election.actions.freezeRoster"),
+      message: t("election.admin.freezePrompt"),
+      confirmText: t("election.actions.freezeRoster"),
+      variant: "warning",
+      loading: false,
+      onConfirm: async () => {
+        try {
+          setConfirmModal((prev) => ({ ...prev, loading: true }));
+          const res = await freezeAdminRoster(electionId);
+          setConfirmModal((prev) => ({ ...prev, open: false, loading: false }));
+          setActionMsg(t("election.admin.freezeSuccess", { count: res.issued_credential_count }));
+          loadElection();
+        } catch (err: any) {
+          setConfirmModal((prev) => ({ ...prev, open: false, loading: false }));
+          setActionError(err.message || t("error.internal"));
+        }
+      },
+    });
   };
 
-  const handleClose = async () => {
-    if (!window.confirm(t("election.admin.closePrompt"))) return;
-    try {
-      await closeAdminElection(electionId);
-      alert(t("election.admin.closeSuccess"));
-      loadElection();
-    } catch (err: any) {
-      alert(err.message || t("error.internal"));
-    }
+  const handleClose = () => {
+    setActionMsg(null);
+    setActionError(null);
+    setConfirmModal({
+      open: true,
+      title: t("election.actions.earlyClose"),
+      message: t("election.admin.closePrompt"),
+      confirmText: t("election.actions.earlyClose"),
+      variant: "danger",
+      loading: false,
+      onConfirm: async () => {
+        try {
+          setConfirmModal((prev) => ({ ...prev, loading: true }));
+          await closeAdminElection(electionId);
+          setConfirmModal((prev) => ({ ...prev, open: false, loading: false }));
+          setActionMsg(t("election.admin.closeSuccess"));
+          loadElection();
+        } catch (err: any) {
+          setConfirmModal((prev) => ({ ...prev, open: false, loading: false }));
+          setActionError(err.message || t("error.internal"));
+        }
+      },
+    });
   };
 
   if (loading) {
@@ -107,6 +171,21 @@ export function AdminElectionDetailPage() {
               &larr; {t("election.admin.title")}
             </Link>
           </div>
+
+          {actionMsg ? (
+            <InlineBanner
+              type="success"
+              message={actionMsg}
+              onClose={() => setActionMsg(null)}
+            />
+          ) : null}
+          {actionError ? (
+            <InlineBanner
+              type="error"
+              message={actionError}
+              onClose={() => setActionError(null)}
+            />
+          ) : null}
 
           <header className="admin-detail-header-card">
             <div className="header-badge-row">
@@ -234,6 +313,18 @@ export function AdminElectionDetailPage() {
           </section>
         </div>
       </div>
+
+      <ConfirmActionModal
+        open={confirmModal.open}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText={t("common.cancel")}
+        variant={confirmModal.variant}
+        loading={confirmModal.loading}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal((prev) => ({ ...prev, open: false }))}
+      />
     </div>
   );
 }

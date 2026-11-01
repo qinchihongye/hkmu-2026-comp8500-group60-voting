@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { InlineBanner } from "../components/InlineBanner";
 import { createAdminElection } from "../features/elections/api";
 import type { ElectionCandidateItem } from "../features/elections/types";
 import { useI18n } from "../i18n/LocaleProvider";
@@ -29,6 +30,7 @@ export function AdminElectionCreatePage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [candError, setCandError] = useState<string | null>(null);
 
   const handleCandidateChange = (
     index: number,
@@ -41,15 +43,17 @@ export function AdminElectionCreatePage() {
   };
 
   const handleAddCandidate = () => {
+    setCandError(null);
     const nextCode = `C_${candidates.length + 1}`;
     setCandidates([...candidates, { candidate_code: nextCode, name: "", statement: "" }]);
   };
 
   const handleRemoveCandidate = (index: number) => {
     if (candidates.length <= 2) {
-      alert("At least 2 candidates required");
+      setCandError(t("election.admin.minCandidatesRequired") || "At least 2 candidates required");
       return;
     }
+    setCandError(null);
     setCandidates(candidates.filter((_, i) => i !== index));
   };
 
@@ -58,13 +62,13 @@ export function AdminElectionCreatePage() {
     setError(null);
 
     if (!title.trim()) {
-      setError("Title is required");
+      setError(t("election.admin.titleRequired"));
       return;
     }
 
     for (const c of candidates) {
       if (!c.candidate_code.trim() || !c.name.trim()) {
-        setError("All candidates must have a valid code and name");
+        setError(t("election.admin.candidateRequired"));
         return;
       }
     }
@@ -110,7 +114,13 @@ export function AdminElectionCreatePage() {
               <p className="create-subtitle">{t("election.subtitle")}</p>
             </header>
 
-            {error ? <div className="create-error-banner">{error}</div> : null}
+            {error ? (
+              <InlineBanner
+                type="error"
+                message={error}
+                onClose={() => setError(null)}
+              />
+            ) : null}
 
             <form className="create-form" onSubmit={handleSubmit}>
               {/* Basic Info */}
@@ -215,6 +225,14 @@ export function AdminElectionCreatePage() {
                     + {t("election.admin.addCandidate")}
                   </button>
                 </div>
+
+                {candError ? (
+                  <InlineBanner
+                    type="error"
+                    message={candError}
+                    onClose={() => setCandError(null)}
+                  />
+                ) : null}
 
                 <div className="candidates-inputs-list">
                   {candidates.map((cand, idx) => (

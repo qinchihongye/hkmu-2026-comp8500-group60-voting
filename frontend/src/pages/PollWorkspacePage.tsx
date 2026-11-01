@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { ConfirmActionModal } from "../components/ConfirmActionModal";
+import { InlineBanner } from "../components/InlineBanner";
 
 import {
   closePoll,
@@ -28,6 +30,7 @@ export function PollWorkspacePage() {
   const [results, setResults] = useState<PollResults | null>(null);
   const [busy, setBusy] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
 
   const load = useCallback((id: number) => {
     return getOwnedPoll(id).then(async (next) => {
@@ -68,10 +71,16 @@ export function PollWorkspacePage() {
       return;
     }
     setBusy(true);
+    setActionSuccessMsg(null);
     clear();
     try {
       const next = kind === "publish" ? await publishPoll(poll.id, poll.version) : await closePoll(poll.id, poll.version);
       setPoll(next);
+      setActionSuccessMsg(
+        kind === "publish"
+          ? t("workspace.publishSuccess")
+          : t("workspace.closeSuccess")
+      );
       await load(next.id);
     } catch (caught) {
       setCause(isApiClientError(caught) ? caught : new I18nError("error.actionFailed"));
@@ -196,9 +205,23 @@ export function PollWorkspacePage() {
           ) : null}
         </div>
 
+        {actionSuccessMsg ? (
+          <div style={{ marginTop: 14 }}>
+            <InlineBanner
+              type="success"
+              message={actionSuccessMsg}
+              onClose={() => setActionSuccessMsg(null)}
+            />
+          </div>
+        ) : null}
+
         {failure.message ? (
-          <div style={{ marginTop: 14, padding: "10px 14px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8 }}>
-            <p role="alert" style={{ margin: 0, color: "#dc2626", fontSize: "0.9rem", fontWeight: 600 }}>{failure.message}</p>
+          <div style={{ marginTop: 14 }}>
+            <InlineBanner
+              type="error"
+              message={failure.message}
+              onClose={() => clear()}
+            />
           </div>
         ) : null}
 
@@ -209,69 +232,20 @@ export function PollWorkspacePage() {
         ) : null}
       </div>
 
-      {showCloseConfirm ? (
-        <div
-          className="coming-soon-backdrop"
-          onClick={() => setShowCloseConfirm(false)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="coming-soon-card"
-            style={{ maxWidth: 460 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-              <div
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  background: "#fef2f2",
-                  color: "#dc2626",
-                  display: "grid",
-                  placeItems: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
-                  <line x1="12" y1="9" x2="12" y2="13"/>
-                  <line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
-              </div>
-              <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700, color: "#0f172a" }}>
-                提前结束投票确认
-              </h3>
-            </div>
-            <p style={{ margin: "0 0 20px 0", color: "#64748b", fontSize: "0.92rem", lineHeight: 1.5 }}>
-              结束后该投票将停止接收新的选票，并计算最终结果。该操作不可撤销。
-            </p>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-              <button
-                type="button"
-                className="view-btn view-btn-secondary"
-                onClick={() => setShowCloseConfirm(false)}
-                disabled={busy}
-              >
-                {t("common.cancel")}
-              </button>
-              <button
-                type="button"
-                className="view-btn view-btn-primary"
-                style={{ background: "#dc2626", borderColor: "#dc2626" }}
-                disabled={busy}
-                onClick={async () => {
-                  setShowCloseConfirm(false);
-                  await act("close");
-                }}
-              >
-                {busy ? t("common.saving") : t("workspace.close")}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ConfirmActionModal
+        open={showCloseConfirm}
+        title={t("workspace.closeConfirmTitle")}
+        message={t("workspace.closeConfirmPrompt")}
+        confirmText={t("workspace.close")}
+        cancelText={t("common.cancel")}
+        variant="danger"
+        loading={busy}
+        onConfirm={async () => {
+          setShowCloseConfirm(false);
+          await act("close");
+        }}
+        onCancel={() => setShowCloseConfirm(false)}
+      />
 
       {share ? (
         <SharePanel

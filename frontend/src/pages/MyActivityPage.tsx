@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { ConfirmActionModal } from "../components/ConfirmActionModal";
+import { InlineBanner } from "../components/InlineBanner";
 
 import { useAuth } from "../features/auth/AuthProvider";
 import { MyPollCard } from "../features/creator/MyPollCard";
@@ -99,6 +101,7 @@ export function MyActivityPage({ defaultTab }: MyActivityPageProps) {
   const [votePage, setVotePage] = useState(1);
   const [voteLoading, setVoteLoading] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<MyVote | null>(null);
+  const [deleteNotice, setDeleteNotice] = useState<string | null>(null);
   const votePageSize = 12;
 
   const storageKey = auth.user
@@ -406,6 +409,14 @@ export function MyActivityPage({ defaultTab }: MyActivityPageProps) {
               </div>
             ) : (
               <>
+                {deleteNotice ? (
+                  <InlineBanner
+                    type="success"
+                    message={deleteNotice}
+                    onClose={() => setDeleteNotice(null)}
+                  />
+                ) : null}
+
                 <div className="saas-table-card">
                   <table className="saas-table">
                     <thead>
@@ -443,51 +454,31 @@ export function MyActivityPage({ defaultTab }: MyActivityPageProps) {
                   </table>
                 </div>
 
-                {/* Delete Confirmation Modal */}
-                {recordToDelete ? (
-                  <div
-                    className="vote-delete-modal-backdrop"
-                    onClick={() => setRecordToDelete(null)}
-                  >
-                    <div
-                      className="vote-delete-modal-card"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <h4 className="vote-delete-modal-title">{t("votes.deleteTitle")}</h4>
-                      <p className="vote-delete-modal-text">{t("votes.deleteConfirm")}</p>
-                      <p className="vote-delete-modal-hint">{t("votes.deleteHint")}</p>
-                      <div className="vote-delete-modal-actions">
-                        <button
-                          type="button"
-                          className="vote-delete-modal-cancel"
-                          onClick={() => setRecordToDelete(null)}
-                        >
-                          {t("common.cancel")}
-                        </button>
-                        <button
-                          type="button"
-                          className="vote-delete-modal-confirm"
-                          onClick={() => {
-                            const deleted = getDeletedReceipts(storageKey);
-                            if (!deleted.includes(recordToDelete.receipt_id)) {
-                              deleted.push(recordToDelete.receipt_id);
-                              try {
-                                localStorage.setItem(storageKey, JSON.stringify(deleted));
-                              } catch {
-                                // ignore
-                              }
-                            }
-                            setVotedItems((prev) => prev.filter((i) => i.receipt_id !== recordToDelete.receipt_id));
-                            setVotedTotal((prev) => Math.max(0, prev - 1));
-                            setRecordToDelete(null);
-                          }}
-                        >
-                          {t("votes.confirmDelete")}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
+                <ConfirmActionModal
+                  open={Boolean(recordToDelete)}
+                  title={t("votes.deleteTitle")}
+                  message={`${t("votes.deleteConfirm")} (${t("votes.deleteHint")})`}
+                  confirmText={t("votes.confirmDelete")}
+                  cancelText={t("common.cancel")}
+                  variant="danger"
+                  onConfirm={() => {
+                    if (!recordToDelete) return;
+                    const deleted = getDeletedReceipts(storageKey);
+                    if (!deleted.includes(recordToDelete.receipt_id)) {
+                      deleted.push(recordToDelete.receipt_id);
+                      try {
+                        localStorage.setItem(storageKey, JSON.stringify(deleted));
+                      } catch {
+                        // ignore
+                      }
+                    }
+                    setVotedItems((prev) => prev.filter((i) => i.receipt_id !== recordToDelete.receipt_id));
+                    setVotedTotal((prev) => Math.max(0, prev - 1));
+                    setRecordToDelete(null);
+                    setDeleteNotice(t("votes.deleteSuccess"));
+                  }}
+                  onCancel={() => setRecordToDelete(null)}
+                />
 
                 {/* Pagination */}
                 {votedPages > 1 ? (

@@ -16,7 +16,7 @@ describe("BallotForm", () => {
     renderWithProviders(
       <BallotForm poll={samplePoll()} guestReady={false} onCast={onCast} onRecover={vi.fn()} />,
     );
-    expect(screen.getByText(/not strictly one person, one vote/)).toBeInTheDocument();
+    expect(screen.getByText(/anonymous ballot/)).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Sign in to vote" })).not.toBeInTheDocument();
     expect(screen.getByTestId("vote-submit")).toBeDisabled();
     await userEvent.click(screen.getByTestId("vote-submit"));

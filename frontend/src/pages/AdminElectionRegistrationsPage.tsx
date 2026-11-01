@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { InlineBanner } from "../components/InlineBanner";
 import {
   getAdminElection,
   getAdminRegistrations,
@@ -37,6 +38,11 @@ export function AdminElectionRegistrationsPage() {
   const [decision, setDecision] = useState<"APPROVED" | "REJECTED">("APPROVED");
   const [reviewNote, setReviewNote] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const loadData = () => {
     if (!electionId) return;
@@ -67,20 +73,29 @@ export function AdminElectionRegistrationsPage() {
     setReviewingReg(reg);
     setDecision("APPROVED");
     setReviewNote("");
+    setReviewError(null);
   };
 
   const handleConfirmReview = async () => {
     if (!reviewingReg) return;
     try {
+      setReviewError(null);
       setSubmittingReview(true);
       await reviewAdminRegistration(electionId, reviewingReg.id, {
         decision,
         review_note: reviewNote.trim() || undefined,
       });
       setReviewingReg(null);
+      setActionFeedback({
+        type: "success",
+        message:
+          decision === "APPROVED"
+            ? t("election.admin.registrationApproved")
+            : t("election.admin.registrationRejected"),
+      });
       loadData();
     } catch (err: any) {
-      alert(err.message || t("error.internal"));
+      setReviewError(err.message || t("error.internal"));
     } finally {
       setSubmittingReview(false);
     }
@@ -121,7 +136,20 @@ export function AdminElectionRegistrationsPage() {
       </header>
 
       <div className="view-scroll-frame">
-        {error ? <div className="admin-error-banner">{error}</div> : null}
+        {actionFeedback ? (
+          <InlineBanner
+            type={actionFeedback.type}
+            message={actionFeedback.message}
+            onClose={() => setActionFeedback(null)}
+          />
+        ) : null}
+        {error ? (
+          <InlineBanner
+            type="error"
+            message={error}
+            onClose={() => setError(null)}
+          />
+        ) : null}
 
         {loading ? (
           <div className="saas-table-card" style={{ padding: 48, textAlign: "center", color: "#64748b" }}>
@@ -229,6 +257,13 @@ export function AdminElectionRegistrationsPage() {
             <p className="modal-subtitle">
               •••• {reviewingReg.document_suffix} ({reviewingReg.issuer})
             </p>
+
+            {reviewError ? (
+              <div className="review-modal-error" role="alert">
+                <span className="error-icon">⚠️</span>
+                <span>{reviewError}</span>
+              </div>
+            ) : null}
 
             <div className="decision-radio-group">
               <label className={`decision-card ${decision === "APPROVED" ? "selected approve" : ""}`}>

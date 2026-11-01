@@ -28,7 +28,7 @@ from src.main.python.database.models.base import Base
 class Vote(Base):
     """一张已提交的选票。
 
-    匿名票的 voter_id 必须为空，也不保存访客编号、IP 或 User-Agent。
+    匿名票未登录时 voter_id 为空，登录时关联 voter_id 供用户个人历史回溯，也不保存访客编号、IP 或 User-Agent。
     选中的选项记在明细里，不记在这张父票上。
 
     Attributes:
@@ -36,7 +36,7 @@ class Vote(Base):
         receipt_id: 对外回执。
         poll_id: 所属投票。
         identity_mode: 必须与所属投票的记名方式一致。
-        voter_id: 记名投票的账户。匿名投票为空。
+        voter_id: 记名投票的账户，或已登录用户投出的不记名投票的账户。匿名访客为空。
         anonymous_voter_hash: 本场浏览器凭据散列。记名投票为空。
         submitted_at: 提交时间，UTC。
         selections: 这次提交选中的选项明细。
@@ -47,7 +47,7 @@ class Vote(Base):
         CheckConstraint(
             "(identity_mode = 'NAMED' AND voter_id IS NOT NULL "
             "AND anonymous_voter_hash IS NULL) "
-            "OR (identity_mode = 'ANONYMOUS' AND voter_id IS NULL "
+            "OR (identity_mode = 'ANONYMOUS' "
             "AND anonymous_voter_hash IS NOT NULL)",
             name="ck_votes_identity",
         ),
@@ -71,6 +71,13 @@ class Vote(Base):
             "anonymous_voter_hash",
             unique=True,
             postgresql_where=text("identity_mode = 'ANONYMOUS'"),
+        ),
+        Index(
+            "uq_votes_anon_poll_voter",
+            "poll_id",
+            "voter_id",
+            unique=True,
+            postgresql_where=text("identity_mode = 'ANONYMOUS' AND voter_id IS NOT NULL"),
         ),
         Index("ix_votes_poll_id", "poll_id"),
     )

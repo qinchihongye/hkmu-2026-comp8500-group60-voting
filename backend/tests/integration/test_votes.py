@@ -239,4 +239,4 @@ def test_commit_confirmation_loss_keeps_the_vote(
         vote = session.scalar(select(Vote).where(Vote.poll_id == poll_id))
         assert vote is not None
         assert vote.anonymous_voter_hash == anonymous_voter_hash("k" * 32, poll_id, raw_token)
-        assert vote.voter_id is None
+        assert vote.voter_id == created["creator_id"]

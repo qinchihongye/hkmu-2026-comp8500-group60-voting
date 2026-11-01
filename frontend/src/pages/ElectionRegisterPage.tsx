@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { InlineBanner } from "../components/InlineBanner";
 import { getPublicElection, registerVoter } from "../features/elections/api";
 import type { DocumentType, RegistrationStatus, VoterRegistrationSummary } from "../features/elections/types";
 import { useI18n } from "../i18n/LocaleProvider";
@@ -46,11 +47,11 @@ export function ElectionRegisterPage() {
     setError(null);
 
     if (!legalName.trim()) {
-      setError(t("election.registration.legalName") + " required");
+      setError(t("election.registration.legalNameRequired"));
       return;
     }
     if (!docNumber.trim()) {
-      setError(t("election.registration.docNumber") + " required");
+      setError(t("election.registration.docNumberRequired"));
       return;
     }
 
@@ -190,7 +191,13 @@ export function ElectionRegisterPage() {
                   <p className="notice-text">{t("election.registration.docHint")}</p>
                 </div>
 
-                {error ? <div className="register-error-banner">{error}</div> : null}
+                {error ? (
+                  <InlineBanner
+                    type="error"
+                    message={error}
+                    onClose={() => setError(null)}
+                  />
+                ) : null}
 
                 <div className="form-group">
                   <label htmlFor="legalName" className="form-label">
