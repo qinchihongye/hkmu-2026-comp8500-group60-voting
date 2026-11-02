@@ -449,8 +449,7 @@
 }
 
 /* Responsive Grid for Tablets / Mobile */
-/* Responsive Grid for Tablets / Mobile */
-@media (max-width: 860px) {
+@media (max-width: 960px) {
   .dashboard-root {
     width: 100%;
     min-width: 0;
@@ -461,6 +460,13 @@
     flex-direction: column;
     overflow: hidden;
     box-sizing: border-box;
+  }
+
+  .dashboard-root .polls-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    width: 100% !important;
   }
 
   .dashboard-header {

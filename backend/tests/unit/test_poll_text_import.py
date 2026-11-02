@@ -93,6 +93,10 @@ def _extraction(**overrides: object) -> ModelPollExtraction:
             week_scope="unqualified",
         ),
         "selection_mode": None,
+        "identity_mode": None,
+        "visibility": None,
+        "vote_limit": None,
+        "allow_live_results": None,
         "content_category": "single_poll",
     }
     payload.update(overrides)
@@ -290,6 +294,50 @@ def test_selection_mode_is_multiple_only_when_the_text_says_so() -> None:
 
     spoken = _parse(_extraction(selection_mode="MULTIPLE")).model_dump(mode="json")["fields"]
     assert spoken["selection_mode"] == "MULTIPLE"
+
+
+def test_explicit_poll_settings_are_returned_without_inferred_identity() -> None:
+    """Explicit privacy, ballot cap and live results are returned without inferring anonymity."""
+    result = _parse(
+        _extraction(
+            identity_mode=None,
+            visibility="PRIVATE",
+            vote_limit=50,
+            allow_live_results=True,
+            selection_mode="MULTIPLE",
+        )
+    )
+    fields = result.model_dump(mode="json")["fields"]
+    assert fields["visibility"] == "PRIVATE"
+    assert fields["vote_limit"] == 50
+    assert fields["allow_live_results"] is True
+    assert fields["selection_mode"] == "MULTIPLE"
+    assert "identity_mode" not in fields
+
+
+def test_explicit_false_setting_is_kept_and_unmentioned_settings_are_omitted() -> None:
+    """False remains an explicit result while absent settings do not overwrite the form."""
+    absent = _parse(_extraction()).model_dump(mode="json")["fields"]
+    assert "visibility" not in absent
+    assert "vote_limit" not in absent
+    assert "allow_live_results" not in absent
+    assert "identity_mode" not in absent
+
+    stated = _parse(
+        _extraction(identity_mode="ANONYMOUS", visibility="PUBLIC", allow_live_results=False)
+    ).model_dump(mode="json")["fields"]
+    assert stated["identity_mode"] == "ANONYMOUS"
+    assert stated["visibility"] == "PUBLIC"
+    assert stated["allow_live_results"] is False
+
+
+def test_out_of_range_vote_limit_is_not_applied() -> None:
+    """An out-of-range ballot cap is omitted and reported for manual review."""
+    result = _parse(_extraction(vote_limit=100_001)).model_dump(mode="json")
+    assert "vote_limit" not in result["fields"]
+    assert {"field": "vote_limit", "code": "VOTE_LIMIT_INVALID"} in result["issues"]
+    with pytest.raises(ValidationError):
+        _extraction(vote_limit=True)
 
 
 def test_multiple_with_two_options_does_not_invent_a_third() -> None:

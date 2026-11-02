@@ -341,6 +341,22 @@ export function PollForm({
       next.endsDate = parts.date;
       next.endsTime = parts.time;
     }
+    if (fields.identity_mode != null) {
+      next.identityMode = fields.identity_mode;
+    }
+    if (fields.visibility != null) {
+      next.visibility = fields.visibility;
+      if (fields.visibility === "PUBLIC") {
+        next.accessPassword = "";
+      }
+    }
+    if (fields.vote_limit != null) {
+      next.voteLimit = fields.vote_limit;
+      setLimitText(String(fields.vote_limit));
+    }
+    if (fields.allow_live_results !== undefined && fields.allow_live_results !== null) {
+      next.allowLiveResults = fields.allow_live_results;
+    }
     const resolvedOptions = next.options ?? value.options;
     if (fields.selection_mode) {
       if (fields.selection_mode === "MULTIPLE" && canChooseMultiple(resolvedOptions)) {

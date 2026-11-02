@@ -856,13 +856,14 @@
   display: flex;
   align-items: stretch;
   justify-content: space-around;
-  gap: 4px;
+  gap: 2px;
   flex-shrink: 0;
-  min-height: 64px;
-  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  min-height: 60px;
+  padding: 4px 4px calc(6px + env(safe-area-inset-bottom));
   background: #ffffff;
   border-top: 1px solid #e2e8f0;
   box-sizing: border-box;
+  box-shadow: 0 -2px 10px rgba(15, 23, 42, 0.04);
 }
 
 .mobile-tab {
@@ -874,11 +875,11 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 4px 2px;
-  border-radius: 12px;
+  padding: 4px 1px;
+  border-radius: 10px;
   color: #64748b;
   text-decoration: none;
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 600;
   line-height: 1.1;
   text-align: center;
@@ -962,6 +963,14 @@
   flex-shrink: 0;
 }
 
+.topbar-mobile-menu-btn {
+  display: none;
+}
+
+.sidebar-mobile-close-btn {
+  display: none;
+}
+
 /* --- Responsive Breakpoints --- */
 @media (max-width: 960px) {
   .shell {
@@ -978,6 +987,83 @@
 
   .sidebar {
     display: none;
+  }
+
+  .sidebar.mobile-open {
+    display: flex !important;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 270px;
+    max-width: 82vw;
+    z-index: 1200;
+    background: #ffffff;
+    box-shadow: 6px 0 24px rgba(15, 23, 42, 0.22);
+    animation: drawerSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes drawerSlideIn {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .mobile-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 1150;
+    animation: fadeInBackdrop 0.2s ease;
+  }
+
+  @keyframes fadeInBackdrop {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .topbar-mobile-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: #475569;
+    padding: 6px;
+    margin-right: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .topbar-mobile-menu-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  .sidebar-mobile-close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: #64748b;
+    padding: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .sidebar-mobile-close-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
   }
 
   .topbar-left-group {

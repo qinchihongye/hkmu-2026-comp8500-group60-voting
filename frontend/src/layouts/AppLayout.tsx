@@ -37,6 +37,7 @@ export function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const mobileNav = useMobileNav();
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -55,7 +56,11 @@ export function AppLayout() {
   const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
 
   useEffect(() => {
-    if (!userMenuOpen && !notifOpen) return;
+    setMobileDrawerOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!userMenuOpen && !notifOpen && !mobileDrawerOpen) return;
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (userMenuOpen && userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setUserMenuOpen(false);
@@ -68,6 +73,7 @@ export function AppLayout() {
       if (event.key === "Escape") {
         setUserMenuOpen(false);
         setNotifOpen(false);
+        setMobileDrawerOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -78,7 +84,7 @@ export function AppLayout() {
       document.removeEventListener("touchstart", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [userMenuOpen, notifOpen]);
+  }, [userMenuOpen, notifOpen, mobileDrawerOpen]);
 
   function toggleSidebar() {
     setCollapsed((prev) => {
@@ -112,7 +118,15 @@ export function AppLayout() {
       </a>
 
       {/* ================= LEFT SIDEBAR ================= */}
-      <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
+      {mobileDrawerOpen ? (
+        <div
+          className="mobile-drawer-backdrop"
+          aria-hidden="true"
+          onClick={() => setMobileDrawerOpen(false)}
+        />
+      ) : null}
+
+      <aside className={`sidebar ${collapsed ? "collapsed" : ""} ${mobileDrawerOpen ? "mobile-open" : ""}`}>
         {/* Brand & Collapse Toggle */}
         <div className="sidebar-header">
           <Link to="/overview" className="brand" aria-label={t("nav.home")} title={t("nav.home")}>
@@ -120,28 +134,43 @@ export function AppLayout() {
             {!collapsed && <span className="brand-name">VoteNow</span>}
           </Link>
 
-          <button
-            type="button"
-            className="sidebar-collapse-btn"
-            aria-label={collapsed ? t("nav.expand") : t("nav.collapse")}
-            title={collapsed ? t("nav.expand") : t("nav.collapse")}
-            onClick={toggleSidebar}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
+          {mobileNav ? (
+            <button
+              type="button"
+              className="sidebar-mobile-close-btn"
+              aria-label={t("common.close")}
+              title={t("common.close")}
+              onClick={() => setMobileDrawerOpen(false)}
             >
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-              <line x1="9" y1="3" x2="9" y2="21" />
-            </svg>
-          </button>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="sidebar-collapse-btn"
+              aria-label={collapsed ? t("nav.expand") : t("nav.collapse")}
+              title={collapsed ? t("nav.expand") : t("nav.collapse")}
+              onClick={toggleSidebar}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <line x1="9" y1="3" x2="9" y2="21" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Navigation Items with Icons */}
@@ -294,6 +323,19 @@ export function AppLayout() {
         {/* Topbar Navigation Header */}
         <header className="topbar">
           <div className="topbar-mobile-left">
+            <button
+              type="button"
+              className="topbar-mobile-menu-btn"
+              aria-label={t("nav.main")}
+              title={t("nav.main")}
+              onClick={() => setMobileDrawerOpen(true)}
+            >
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
             <Link to="/overview" className="topbar-mobile-brand" aria-label={t("nav.home")}>
               <img className="brand-logo-icon" src="/favicon.png" alt="" style={{ width: 24, height: 24 }} />
               <span className="brand-name" style={{ fontSize: "1.15rem" }}>VoteNow</span>
@@ -415,6 +457,16 @@ export function AppLayout() {
                     <>
                       <div className="topbar-dropdown-divider" />
                       <Link
+                        to="/admin/elections"
+                        className="topbar-dropdown-item"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        </svg>
+                        <span>{t("nav.adminElections")}</span>
+                      </Link>
+                      <Link
                         to="/admin/polls"
                         className="topbar-dropdown-item"
                         onClick={() => setUserMenuOpen(false)}
@@ -436,6 +488,20 @@ export function AppLayout() {
                           <polyline points="2 12 12 17 22 12" />
                         </svg>
                         <span>{t("nav.audit")}</span>
+                      </Link>
+
+                      <div className="topbar-dropdown-divider" />
+
+                      <Link
+                        to="/my-activity"
+                        className="topbar-dropdown-item"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="9 11 12 14 22 4" />
+                          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                        </svg>
+                        <span>{t("nav.myActivity")}</span>
                       </Link>
                     </>
                   ) : null}
@@ -491,24 +557,43 @@ export function AppLayout() {
               <TabIcon name="election" />
               <span>{t("nav.electionsShort")}</span>
             </NavLink>
-            {authenticated ? (
-              <NavLink to="/my-polls/new" className="mobile-tab mobile-tab-create" aria-label={t("nav.create")}>
-                <span className="mobile-tab-create-mark" aria-hidden="true">+</span>
-                <span>{t("nav.createShort")}</span>
-              </NavLink>
-            ) : null}
-            {authenticated ? (
-              <NavLink to="/my-polls" end className="mobile-tab" aria-label={t("nav.myPolls")}>
-                <TabIcon name="mine" />
-                <span>{t("nav.myPolls")}</span>
-              </NavLink>
-            ) : null}
-            {authenticated ? (
-              <NavLink to="/my-votes" className="mobile-tab" aria-label={t("nav.history")}>
-                <TabIcon name="history" />
-                <span>{t("nav.history")}</span>
-              </NavLink>
-            ) : null}
+            {isAdmin ? (
+              <>
+                <NavLink to="/my-polls/new" className="mobile-tab mobile-tab-create" aria-label={t("nav.create")}>
+                  <span className="mobile-tab-create-mark" aria-hidden="true">+</span>
+                  <span>{t("nav.createShort")}</span>
+                </NavLink>
+                <NavLink to="/my-activity" className="mobile-tab" aria-label={t("nav.myActivity")}>
+                  <TabIcon name="mine" />
+                  <span>{t("nav.myActivity")}</span>
+                </NavLink>
+                <NavLink to="/admin/polls" className="mobile-tab" aria-label={t("nav.supervision")}>
+                  <TabIcon name="supervision" />
+                  <span>{t("nav.supervision")}</span>
+                </NavLink>
+              </>
+            ) : (
+              <>
+                {authenticated ? (
+                  <NavLink to="/my-polls/new" className="mobile-tab mobile-tab-create" aria-label={t("nav.create")}>
+                    <span className="mobile-tab-create-mark" aria-hidden="true">+</span>
+                    <span>{t("nav.createShort")}</span>
+                  </NavLink>
+                ) : null}
+                {authenticated ? (
+                  <NavLink to="/my-activity" end className="mobile-tab" aria-label={t("nav.myActivity")}>
+                    <TabIcon name="mine" />
+                    <span>{t("nav.myActivity")}</span>
+                  </NavLink>
+                ) : null}
+                {authenticated ? (
+                  <NavLink to="/my-votes" className="mobile-tab" aria-label={t("nav.history")}>
+                    <TabIcon name="history" />
+                    <span>{t("nav.history")}</span>
+                  </NavLink>
+                ) : null}
+              </>
+            )}
           </nav>
         ) : null}
       </div>
@@ -516,12 +601,26 @@ export function AppLayout() {
   );
 }
 
-function TabIcon({ name }: { name: "overview" | "polls" | "election" | "mine" | "history" }) {
-  if (name === "election") {
+function TabIcon({ name }: { name: "overview" | "polls" | "election" | "mine" | "history" | "adminElection" | "supervision" }) {
+  if (name === "adminElection") {
     return (
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-        <polyline points="9 12 11 14 15 10" />
+      </svg>
+    );
+  }
+  if (name === "supervision") {
+    return (
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    );
+  }
+  if (name === "election") {
+    return (
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
       </svg>
     );
   }

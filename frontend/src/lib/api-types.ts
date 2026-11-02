@@ -208,6 +208,7 @@ export type PollParseIssueCode =
   | "OPTION_COUNT_INVALID"
   | "DUPLICATE_OPTIONS"
   | "MULTIPLE_REQUIRES_THREE_OPTIONS"
+  | "VOTE_LIMIT_INVALID"
   | "TIME_AMBIGUOUS"
   | "TIME_IN_PAST"
   | "TIME_RANGE_CONFLICT"
@@ -215,7 +216,7 @@ export type PollParseIssueCode =
   | "NO_POLL_CONTENT";
 
 export type PollParseIssue = {
-  field: "title" | "description" | "options" | "starts_at" | "ends_at" | "selection_mode" | "text";
+  field: "title" | "description" | "options" | "starts_at" | "ends_at" | "selection_mode" | "vote_limit" | "text";
   code: PollParseIssueCode;
 };
 
@@ -230,6 +231,10 @@ export type PollTextFields = {
   starts_at?: string | null;
   ends_at?: string | null;
   selection_mode?: SelectionMode | null;
+  identity_mode?: IdentityMode | null;
+  visibility?: Visibility | null;
+  vote_limit?: number | null;
+  allow_live_results?: boolean | null;
 };
 
 export type PollTextParseResult = {

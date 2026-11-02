@@ -61,6 +61,10 @@ def _payload() -> dict[str, object]:
         "starts_hint": None,
         "ends_hint": None,
         "selection_mode": None,
+        "identity_mode": None,
+        "visibility": None,
+        "vote_limit": None,
+        "allow_live_results": None,
         "content_category": "single_poll",
     }
 

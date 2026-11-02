@@ -346,6 +346,33 @@
   font-weight: 600;
 }
 
+@media (max-width: 768px) {
+  .col-actions-header,
+  .col-actions {
+    width: 88px !important;
+    min-width: 88px !important;
+    padding-right: 10px !important;
+    padding-left: 8px !important;
+  }
+
+  .col-actions-group {
+    justify-content: center !important;
+    gap: 0 !important;
+  }
+
+  .col-actions-group .table-btn:not(.btn-view),
+  .col-actions-group .roster-frozen-badge {
+    display: none !important;
+  }
+
+  .col-actions-group .btn-view {
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    min-height: 30px;
+    font-weight: 700;
+  }
+}
+
 @media (max-width: 640px) {
   .admin-page-header {
     flex-direction: column;

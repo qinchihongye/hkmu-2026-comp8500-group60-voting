@@ -6,11 +6,14 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, model_serializer
 
-from src.main.python.constants.enums import SelectionMode
+from src.main.python.constants.enums import IdentityMode, SelectionMode, Visibility
 from src.main.python.constants.limits import MAX_POLL_TEXT_LENGTH
 
 POLL_IMPORT_TIMEZONE = "Asia/Hong_Kong"
-_OPTIONAL_FIELD_KEYS = ("description", "starts_at", "ends_at", "selection_mode")
+_OPTIONAL_FIELD_KEYS = (
+    "description", "starts_at", "ends_at", "selection_mode", "identity_mode",
+    "visibility", "vote_limit", "allow_live_results",
+)
 
 
 class PollParseIssueCode(StrEnum):
@@ -20,6 +23,7 @@ class PollParseIssueCode(StrEnum):
     OPTION_COUNT_INVALID = "OPTION_COUNT_INVALID"
     DUPLICATE_OPTIONS = "DUPLICATE_OPTIONS"
     MULTIPLE_REQUIRES_THREE_OPTIONS = "MULTIPLE_REQUIRES_THREE_OPTIONS"
+    VOTE_LIMIT_INVALID = "VOTE_LIMIT_INVALID"
     TIME_AMBIGUOUS = "TIME_AMBIGUOUS"
     TIME_IN_PAST = "TIME_IN_PAST"
     TIME_RANGE_CONFLICT = "TIME_RANGE_CONFLICT"
@@ -44,6 +48,7 @@ class PollParseIssue(BaseModel):
         "starts_at",
         "ends_at",
         "selection_mode",
+        "vote_limit",
         "text",
     ]
     code: PollParseIssueCode
@@ -81,6 +86,10 @@ class PollTextFields(BaseModel):
     starts_at: datetime | None = None
     ends_at: datetime | None = None
     selection_mode: SelectionMode | None = None
+    identity_mode: IdentityMode | None = None
+    visibility: Visibility | None = None
+    vote_limit: int | None = None
+    allow_live_results: bool | None = None
 
     @model_serializer(mode="wrap")
     def serialize_fields(self, handler):  # type: ignore[no-untyped-def]

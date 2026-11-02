@@ -1750,13 +1750,13 @@
 
   ```text
   PollParseIssue
-  ├── field: title / description / options / starts_at / ends_at / selection_mode / text
+  ├── field: title / description / options / starts_at / ends_at / selection_mode / vote_limit / text
   └── code: PollParseIssueCode
   ```
 
   | 字段 | 类型／嵌套模型 | 模型必需 | 默认／约束 | 含义 |
   | --- | --- | --- | --- | --- |
-  | field | title / description / options / starts_at / ends_at / selection_mode / text | 是 | — | 相关字段。整段原文的问题使用 text。 |
+  | field | title / description / options / starts_at / ends_at / selection_mode / vote_limit / text | 是 | — | 相关字段。整段原文的问题使用 text。 |
   | code | PollParseIssueCode | 是 | — | 固定问题码。 |
 
   **业务数据示例**
@@ -1778,6 +1778,7 @@
   | OPTION_COUNT_INVALID |
   | DUPLICATE_OPTIONS |
   | MULTIPLE_REQUIRES_THREE_OPTIONS |
+  | VOTE_LIMIT_INVALID |
   | TIME_AMBIGUOUS |
   | TIME_IN_PAST |
   | TIME_RANGE_CONFLICT |
@@ -1926,7 +1927,11 @@
   ├── description: string / null
   ├── starts_at: string:date-time / null
   ├── ends_at: string:date-time / null
-  └── selection_mode: SelectionMode / null
+  ├── selection_mode: SelectionMode / null
+  ├── identity_mode: IdentityMode / null
+  ├── visibility: Visibility / null
+  ├── vote_limit: integer / null
+  └── allow_live_results: boolean / null
   ```
 
   | 字段 | 类型／嵌套模型 | 模型必需 | 默认／约束 | 含义 |
@@ -1937,14 +1942,21 @@
   | starts_at | string:date-time / null | 否 | — | 香港时间的开始时刻。不可靠时省略。 |
   | ends_at | string:date-time / null | 否 | — | 香港时间的结束时刻。不可靠时省略。 |
   | selection_mode | SelectionMode / null | 否 | — | 原文明确写出的选择方式。没说明时省略。 |
+  | identity_mode | IdentityMode / null | 否 | — | 明确记名或匿名时返回；私密不推断匿名。 |
+  | visibility | Visibility / null | 否 | — | 明确公开或私密时返回。 |
+  | vote_limit | integer / null | 否 | 1–100000 | 整场选票上限；非法值省略并返回 VOTE_LIMIT_INVALID。 |
+  | allow_live_results | boolean / null | 否 | — | 进行中是否允许查看结果；明确禁止时返回 false。 |
 
-  `title` 和 `options` 始终出现；description、starts_at、ends_at、selection_mode 无可靠值时省略，不输出 null 来清空表单。
+  `title` 和 `options` 始终出现；其他字段无可靠值时省略，不输出 null 来清空表单。私密投票的访问密码由创建者填写，识别接口不返回密码。
 
   **业务数据示例**
 
   ```json
   {
     "title": "Friday sharing",
+    "visibility": "PRIVATE",
+    "vote_limit": 50,
+    "allow_live_results": true,
     "options": [
       {
         "label": "React"

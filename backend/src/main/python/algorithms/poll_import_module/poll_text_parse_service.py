@@ -14,6 +14,7 @@ from src.main.python.algorithms.poll_import_module.poll_time_resolver import res
 from src.main.python.config.logger_config import get_logger
 from src.main.python.constants.enums import SelectionMode
 from src.main.python.constants.error_codes import ApiCode
+from src.main.python.constants.limits import MAX_VOTE_LIMIT
 from src.main.python.fileds.response.poll_import_response import (
     POLL_IMPORT_TIMEZONE,
     ParsedOption,
@@ -157,6 +158,10 @@ class PollTextParseService:
         description, description_issue = _description(extraction.description)
         options, option_issue = _options(extraction.options)
         mode, mode_issue = _selection(extraction.selection_mode, len(options))
+        vote_limit = extraction.vote_limit
+        if vote_limit is not None and not 1 <= vote_limit <= MAX_VOTE_LIMIT:
+            vote_limit = None
+            issues.append(_issue("vote_limit", PollParseIssueCode.VOTE_LIMIT_INVALID))
         for issue in (title_issue, description_issue, option_issue, mode_issue):
             if issue is not None:
                 issues.append(issue)
@@ -174,6 +179,10 @@ class PollTextParseService:
             and not options
             and starts is None
             and ends is None
+            and extraction.identity_mode is None
+            and extraction.visibility is None
+            and vote_limit is None
+            and extraction.allow_live_results is None
         )
         if nothing_usable:
             issues.append(_issue("text", PollParseIssueCode.NO_POLL_CONTENT))
@@ -185,6 +194,10 @@ class PollTextParseService:
                 starts_at=starts,
                 ends_at=ends,
                 selection_mode=mode,
+                identity_mode=extraction.identity_mode,
+                visibility=extraction.visibility,
+                vote_limit=vote_limit,
+                allow_live_results=extraction.allow_live_results,
             ),
             issues=issues,
             reference_time=reference,
