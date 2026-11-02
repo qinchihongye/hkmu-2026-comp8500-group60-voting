@@ -10,6 +10,7 @@ import {
 } from "../features/elections/api";
 import { ElectionPhaseBadge } from "../features/elections/ElectionPhaseBadge";
 import type { ElectionSummary } from "../features/elections/types";
+import { normalizeElectionPhase } from "../features/elections/types";
 import { useI18n } from "../i18n/LocaleProvider";
 import "./AdminElectionsPage.css";
 
@@ -40,7 +41,7 @@ export function AdminElectionsPage() {
     message: "",
     variant: "primary",
     loading: false,
-    onConfirm: async () => {},
+    onConfirm: async () => { },
   });
 
   const fetchElections = () => {
@@ -326,17 +327,19 @@ export function AdminElectionsPage() {
                             {t("election.actions.reviewRegistrations")}
                           </Link>
 
-                          {elec.phase === "DRAFT" ? (
-                            <button
-                              type="button"
-                              className="table-btn btn-publish"
-                              onClick={() => handlePublish(elec.id)}
-                            >
-                              {t("election.actions.publish")}
-                            </button>
-                          ) : null}
+                            {
+                              elec.lifecycle === "DRAFT" || elec.phase === "DRAFT" ? (
+                                <button
+                                  type="button"
+                                  className="table-btn btn-publish"
+                                  onClick={() => handlePublish(elec.id)}
+                                >
+                                  {t("election.actions.publish")}
+                                </button>
+                              ) : null
+                            }
 
-                          {elec.phase === "REVIEWING" ? (
+                            { normalizeElectionPhase(elec.phase) === "REVIEW" ? (
                             <button
                               type="button"
                               className="table-btn btn-freeze"
@@ -346,7 +349,7 @@ export function AdminElectionsPage() {
                             </button>
                           ) : null}
 
-                          {elec.phase === "VOTING_OPEN" ? (
+                            { normalizeElectionPhase(elec.phase) === "VOTING" ? (
                             <button
                               type="button"
                               className="table-btn btn-close"

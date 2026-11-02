@@ -2,7 +2,18 @@
  * Type definitions for Election domain (B2 Architecture).
  */
 
-export type ElectionPhase =
+  /**
+   * Standard 5-stage Canonical Election Phases.
+   * Sequential flow: UPCOMING -> REGISTRATION -> REVIEW -> VOTING -> RESULTS
+   */
+  export type CanonicalElectionPhase =
+  | "UPCOMING"
+  | "REGISTRATION"
+  | "REVIEW"
+  | "VOTING"
+  | "RESULTS";
+
+export type LegacyElectionPhase =
   | "DRAFT"
   | "REGISTRATION_SCHEDULED"
   | "REGISTRATION_OPEN"
@@ -10,6 +21,45 @@ export type ElectionPhase =
   | "VOTING_SCHEDULED"
   | "VOTING_OPEN"
   | "CLOSED";
+
+export type ElectionPhase = CanonicalElectionPhase | LegacyElectionPhase;
+
+export const CANONICAL_PHASES: readonly CanonicalElectionPhase[] = [
+  "UPCOMING",
+  "REGISTRATION",
+  "REVIEW",
+  "VOTING",
+  "RESULTS",
+] as const;
+
+/**
+ * Normalizes any phase string (canonical or legacy) into the canonical 5-stage identifier.
+ */
+export function normalizeElectionPhase(phase?: string | null): CanonicalElectionPhase {
+  if (!phase) return "UPCOMING";
+  const p = phase.toUpperCase().trim();
+  switch (p) {
+    case "UPCOMING":
+    case "DRAFT":
+    case "REGISTRATION_SCHEDULED":
+      return "UPCOMING";
+    case "REGISTRATION":
+    case "REGISTRATION_OPEN":
+      return "REGISTRATION";
+    case "REVIEW":
+    case "REVIEWING":
+    case "VOTING_SCHEDULED":
+      return "REVIEW";
+    case "VOTING":
+    case "VOTING_OPEN":
+      return "VOTING";
+    case "RESULTS":
+    case "CLOSED":
+      return "RESULTS";
+    default:
+      return "UPCOMING";
+  }
+}
 
 export type DocumentType = "RESIDENT_ID" | "HK_MACAU_PERMIT" | "STUDENT_ID";
 

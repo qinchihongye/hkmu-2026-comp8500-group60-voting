@@ -1,4 +1,5 @@
 import type { ElectionPhase } from "./types";
+import { normalizeElectionPhase } from "./types";
 import { useI18n } from "../../i18n/LocaleProvider";
 import "./ElectionPhaseBadge.css";
 
@@ -9,27 +10,38 @@ interface Props {
 
 export function ElectionPhaseBadge({ phase, className = "" }: Props) {
   const { t } = useI18n();
+  const canonical = normalizeElectionPhase(phase);
 
-  const phaseMap: Record<ElectionPhase, { labelKey: string; colorClass: string }> = {
-    DRAFT: { labelKey: "election.phase.DRAFT", colorClass: "badge-draft" },
-    REGISTRATION_SCHEDULED: {
-      labelKey: "election.phase.REGISTRATION_SCHEDULED",
-      colorClass: "badge-reg-sched",
-    },
-    REGISTRATION_OPEN: {
-      labelKey: "election.phase.REGISTRATION_OPEN",
-      colorClass: "badge-reg-open",
-    },
-    REVIEWING: { labelKey: "election.phase.REVIEWING", colorClass: "badge-reviewing" },
-    VOTING_SCHEDULED: {
-      labelKey: "election.phase.VOTING_SCHEDULED",
-      colorClass: "badge-vote-sched",
-    },
-    VOTING_OPEN: { labelKey: "election.phase.VOTING_OPEN", colorClass: "badge-vote-open" },
-    CLOSED: { labelKey: "election.phase.CLOSED", colorClass: "badge-closed" },
+      const phaseMap: Record<
+        string,
+    { labelKey: string; colorClass: string }
+  > = {
+      UPCOMING: {
+        labelKey: "election.phase.UPCOMING",
+        colorClass: "badge-reg-sched",
+      },
+        REGISTRATION: {
+          labelKey: "election.phase.REGISTRATION",
+          colorClass: "badge-reg-open",
+        },
+          REVIEW: {
+            labelKey: "election.phase.REVIEW",
+            colorClass: "badge-reviewing",
+          },
+          VOTING: {
+            labelKey: "election.phase.VOTING",
+            colorClass: "badge-vote-open",
+          },
+          RESULTS: {
+            labelKey: "election.phase.RESULTS",
+            colorClass: "badge-closed",
+          },
+        };
+
+  const item = phaseMap[canonical] || {
+    labelKey: `election.phase.${canonical}`,
+    colorClass: "badge-draft",
   };
-
-  const item = phaseMap[phase] || { labelKey: phase, colorClass: "badge-draft" };
 
   return (
     <span className={`election-phase-badge ${item.colorClass} ${className}`}>
@@ -38,4 +50,3 @@ export function ElectionPhaseBadge({ phase, className = "" }: Props) {
     </span>
   );
 }
-

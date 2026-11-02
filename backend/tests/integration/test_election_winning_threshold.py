@@ -103,9 +103,9 @@ def test_election_winning_threshold_auto_closes(auth_client: TestClient) -> None
     # 5. Advance to voting open
     clock_of(auth_client).advance(timedelta(days=2))
 
-    # Verify election phase is VOTING_OPEN
+    # Verify election phase is VOTING
     detail_before = envelope(auth_client.get(f"/api/v1/elections/{election_id}"), 200)
-    assert detail_before["phase"] == "VOTING_OPEN"
+    assert detail_before["phase"] == ElectionPhase.VOTING
 
     # 6. Voter 1 casts ballot for Alice
     v1_csrf = login(auth_client, "voter_one")
@@ -117,15 +117,15 @@ def test_election_winning_threshold_auto_closes(auth_client: TestClient) -> None
     )
     envelope(ballot_resp, 201)
 
-    # 7. Alice reached winning_threshold (1 vote)! Election should immediately be CLOSED
+    # 7. Alice reached winning_threshold (1 vote)! Election should immediately be CLOSED / RESULTS
     detail_after = envelope(auth_client.get(f"/api/v1/elections/{election_id}"), 200)
-    assert detail_after["phase"] == "CLOSED"
+    assert detail_after["phase"] == ElectionPhase.RESULTS
     assert detail_after["lifecycle"] == "CLOSED"
 
     # 8. Check results: Alice is the elected winner
     results_resp = auth_client.get(f"/api/v1/elections/{election_id}/results")
     res_data = envelope(results_resp, 200)
-    assert res_data["phase"] == "CLOSED"
+    assert res_data["phase"] == ElectionPhase.RESULTS
     assert res_data["winner_option_ids"] == [alice_option_id]
 
     # 9. Voter 2 attempts to vote now, rejected because election is closed

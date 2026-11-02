@@ -6,10 +6,11 @@ import {
   getAdminRegistrations,
   reviewAdminRegistration,
 } from "../features/elections/api";
-import type {
-  ElectionDetail,
-  RegistrationStatus,
-  VoterRegistrationSummary,
+import {
+  normalizeElectionPhase,
+  type ElectionDetail,
+  type RegistrationStatus,
+  type VoterRegistrationSummary,
 } from "../features/elections/types";
 import { useI18n } from "../i18n/LocaleProvider";
 import "./AdminElectionRegistrationsPage.css";
@@ -134,7 +135,7 @@ export function AdminElectionRegistrationsPage() {
           </Link>
         </div>
 
-        {election?.phase === "REVIEWING" ? (
+        {normalizeElectionPhase(election?.phase) === "REVIEW" ? (
           <div
             style={{
               background: "#eff6ff",
@@ -179,7 +180,7 @@ export function AdminElectionRegistrationsPage() {
               {t("election.admin.registrationsTitle", { title: election?.title || "" })}
             </h1>
             <p className="view-subtitle">
-              {t("election.admin.candidatesTitle")} ({registrations.length})
+              {t("election.admin.voterRegistrationsTitle")} ({registrations.length})
             </p>
           </div>
 
@@ -263,14 +264,14 @@ export function AdminElectionRegistrationsPage() {
             <table className="saas-table registrations-table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>{t("election.registration.legalName")}</th>
-                  <th>{t("election.registration.docType")}</th>
-                  <th>{t("election.registration.docNumber")}</th>
-                  <th>{t("election.registration.issuer")}</th>
-                  <th>{t("common.status")}</th>
-                  <th>Score</th>
-                  <th>{t("admin.actionsCol")}</th>
+                  <th className="th-id">ID</th>
+                  <th className="th-name">{t("election.registration.legalName")}</th>
+                  <th className="th-doc-type">{t("election.registration.docType")}</th>
+                  <th className="th-doc-num">{t("election.registration.docNumber")}</th>
+                  <th className="th-issuer">{t("election.registration.issuer")}</th>
+                  <th className="th-status">{t("common.status")}</th>
+                  <th className="th-score">{t("election.admin.scoreCol")}</th>
+                  <th className="th-actions">{t("admin.actionsCol")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -278,22 +279,22 @@ export function AdminElectionRegistrationsPage() {
                   <tr key={reg.id}>
                     <td className="col-id">#{reg.id}</td>
                     <td className="col-name">{reg.legal_name_snapshot}</td>
-                    <td>{t(`election.docType.${reg.document_type}` as any)}</td>
-                    <td>•••• {reg.document_suffix}</td>
-                    <td>{reg.issuer}</td>
-                    <td>
+                    <td className="col-doc-type">{t(`election.docType.${reg.document_type}` as any)}</td>
+                    <td className="col-doc-num">•••• {reg.document_suffix}</td>
+                    <td className="col-issuer">{reg.issuer}</td>
+                    <td className="col-status">
                       <span className={`status-pill status-${reg.status.toLowerCase()}`}>
                         {t(`election.status.${reg.status}` as any)}
                       </span>
                     </td>
-                    <td>
+                    <td className="col-score">
                       {reg.model_score != null ? (
                         <span className="score-tag">{reg.model_score}</span>
                       ) : (
                         "-"
                       )}
                     </td>
-                    <td>
+                    <td className="col-actions">
                       <button
                         type="button"
                         className="table-btn btn-review"

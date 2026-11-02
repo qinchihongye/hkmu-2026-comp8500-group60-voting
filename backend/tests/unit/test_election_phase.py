@@ -74,8 +74,41 @@ def test_voting_scheduled_when_roster_frozen() -> None:
     assert compute_election_phase(poll, config, now) == ElectionPhase.VOTING_SCHEDULED
 
 
-def test_voting_open() -> None:
-    poll, config = _make_election(lifecycle=PollLifecycle.PUBLISHED, roster_frozen=True)
-    now = poll.starts_at + timedelta(hours=1)
-    assert compute_election_phase(poll, config, now) == ElectionPhase.VOTING_OPEN
+def test_canonical_five_stages_sequence() -> None:
+    """Verify strict sequential transition across the 5 canonical phases:
+
+    UPCOMING -> REGISTRATION -> REVIEW -> VOTING -> RESULTS
+    """
+    poll, config = _make_election(lifecycle=PollLifecycle.PUBLISHED, roster_frozen=False)
+
+    # 1. UPCOMING: Before registration starts
+    t_upcoming = config.registration_starts_at - timedelta(minutes=10)
+    assert compute_election_phase(poll, config, t_upcoming) == ElectionPhase.UPCOMING
+
+    # 2. REGISTRATION: Within registration window
+    t_reg = config.registration_starts_at + timedelta(minutes=10)
+    assert compute_election_phase(poll, config, t_reg) == ElectionPhase.REGISTRATION
+
+    # 3. REVIEW: After registration ends, before roster freeze (mandatory gating)
+    t_review = config.registration_ends_at + timedelta(minutes=10)
+    assert compute_election_phase(poll, config, t_review) == ElectionPhase.REVIEW
+
+    # Even if time reaches voting start, if roster not frozen, MUST remain in REVIEW
+    t_voting_time = poll.starts_at + timedelta(minutes=10)
+    assert compute_election_phase(poll, config, t_voting_time) == ElectionPhase.REVIEW
+
+    # Freeze roster:
+    config.roster_frozen_at = config.registration_ends_at + timedelta(hours=1)
+    config.eligible_voter_count = 10
+
+    # Before voting start time: still in REVIEW
+    t_pre_vote = poll.starts_at - timedelta(minutes=10)
+    assert compute_election_phase(poll, config, t_pre_vote) == ElectionPhase.REVIEW
+
+    # 4. VOTING: Roster frozen and within voting window
+    assert compute_election_phase(poll, config, t_voting_time) == ElectionPhase.VOTING
+
+    # 5. RESULTS: After voting ends
+    t_results = poll.ends_at + timedelta(minutes=1)
+    assert compute_election_phase(poll, config, t_results) == ElectionPhase.RESULTS
 

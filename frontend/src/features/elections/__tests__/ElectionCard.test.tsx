@@ -36,6 +36,8 @@ describe("ElectionCard", () => {
     expect(screen.getByText("Faculty Senate Election")).toBeInTheDocument();
     expect(screen.getByText("Official Election")).toBeInTheDocument();
     expect(screen.getByText("Register to vote")).toBeInTheDocument();
+    expect(screen.getByText(/3/)).toBeInTheDocument();
+    expect(screen.getByText("Not registered")).toBeInTheDocument();
   });
 
   it("renders registered status if user is already registered", () => {
@@ -50,19 +52,38 @@ describe("ElectionCard", () => {
   it("renders secret ballot button when voting is open for approved voter", () => {
     renderCard({
       ...baseElection,
-      phase: "VOTING_OPEN",
+      phase: "VOTING",
       my_registration_status: "APPROVED",
       has_voted: false,
     });
     expect(screen.getByText("Cast secret ballot")).toBeInTheDocument();
   });
 
-  it("renders view results button when election is closed", () => {
+  it("renders already voted status and view results when user has voted", () => {
     renderCard({
       ...baseElection,
-      phase: "CLOSED",
+      phase: "VOTING",
+      my_registration_status: "APPROVED",
+      has_voted: true,
+    });
+    expect(screen.getByText("Ballot cast")).toBeInTheDocument();
+    expect(screen.getByText("View results")).toBeInTheDocument();
+  });
+
+  it("renders view results button when election is in results stage", () => {
+    renderCard({
+      ...baseElection,
+      phase: "RESULTS",
     });
     expect(screen.getByText("View results")).toBeInTheDocument();
   });
-});
 
+  it("renders winning threshold in structured grid when specified", () => {
+    renderCard({
+      ...baseElection,
+      winning_threshold: 50,
+    });
+    expect(screen.getByText(/Winning vote threshold/i)).toBeInTheDocument();
+    expect(screen.getByText(/50/)).toBeInTheDocument();
+  });
+});

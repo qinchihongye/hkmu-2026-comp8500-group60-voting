@@ -49,20 +49,28 @@ def _request_id() -> str:
 
 
 def compute_election_phase(poll: Poll, config: ElectionConfig, now: datetime) -> ElectionPhase:
-    """Compute current effective election phase."""
+    """Compute current effective election phase (Strict 5-stage lifecycle).
+
+    Phase transition sequence:
+    1. UPCOMING: Draft or published prior to registration window.
+    2. REGISTRATION: Within registration window [registration_starts_at, registration_ends_at).
+    3. REVIEW: Registration window closed, admin reviews & freezes roster (mandatory before voting).
+    4. VOTING: Roster is frozen and within voting window [starts_at, ends_at).
+    5. RESULTS: Voting closed (lifecycle CLOSED or now >= ends_at) or threshold reached.
+    """
     if poll.lifecycle == PollLifecycle.DRAFT:
-        return ElectionPhase.DRAFT
+        return ElectionPhase.UPCOMING
     if poll.lifecycle == PollLifecycle.CLOSED or now >= poll.ends_at:
-        return ElectionPhase.CLOSED
+        return ElectionPhase.RESULTS
     if now < config.registration_starts_at:
-        return ElectionPhase.REGISTRATION_SCHEDULED
+        return ElectionPhase.UPCOMING
     if now < config.registration_ends_at:
-        return ElectionPhase.REGISTRATION_OPEN
+        return ElectionPhase.REGISTRATION
     if config.roster_frozen_at is None:
-        return ElectionPhase.REVIEWING
+        return ElectionPhase.REVIEW
     if now < poll.starts_at:
-        return ElectionPhase.VOTING_SCHEDULED
-    return ElectionPhase.VOTING_OPEN
+        return ElectionPhase.REVIEW
+    return ElectionPhase.VOTING
 
 
 class ElectionService:
@@ -606,10 +614,10 @@ class ElectionService:
         if user_id is None:
             detail.can_register = False
             detail.can_vote = False
-            detail.can_view_results = detail.phase == ElectionPhase.CLOSED
-            if detail.phase == ElectionPhase.REGISTRATION_OPEN:
+            detail.can_view_results = detail.phase == ElectionPhase.RESULTS
+            if detail.phase == ElectionPhase.REGISTRATION:
                 detail.next_action = "LOGIN_TO_REGISTER"
-            elif detail.phase == ElectionPhase.CLOSED:
+            elif detail.phase == ElectionPhase.RESULTS:
                 detail.next_action = "VIEW_RESULTS"
             return
 
@@ -634,32 +642,29 @@ class ElectionService:
                     detail.has_voted = True
 
         detail.can_register = (
-            detail.phase == ElectionPhase.REGISTRATION_OPEN
+            detail.phase == ElectionPhase.REGISTRATION
             and detail.user_registration_status is None
         )
 
         detail.can_vote = (
-            detail.phase == ElectionPhase.VOTING_OPEN
+            detail.phase == ElectionPhase.VOTING
             and detail.user_registration_status == RegistrationStatus.APPROVED
             and not detail.has_voted
         )
 
-        if detail.phase == ElectionPhase.CLOSED:
+        if detail.phase == ElectionPhase.RESULTS:
             detail.can_view_results = True
         elif detail.phase in (
-            ElectionPhase.VOTING_OPEN,
-            ElectionPhase.VOTING_SCHEDULED,
-            ElectionPhase.REVIEWING,
+            ElectionPhase.VOTING,
+            ElectionPhase.REVIEW,
         ):
             detail.can_view_results = detail.allow_live_results and detail.has_voted
         else:
             detail.can_view_results = False
 
-        if detail.phase == ElectionPhase.DRAFT:
-            detail.next_action = "WAIT_FOR_PUBLISH"
-        elif detail.phase == ElectionPhase.REGISTRATION_SCHEDULED:
+        if detail.phase == ElectionPhase.UPCOMING:
             detail.next_action = "WAIT_FOR_REGISTRATION"
-        elif detail.phase == ElectionPhase.REGISTRATION_OPEN:
+        elif detail.phase == ElectionPhase.REGISTRATION:
             if detail.user_registration_status is None:
                 detail.next_action = "REGISTER"
             elif detail.user_registration_status == RegistrationStatus.PENDING:
@@ -670,16 +675,14 @@ class ElectionService:
                 detail.next_action = "WAIT_FOR_ROSTER_FREEZE"
             else:
                 detail.next_action = "REGISTRATION_REJECTED"
-        elif detail.phase == ElectionPhase.REVIEWING:
+        elif detail.phase == ElectionPhase.REVIEW:
             if detail.user_registration_status == RegistrationStatus.APPROVED:
                 detail.next_action = "WAIT_FOR_ROSTER_FREEZE"
             elif detail.user_registration_status == RegistrationStatus.NEEDS_REVIEW:
                 detail.next_action = "WAIT_FOR_ADMIN_REVIEW"
             else:
                 detail.next_action = "WAIT_FOR_VOTING"
-        elif detail.phase == ElectionPhase.VOTING_SCHEDULED:
-            detail.next_action = "WAIT_FOR_VOTING_START"
-        elif detail.phase == ElectionPhase.VOTING_OPEN:
+        elif detail.phase == ElectionPhase.VOTING:
             if detail.can_vote:
                 detail.next_action = "VOTE"
             elif detail.has_voted:
@@ -688,7 +691,7 @@ class ElectionService:
                 )
             else:
                 detail.next_action = "NOT_ELIGIBLE"
-        elif detail.phase == ElectionPhase.CLOSED:
+        elif detail.phase == ElectionPhase.RESULTS:
             detail.next_action = "VIEW_RESULTS"
 
     def check_and_trigger_threshold(

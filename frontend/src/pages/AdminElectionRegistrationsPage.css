@@ -48,30 +48,47 @@
   border: 1px solid rgba(226, 232, 240, 0.85);
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 16px -2px rgba(15, 23, 42, 0.05);
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.registrations-table-card::-webkit-scrollbar {
+  height: 6px;
+}
+
+.registrations-table-card::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.registrations-table-card::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .registrations-table {
   width: 100%;
-  border-collapse: collapse;
+  min-width: 860px;
+  border-collapse: separate;
+  border-spacing: 0;
   white-space: nowrap;
 }
 
 .registrations-table th {
-  padding: 14px 18px;
+  padding: 12px 14px;
   background: #f8fafc;
   color: #475569;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   border-bottom: 1px solid #e2e8f0;
   text-align: left;
 }
 
 .registrations-table td {
-  padding: 15px 18px;
+  padding: 12px 14px;
   border-bottom: 1px solid #f1f5f9;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: #1e293b;
   vertical-align: middle;
 }
@@ -81,6 +98,35 @@
 }
 
 .registrations-table tr:hover td {
+  background: #f8fafc;
+}
+
+.th-score,
+.col-score {
+  text-align: center;
+}
+
+.th-actions,
+.col-actions {
+  position: sticky;
+  right: 0;
+  text-align: right;
+  padding-right: 18px;
+}
+
+.th-actions {
+  background: #f8fafc;
+  z-index: 2;
+  box-shadow: -3px 0 6px -2px rgba(15, 23, 42, 0.06);
+}
+
+.col-actions {
+  background: #ffffff;
+  z-index: 1;
+  box-shadow: -3px 0 6px -2px rgba(15, 23, 42, 0.06);
+}
+
+.registrations-table tr:hover .col-actions {
   background: #f8fafc;
 }
 

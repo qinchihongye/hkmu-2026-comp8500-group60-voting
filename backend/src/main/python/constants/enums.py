@@ -21,15 +21,42 @@ class ActivityType(StrEnum):
 
 
 class ElectionPhase(StrEnum):
-    """选举对外展示的细分有效阶段。"""
+    """选举对外展示的标准五阶段（统一架构）。
 
-    DRAFT = "DRAFT"
-    REGISTRATION_SCHEDULED = "REGISTRATION_SCHEDULED"
-    REGISTRATION_OPEN = "REGISTRATION_OPEN"
-    REVIEWING = "REVIEWING"
-    VOTING_SCHEDULED = "VOTING_SCHEDULED"
-    VOTING_OPEN = "VOTING_OPEN"
-    CLOSED = "CLOSED"
+    阶段流转顺序严格为：
+    UPCOMING (即将开放) -> REGISTRATION (资格登记) -> REVIEW (名册审核) -> VOTING (正式投票) -> RESULTS (结果公示)
+    """
+
+    UPCOMING = "UPCOMING"
+    REGISTRATION = "REGISTRATION"
+    REVIEW = "REVIEW"
+    VOTING = "VOTING"
+    RESULTS = "RESULTS"
+
+    # 向后兼容的历史/细分状态别名（保证受限文件与存量客户端 100% 兼容）：
+    DRAFT = "UPCOMING"
+    REGISTRATION_SCHEDULED = "UPCOMING"
+    REGISTRATION_OPEN = "REGISTRATION"
+    REVIEWING = "REVIEW"
+    VOTING_SCHEDULED = "REVIEW"
+    VOTING_OPEN = "VOTING"
+    CLOSED = "RESULTS"
+
+    @classmethod
+    def _missing_(cls, value: object) -> "ElectionPhase | None":
+        if not isinstance(value, str):
+            return None
+        upper = value.upper()
+        mapping = {
+            "DRAFT": cls.UPCOMING,
+            "REGISTRATION_SCHEDULED": cls.UPCOMING,
+            "REGISTRATION_OPEN": cls.REGISTRATION,
+            "REVIEWING": cls.REVIEW,
+            "VOTING_SCHEDULED": cls.REVIEW,
+            "VOTING_OPEN": cls.VOTING,
+            "CLOSED": cls.RESULTS,
+        }
+        return mapping.get(upper)
 
 
 class DocumentType(StrEnum):

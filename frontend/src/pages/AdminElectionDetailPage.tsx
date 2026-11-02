@@ -8,8 +8,10 @@ import {
   getAdminElection,
   publishAdminElection,
 } from "../features/elections/api";
+import { ElectionLifecycleTimeline } from "../features/elections/ElectionLifecycleTimeline";
 import { ElectionPhaseBadge } from "../features/elections/ElectionPhaseBadge";
 import type { ElectionDetail } from "../features/elections/types";
+import { normalizeElectionPhase } from "../features/elections/types";
 import { useI18n } from "../i18n/LocaleProvider";
 import "./AdminElectionDetailPage.css";
 
@@ -38,7 +40,7 @@ export function AdminElectionDetailPage() {
     message: "",
     variant: "primary",
     loading: false,
-    onConfirm: async () => {},
+    onConfirm: async () => { },
   });
 
   const loadElection = () => {
@@ -199,148 +201,155 @@ export function AdminElectionDetailPage() {
               <p className="header-desc">{election.description}</p>
             ) : null}
 
+            {/* Stage Progress Timeline */}
+            <div style={{ margin: "16px 0 20px 0" }}>
+              <ElectionLifecycleTimeline phase={election.phase} />
+            </div>
+
             {/* Admin Action Control Bar */}
             <div className="admin-control-bar">
-              {election.phase === "DRAFT" ? (
-                <button
-                  type="button"
-                  className="ctrl-btn btn-publish"
-                  onClick={handlePublish}
-                >
-                  {t("election.actions.publish")}
-                </button>
-              ) : null}
+                {
+                  election.lifecycle === "DRAFT" || election.phase === "DRAFT" ? (
+                    <button
+                      type="button"
+                      className="ctrl-btn btn-publish"
+                      onClick={handlePublish}
+                    >
+                      {t("election.actions.publish")}
+                    </button>
+                  ) : null
+                }
 
-              <Link
+                < Link
                 to={`/admin/elections/${election.id}/registrations`}
-                className="ctrl-btn btn-review"
+              className="ctrl-btn btn-review"
               >
-                {t("election.actions.reviewRegistrations")}
-              </Link>
+              {t("election.actions.reviewRegistrations")}
+            </Link>
 
-              {election.phase === "REVIEWING" ? (
-                <button
-                  type="button"
-                  className="ctrl-btn btn-freeze"
-                  onClick={handleFreeze}
-                >
-                  {t("election.actions.freezeRoster")}
-                </button>
-              ) : null}
-
-              {election.phase === "VOTING_OPEN" ? (
-                <button
-                  type="button"
-                  className="ctrl-btn btn-close"
-                  onClick={handleClose}
-                >
-                  {t("election.actions.earlyClose")}
-                </button>
-              ) : null}
-
-              <Link
-                to={`/elections/${election.id}/results`}
-                className="ctrl-btn btn-results"
+              { normalizeElectionPhase(election.phase) === "REVIEW" ? (
+              <button
+                type="button"
+                className="ctrl-btn btn-freeze"
+                onClick={handleFreeze}
               >
-                {t("election.actions.viewResults")}
-              </Link>
-
-              <Link
-                to={`/elections/${election.id}`}
-                className="ctrl-btn btn-view"
-              >
-                👁️ {t("election.admin.viewPublicPage")}
-              </Link>
-            </div>
-          </header>
-
-          {/* Timelines and Config */}
-          <section className="detail-meta-grid">
-            <div className="meta-card">
-              <span className="meta-label">{t("election.admin.registrationWindow")}</span>
-              <span className="meta-val">
-                {formatDate(election.registration_starts_at)}
-                <br />
-                &darr;
-                <br />
-                {formatDate(election.registration_ends_at)}
-              </span>
-            </div>
-
-            <div className="meta-card">
-              <span className="meta-label">{t("election.admin.votingWindow")}</span>
-              <span className="meta-val">
-                {formatDate(election.starts_at)}
-                <br />
-                &darr;
-                <br />
-                {formatDate(election.ends_at)}
-              </span>
-            </div>
-
-            <div className="meta-card">
-              <span className="meta-label">{t("election.admin.allowLiveResults")}</span>
-              <span className="meta-val">
-                {election.allow_live_results ? (
-                  <span className="tag-enabled">✓ {t("polls.liveResults")}</span>
-                ) : (
-                  <span className="tag-disabled">✕ {t("polls.resultsAfterClose")}</span>
-                )}
-              </span>
-            </div>
-
-            {election.winning_threshold ? (
-              <div className="meta-card">
-                <span className="meta-label">{t("election.admin.winningThreshold")}</span>
-                <span className="meta-val">
-                  <span className="tag-enabled">🏆 {t("election.results.votes", { count: election.winning_threshold })}</span>
-                </span>
-              </div>
+                {t("election.actions.freezeRoster")}
+              </button>
             ) : null}
-          </section>
 
-          {/* Candidates List */}
-          <section className="admin-candidates-section">
-            <h2 className="section-title">
-              {t("election.admin.candidatesTitle")} ({election.candidates.length})
-            </h2>
-            <div className="saas-table-card candidates-table-card">
-              <table className="saas-table candidates-table">
-                <thead>
-                  <tr>
-                    <th>{t("election.admin.candidateCode")}</th>
-                    <th>{t("election.admin.candidateName")}</th>
-                    <th>{t("election.admin.candidateStatement")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {election.candidates.map((c) => (
-                    <tr key={c.option_id ?? c.poll_option_id ?? c.candidate_code}>
-                      <td className="col-code">
-                        <span className="candidate-code-tag">{c.candidate_code}</span>
-                      </td>
-                      <td className="col-name">{c.name}</td>
-                      <td className="col-statement">{c.statement || "-"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+              { normalizeElectionPhase(election.phase) === "VOTING" ? (
+              <button
+                type="button"
+                className="ctrl-btn btn-close"
+                onClick={handleClose}
+              >
+                {t("election.actions.earlyClose")}
+              </button>
+            ) : null}
+
+            <Link
+              to={`/elections/${election.id}/results`}
+              className="ctrl-btn btn-results"
+            >
+              {t("election.actions.viewResults")}
+            </Link>
+
+            <Link
+              to={`/elections/${election.id}`}
+              className="ctrl-btn btn-view"
+            >
+              👁️ {t("election.admin.viewPublicPage")}
+            </Link>
         </div>
-      </div>
+      </header>
 
-      <ConfirmActionModal
-        open={confirmModal.open}
-        title={confirmModal.title}
-        message={confirmModal.message}
-        confirmText={confirmModal.confirmText}
-        cancelText={t("common.cancel")}
-        variant={confirmModal.variant}
-        loading={confirmModal.loading}
-        onConfirm={confirmModal.onConfirm}
-        onCancel={() => setConfirmModal((prev) => ({ ...prev, open: false }))}
-      />
+      {/* Timelines and Config */}
+      <section className="detail-meta-grid">
+        <div className="meta-card">
+          <span className="meta-label">{t("election.admin.registrationWindow")}</span>
+          <span className="meta-val">
+            {formatDate(election.registration_starts_at)}
+            <br />
+            &darr;
+            <br />
+            {formatDate(election.registration_ends_at)}
+          </span>
+        </div>
+
+        <div className="meta-card">
+          <span className="meta-label">{t("election.admin.votingWindow")}</span>
+          <span className="meta-val">
+            {formatDate(election.starts_at)}
+            <br />
+            &darr;
+            <br />
+            {formatDate(election.ends_at)}
+          </span>
+        </div>
+
+        <div className="meta-card">
+          <span className="meta-label">{t("election.admin.allowLiveResults")}</span>
+          <span className="meta-val">
+            {election.allow_live_results ? (
+              <span className="tag-enabled">✓ {t("polls.liveResults")}</span>
+            ) : (
+              <span className="tag-disabled">✕ {t("polls.resultsAfterClose")}</span>
+            )}
+          </span>
+        </div>
+
+        {election.winning_threshold ? (
+          <div className="meta-card">
+            <span className="meta-label">{t("election.admin.winningThreshold")}</span>
+            <span className="meta-val">
+              <span className="tag-enabled">🏆 {t("election.results.votes", { count: election.winning_threshold })}</span>
+            </span>
+          </div>
+        ) : null}
+      </section>
+
+      {/* Candidates List */}
+      <section className="admin-candidates-section">
+        <h2 className="section-title">
+          {t("election.admin.candidatesTitle")} ({election.candidates.length})
+        </h2>
+        <div className="saas-table-card candidates-table-card">
+          <table className="saas-table candidates-table">
+            <thead>
+              <tr>
+                <th>{t("election.admin.candidateCode")}</th>
+                <th>{t("election.admin.candidateName")}</th>
+                <th>{t("election.admin.candidateStatement")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {election.candidates.map((c) => (
+                <tr key={c.option_id ?? c.poll_option_id ?? c.candidate_code}>
+                  <td className="col-code">
+                    <span className="candidate-code-tag">{c.candidate_code}</span>
+                  </td>
+                  <td className="col-name">{c.name}</td>
+                  <td className="col-statement">{c.statement || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
+      </div >
+
+    <ConfirmActionModal
+      open={confirmModal.open}
+      title={confirmModal.title}
+      message={confirmModal.message}
+      confirmText={confirmModal.confirmText}
+      cancelText={t("common.cancel")}
+      variant={confirmModal.variant}
+      loading={confirmModal.loading}
+      onConfirm={confirmModal.onConfirm}
+      onCancel={() => setConfirmModal((prev) => ({ ...prev, open: false }))}
+    />
+    </div >
   );
 }

@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthProvider";
 import { getPublicElection } from "../features/elections/api";
+import { ElectionLifecycleTimeline } from "../features/elections/ElectionLifecycleTimeline";
 import { ElectionPhaseBadge } from "../features/elections/ElectionPhaseBadge";
 import type { ElectionDetail } from "../features/elections/types";
+import { normalizeElectionPhase } from "../features/elections/types";
 import { useI18n } from "../i18n/LocaleProvider";
 import "./ElectionDetailPage.css";
 
@@ -68,8 +70,9 @@ export function ElectionDetailPage() {
     }
   };
 
+  const canonicalPhase = normalizeElectionPhase(election.phase);
   const isPendingFreeze =
-    election.phase === "REVIEWING" && new Date(election.starts_at).getTime() <= Date.now();
+  canonicalPhase === "REVIEW" && new Date(election.starts_at).getTime() <= Date.now();
 
   return (
     <div className="view-root">
@@ -130,6 +133,11 @@ export function ElectionDetailPage() {
             {election.description ? (
               <p className="detail-description">{election.description}</p>
             ) : null}
+
+            {/* Stage Progress Timeline */}
+            <div style={{ margin: "16px 0 20px 0" }}>
+              <ElectionLifecycleTimeline phase={election.phase} />
+            </div>
 
             {/* Timelines */}
             <div className="detail-timeline-grid">
@@ -217,7 +225,7 @@ export function ElectionDetailPage() {
                   </span>
                 ) : (
                   <span className="status-pill status-unregistered">
-                    {t("election.phase.REGISTRATION_OPEN")}
+                    {t("election.status.PENDING") ? "未登记" : "Not Registered"}
                   </span>
                 )}
                 {election.has_voted ? (
@@ -243,25 +251,27 @@ export function ElectionDetailPage() {
               </div>
 
               <div className="voter-actions">
-                {election.phase === "REGISTRATION_OPEN" && !election.my_registration_status ? (
-                  <Link to={`/elections/${election.id}/register`} className="action-btn btn-primary">
-                    {t("election.actions.registerNow")}
-                  </Link>
-                ) : null}
+                  { canonicalPhase === "REGISTRATION" && !election.my_registration_status ? (
+                    <Link to={`/elections/${election.id}/register`} className="action-btn btn-primary">
+                      {t("election.actions.registerNow")}
+                    </Link>
+                  ) : null}
 
-                {election.phase === "VOTING_OPEN" &&
-                election.my_registration_status === "APPROVED" &&
-                !election.has_voted ? (
+                  { canonicalPhase === "VOTING" &&
+                  election.my_registration_status === "APPROVED" &&
+                  !election.has_voted ? (
                   <Link to={`/elections/${election.id}/vote`} className="action-btn btn-primary">
                     {t("election.actions.goVote")}
                   </Link>
                 ) : null}
 
-                {election.has_voted || election.phase === "CLOSED" ? (
-                  <Link to={`/elections/${election.id}/results`} className="action-btn btn-secondary">
-                    {t("election.actions.viewResults")}
-                  </Link>
-                ) : null}
+                  {
+                    election.has_voted || canonicalPhase === "RESULTS" ? (
+                      <Link to={`/elections/${election.id}/results`} className="action-btn btn-secondary">
+                        {t("election.actions.viewResults")}
+                      </Link>
+                    ) : null
+                  }
               </div>
             </div>
           </header>
