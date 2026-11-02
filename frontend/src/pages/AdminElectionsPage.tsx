@@ -339,15 +339,35 @@ export function AdminElectionsPage() {
                               ) : null
                             }
 
-                            { normalizeElectionPhase(elec.phase) === "REVIEW" ? (
-                            <button
-                              type="button"
-                              className="table-btn btn-freeze"
-                              onClick={() => handleFreeze(elec.id)}
-                            >
-                              {t("election.actions.freezeRoster")}
-                            </button>
-                          ) : null}
+                            {normalizeElectionPhase(elec.phase) === "REVIEW" ? (
+                              elec.roster_frozen_at ? (
+                                <span
+                                  className="table-badge roster-frozen-badge"
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 4,
+                                    padding: "4px 8px",
+                                    background: "#f1f5f9",
+                                    color: "#475569",
+                                    border: "1px solid #cbd5e1",
+                                    borderRadius: 6,
+                                    fontSize: "0.78rem",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  🔒 {t("election.admin.rosterFrozen")}
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="table-btn btn-freeze"
+                                  onClick={() => handleFreeze(elec.id)}
+                                >
+                                  {t("election.actions.freezeRoster")}
+                                </button>
+                              )
+                            ) : null}
 
                             { normalizeElectionPhase(elec.phase) === "VOTING" ? (
                             <button

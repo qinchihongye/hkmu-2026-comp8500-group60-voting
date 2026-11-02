@@ -176,19 +176,23 @@ export function ElectionResultPage() {
 
           {/* Winner Spotlight Banner (if candidate results available) */}
           {winners.length > 0 ? (
-            <section className={`winner-spotlight-card ${is_tie ? "tie-card" : ""}`}>
-              <div className="winner-trophy-icon">{is_tie ? "⚖️" : "🏆"}</div>
+            <section className={`winner-spotlight-card ${is_tie ? "tie-card" : !isClosed ? "live-card" : ""}`}>
+              <div className="winner-trophy-icon">{is_tie ? "⚖️" : !isClosed ? "📊" : "🏆"}</div>
               <div className="winner-details">
                 <span className="winner-label">
                   {is_tie
-                    ? t("election.results.tiedWinners", { count: winners.length })
+                    ? !isClosed
+                      ? t("election.results.tiedLeaders", { count: winners.length })
+                      : t("election.results.tiedWinners", { count: winners.length })
+                    : !isClosed
+                    ? t("election.results.currentLeader")
                     : t("election.results.winner")}
                 </span>
                 <h2 className="winner-names">
                   {winners.map((w) => `${w.name} (${w.candidate_code})`).join(" / ")}
                 </h2>
                 <span className="winner-share-badge">
-                  {winners[0].percentage}% ({winners[0].vote_count} {t("common.records", { total: winners[0].vote_count })})
+                  {winners[0].percentage}% ({t("election.results.votes", { count: winners[0].vote_count })})
                 </span>
                 {results.winning_threshold && winners.some((w) => w.vote_count >= results.winning_threshold!) ? (
                   <div style={{ marginTop: 6, fontSize: "0.85rem", color: "#166534", fontWeight: 600 }}>
@@ -215,7 +219,14 @@ export function ElectionResultPage() {
                         <div className="row-candidate-name">
                           <span className="candidate-code-tag">{c.candidate_code}</span>
                           <span className="name-text">{c.name}</span>
-                          {isWinner ? <span className="winner-mini-badge">🏆</span> : null}
+                          {isWinner ? (
+                            <span
+                              className="winner-mini-badge"
+                              title={!isClosed ? t("election.results.currentLeader") : t("election.results.winner")}
+                            >
+                              {!isClosed ? "📊" : "🏆"}
+                            </span>
+                          ) : null}
                         </div>
                         <div className="row-tally">
                           <span className="vote-num">{c.vote_count}</span>

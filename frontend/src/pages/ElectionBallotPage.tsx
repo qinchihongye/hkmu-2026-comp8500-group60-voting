@@ -8,9 +8,24 @@ import "./ElectionBallotPage.css";
 
 export function ElectionBallotPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const navigate = useNavigate();
   const electionId = id ? parseInt(id, 10) : 0;
+
+  const dateLocale = locale === "en" ? "en-US" : locale === "zh-TW" ? "zh-TW" : "zh-CN";
+  const formatDate = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleString(dateLocale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return iso;
+    }
+  };
 
   const [election, setElection] = useState<ElectionDetail | null>(null);
   const [selectedCandidateId, setSelectedCandidateId] = useState<number | null>(null);
@@ -121,7 +136,7 @@ export function ElectionBallotPage() {
                   <h2>{t("election.ballot.submittedTitle")}</h2>
                   <p className="submitted-at-text">
                     {t("election.ballot.submittedAt", {
-                      time: new Date(receipt.submitted_at).toLocaleString(),
+                      time: formatDate(receipt.submitted_at),
                     })}
                   </p>
                 </div>

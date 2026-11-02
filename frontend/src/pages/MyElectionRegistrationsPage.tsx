@@ -6,10 +6,25 @@ import { useI18n } from "../i18n/LocaleProvider";
 import "./MyElectionRegistrationsPage.css";
 
 export function MyElectionRegistrationsPage() {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const [registrations, setRegistrations] = useState<VoterRegistrationSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const dateLocale = locale === "en" ? "en-US" : locale === "zh-TW" ? "zh-TW" : "zh-CN";
+  const formatDate = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleString(dateLocale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return iso;
+    }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -73,7 +88,7 @@ export function MyElectionRegistrationsPage() {
               {t("election.registration.emptyRegistrations")}
             </h3>
             <p style={{ margin: "0 0 22px 0", maxWidth: 440, color: "#64748b", fontSize: "0.9rem", lineHeight: 1.5 }}>
-              Register your identity before roster freeze to receive single-use credentials for upcoming elections.
+              {t("election.registration.emptyDesc")}
             </p>
             <Link
               to="/elections"
@@ -99,46 +114,51 @@ export function MyElectionRegistrationsPage() {
           </div>
         ) : (
           <div className="registrations-list">
-            {registrations.map((reg) => (
-              <div key={reg.id} className="registration-card">
-                <div className="reg-card-header">
-                  <h3 className="reg-poll-title">
-                    <Link to={`/elections/${reg.poll_id}`}>{reg.poll_title}</Link>
-                  </h3>
-                  <span className={`status-pill status-${reg.status.toLowerCase()}`}>
-                    {t(`election.status.${reg.status}` as any)}
-                  </span>
-                </div>
+            {registrations.map((reg) => {
+              const electionTitle = reg.election_title || reg.poll_title || t("election.title");
+              return (
+                <div key={reg.id} className="registration-card">
+                  <div className="reg-card-header">
+                    <h3 className="reg-poll-title">
+                      <Link to={`/elections/${reg.poll_id}`} aria-label={electionTitle}>
+                        {electionTitle}
+                      </Link>
+                    </h3>
+                    <span className={`status-pill status-${reg.status.toLowerCase()}`}>
+                      {t(`election.status.${reg.status}` as any)}
+                    </span>
+                  </div>
 
-                <div className="reg-card-grid">
-                  <div className="reg-meta-item">
-                    <span className="label">{t("election.registration.legalName")}:</span>
-                    <span className="val">{reg.legal_name_snapshot}</span>
+                  <div className="reg-card-grid">
+                    <div className="reg-meta-item">
+                      <span className="label">{t("election.registration.legalName")}:</span>
+                      <span className="val">{reg.legal_name_snapshot}</span>
+                    </div>
+                    <div className="reg-meta-item">
+                      <span className="label">{t("election.registration.docType")}:</span>
+                      <span className="val">{t(`election.docType.${reg.document_type}` as any)}</span>
+                    </div>
+                    <div className="reg-meta-item">
+                      <span className="label">{t("election.registration.docNumber")}:</span>
+                      <span className="val">•••• •••• {reg.document_suffix}</span>
+                    </div>
+                    <div className="reg-meta-item">
+                      <span className="label">{t("election.registration.issuer")}:</span>
+                      <span className="val">{reg.issuer}</span>
+                    </div>
                   </div>
-                  <div className="reg-meta-item">
-                    <span className="label">{t("election.registration.docType")}:</span>
-                    <span className="val">{t(`election.docType.${reg.document_type}` as any)}</span>
-                  </div>
-                  <div className="reg-meta-item">
-                    <span className="label">{t("election.registration.docNumber")}:</span>
-                    <span className="val">•••• •••• {reg.document_suffix}</span>
-                  </div>
-                  <div className="reg-meta-item">
-                    <span className="label">{t("election.registration.issuer")}:</span>
-                    <span className="val">{reg.issuer}</span>
-                  </div>
-                </div>
 
-                <div className="reg-card-footer">
-                  <span className="reg-date">
-                    {new Date(reg.submitted_at).toLocaleString()}
-                  </span>
-                  <Link to={`/elections/${reg.poll_id}`} className="btn-outline">
-                    {t("polls.viewDetails")} &rarr;
-                  </Link>
+                  <div className="reg-card-footer">
+                    <span className="reg-date">
+                      {formatDate(reg.submitted_at)}
+                    </span>
+                    <Link to={`/elections/${reg.poll_id}`} className="btn-outline" aria-label={`${t("polls.viewDetails")} - ${electionTitle}`}>
+                      {t("polls.viewDetails")} &rarr;
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

@@ -32,12 +32,15 @@ def list_admin_elections(
     response: Response,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
+    phase: str | None = Query(default=None),
     principal: Principal = Depends(require_admin),
 ) -> ResponseModel[Page[ElectionSummary]]:
     """List all elections across all phases for administrators."""
     mark_private(response)
     mark_no_referrer(response)
-    items = election_service_for(request).list_admin_elections(page=page, page_size=page_size)
+    items = election_service_for(request).list_admin_elections(
+        page=page, page_size=page_size, phase=phase
+    )
     return success_body(request, items)
 
 

@@ -35,6 +35,7 @@ def list_elections(
     response: Response,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
+    phase: str | None = Query(default=None),
     principal: Principal | None = Depends(get_optional_principal),
 ) -> ResponseModel[Page[ElectionSummary]]:
     """List published and closed elections for public."""
@@ -42,7 +43,7 @@ def list_elections(
     mark_no_referrer(response)
     user_id = principal.user_id if principal else None
     items = election_service_for(request).list_public_elections(
-        page=page, page_size=page_size, user_id=user_id
+        page=page, page_size=page_size, user_id=user_id, phase=phase
     )
     return success_body(request, items)
 

@@ -140,28 +140,68 @@
   text-align: center;
 }
 
-/* Responsive Scaling */
-@media (max-width: 540px) {
+.timeline-mobile-summary {
+  display: none;
+}
+
+/* Responsive Scaling (< 640px) */
+@media (max-width: 640px) {
+  .election-timeline-wrapper {
+    padding: 12px 10px;
+    gap: 8px;
+  }
+  .timeline-step .step-pill {
+    display: none;
+  }
   .step-circle {
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
   }
   .step-circle svg {
-    width: 13px;
-    height: 13px;
+    width: 14px;
+    height: 14px;
   }
   .step-active .step-circle {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     margin: -2px 0;
   }
   .timeline-connector {
-    top: 14px;
+    top: 15px;
   }
-  .step-pill {
-    font-size: 0.65rem;
-    padding: 2px 4px;
-    margin-top: 6px;
+  .timeline-mobile-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: #334155;
+    margin-top: 4px;
+  }
+  .mobile-summary-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.4;
+    flex-wrap: wrap;
+  }
+  .mobile-summary-row.current-stage strong {
+    color: #1363df;
+  }
+  .mobile-summary-row.next-stage {
+    color: #64748b;
+    font-size: 0.76rem;
+  }
+  .summary-badge {
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-weight: 700;
+    font-size: 0.72rem;
+    padding: 1px 6px;
+    border-radius: 4px;
   }
 }
 

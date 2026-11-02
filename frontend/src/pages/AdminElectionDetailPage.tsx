@@ -17,8 +17,10 @@ import "./AdminElectionDetailPage.css";
 
 export function AdminElectionDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const electionId = id ? parseInt(id, 10) : 0;
+
+  const dateLocale = locale === "en" ? "en-US" : locale === "zh-TW" ? "zh-TW" : "zh-CN";
 
   const [election, setElection] = useState<ElectionDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -158,7 +160,13 @@ export function AdminElectionDetailPage() {
 
   const formatDate = (iso: string) => {
     try {
-      return new Date(iso).toLocaleString();
+      return new Date(iso).toLocaleString(dateLocale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
     } catch {
       return iso;
     }
@@ -227,15 +235,35 @@ export function AdminElectionDetailPage() {
               {t("election.actions.reviewRegistrations")}
             </Link>
 
-              { normalizeElectionPhase(election.phase) === "REVIEW" ? (
-              <button
-                type="button"
-                className="ctrl-btn btn-freeze"
-                onClick={handleFreeze}
-              >
-                {t("election.actions.freezeRoster")}
-              </button>
-            ) : null}
+              {normalizeElectionPhase(election.phase) === "REVIEW" ? (
+                election.roster_frozen_at ? (
+                  <span
+                    className="ctrl-badge roster-frozen-badge"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "8px 14px",
+                      background: "#f1f5f9",
+                      color: "#475569",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: 8,
+                      fontSize: "0.85rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    🔒 {t("election.admin.rosterFrozen")}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className="ctrl-btn btn-freeze"
+                    onClick={handleFreeze}
+                  >
+                    {t("election.actions.freezeRoster")}
+                  </button>
+                )
+              ) : null}
 
               { normalizeElectionPhase(election.phase) === "VOTING" ? (
               <button

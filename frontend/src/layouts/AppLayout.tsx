@@ -487,6 +487,10 @@ export function AppLayout() {
               <TabIcon name="overview" />
               <span>{t("nav.overview")}</span>
             </NavLink>
+            <NavLink to="/elections" className="mobile-tab" aria-label={t("nav.elections")}>
+              <TabIcon name="election" />
+              <span>{t("nav.electionsShort")}</span>
+            </NavLink>
             {authenticated ? (
               <NavLink to="/my-polls/new" className="mobile-tab mobile-tab-create" aria-label={t("nav.create")}>
                 <span className="mobile-tab-create-mark" aria-hidden="true">+</span>
@@ -512,7 +516,15 @@ export function AppLayout() {
   );
 }
 
-function TabIcon({ name }: { name: "overview" | "polls" | "mine" | "history" }) {
+function TabIcon({ name }: { name: "overview" | "polls" | "election" | "mine" | "history" }) {
+  if (name === "election") {
+    return (
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        <polyline points="9 12 11 14 15 10" />
+      </svg>
+    );
+  }
   if (name === "overview") {
     return (
       <svg viewBox="0 0 20 20" width="20" height="20" fill="currentColor" aria-hidden="true">

@@ -11,7 +11,7 @@ import "./ElectionDetailPage.css";
 
 export function ElectionDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const { user } = useAuth();
   const [election, setElection] = useState<ElectionDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,10 +55,11 @@ export function ElectionDetailPage() {
     );
   }
 
+  const dateLocale = locale === "en" ? "en-US" : locale === "zh-TW" ? "zh-TW" : "zh-CN";
   const formatDate = (iso: string) => {
     try {
       const d = new Date(iso);
-      return d.toLocaleString(undefined, {
+      return d.toLocaleString(dateLocale, {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -135,7 +136,7 @@ export function ElectionDetailPage() {
             ) : null}
 
             {/* Stage Progress Timeline */}
-            <div style={{ margin: "16px 0 20px 0" }}>
+            <div className="detail-timeline-wrapper-row" style={{ margin: "16px 0 20px 0" }}>
               <ElectionLifecycleTimeline phase={election.phase} />
             </div>
 

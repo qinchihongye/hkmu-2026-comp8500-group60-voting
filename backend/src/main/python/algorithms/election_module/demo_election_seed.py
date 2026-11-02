@@ -372,6 +372,7 @@ def seed_realistic_elections(session_factory: sessionmaker[Session], hmac_key: b
                 extra_users=extra_users,
                 hmac_key=hmac_key,
                 include_extra=True,
+                roster_frozen=True,
             )
 
             # Freeze roster and issue credentials
@@ -461,6 +462,7 @@ def seed_realistic_elections(session_factory: sessionmaker[Session], hmac_key: b
                 extra_users=extra_users,
                 hmac_key=hmac_key,
                 include_extra=True,
+                roster_frozen=True,
             )
 
             session.add(
@@ -580,6 +582,7 @@ def seed_realistic_elections(session_factory: sessionmaker[Session], hmac_key: b
                 extra_users=extra_users,
                 hmac_key=hmac_key,
                 include_extra=True,
+                roster_frozen=True,
             )
 
             session.add(
@@ -641,8 +644,12 @@ def _register_voters_for_election(
     extra_users: list[User],
     hmac_key: bytes,
     include_extra: bool = True,
+    roster_frozen: bool = False,
 ) -> int:
     """Register demo voters (approved, rejected, pending) for a given election.
+
+    If roster_frozen is True, pending / needs_review voters are pre-reviewed
+    by the administrator prior to roster freeze, ensuring a consistent certified roster.
 
     Returns the number of APPROVED registrations.
     """
@@ -665,6 +672,18 @@ def _register_voters_for_election(
             if existing_reg.status == RegistrationStatus.APPROVED.value:
                 approved_count += 1
             continue
+
+        # Determine effective status based on roster freeze state
+        effective_status = spec.status
+        effective_score = spec.score
+        effective_reason_codes = spec.reason_codes
+        effective_review_note = spec.review_note
+
+        if roster_frozen and spec.status == RegistrationStatus.NEEDS_REVIEW:
+            effective_status = RegistrationStatus.APPROVED
+            effective_score = 85
+            effective_reason_codes = ["MANUAL_VERIFICATION_RESOLVED"]
+            effective_review_note = "证件人工复核通过，FTU学籍核验证明有效，通过资格审查并列入正式选民名册"
 
         # Create or find voter identity
         fingerprint = compute_fingerprint(hmac_key, spec.doc_type.value, spec.issuer, spec.doc_number)
@@ -701,17 +720,17 @@ def _register_voters_for_election(
 
         # Registration
         sub_time = poll.created_at + timedelta(hours=2)
-        rev_time = sub_time + timedelta(hours=1) if spec.status != RegistrationStatus.PENDING else None
-        reviewed_by = admin.id if spec.status != RegistrationStatus.PENDING else None
+        rev_time = sub_time + timedelta(hours=1) if effective_status != RegistrationStatus.PENDING else None
+        reviewed_by = admin.id if effective_status != RegistrationStatus.PENDING else None
 
         reg = ElectionRegistration(
             poll_id=poll.id,
             user_id=user.id,
             identity_id=ident.id,
             legal_name_snapshot=spec.display_name.split()[0],
-            status=spec.status.value,
-            model_score=spec.score,
-            model_reason_codes=spec.reason_codes,
+            status=effective_status.value,
+            model_score=effective_score,
+            model_reason_codes=effective_reason_codes,
             model_version="mock-eligibility-v1",
             reviewed_by=reviewed_by,
             reviewed_at=rev_time,
@@ -721,7 +740,7 @@ def _register_voters_for_election(
         session.add(reg)
         session.flush()
 
-        # Review event
+        # Review event (Initial Model Event)
         session.add(
             EligibilityReviewEvent(
                 registration_id=reg.id,
@@ -737,24 +756,24 @@ def _register_voters_for_election(
                 created_at=sub_time,
             )
         )
-        if spec.status in (RegistrationStatus.APPROVED, RegistrationStatus.REJECTED):
+        if effective_status in (RegistrationStatus.APPROVED, RegistrationStatus.REJECTED):
             session.add(
                 EligibilityReviewEvent(
                     registration_id=reg.id,
                     actor_type="ADMIN",
                     actor_id=admin.id,
-                    from_status=RegistrationStatus.PENDING.value,
-                    to_status=spec.status.value,
-                    score=spec.score,
-                    reason_codes=spec.reason_codes,
+                    from_status=spec.status.value if effective_status != spec.status else RegistrationStatus.PENDING.value,
+                    to_status=effective_status.value,
+                    score=effective_score,
+                    reason_codes=effective_reason_codes,
                     model_version=None,
-                    review_note=spec.review_note,
+                    review_note=effective_review_note,
                     request_id=f"seed-admin-{reg.id}",
                     created_at=rev_time,
                 )
             )
 
-        if spec.status == RegistrationStatus.APPROVED:
+        if effective_status == RegistrationStatus.APPROVED:
             approved_count += 1
 
     # Also register extra users (like mzc / demo_user) as APPROVED voters so user can test seamlessly

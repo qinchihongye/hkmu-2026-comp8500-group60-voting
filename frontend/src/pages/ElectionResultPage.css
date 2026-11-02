@@ -158,6 +158,20 @@
   box-shadow: 0 4px 14px rgba(100, 116, 139, 0.12);
 }
 
+.winner-spotlight-card.live-card {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 60%, #bfdbfe 100%);
+  border-color: #93c5fd;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.12);
+}
+
+.live-card .winner-label {
+  color: #1d4ed8;
+}
+
+.live-card .winner-names {
+  color: #1e3a8a;
+}
+
 .winner-trophy-icon {
   font-size: 3rem;
   line-height: 1;

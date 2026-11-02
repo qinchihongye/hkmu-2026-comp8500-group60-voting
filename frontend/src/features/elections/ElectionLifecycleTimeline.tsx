@@ -95,6 +95,9 @@ export function getLifecycleActiveIndex(phase: ElectionPhase): number {
       },
     ];
 
+    const currentStep = steps[activeIndex] || steps[0];
+    const nextStep = activeIndex + 1 < steps.length ? steps[activeIndex + 1] : null;
+
     return (
       <div
         className="election-timeline-wrapper"
@@ -136,6 +139,25 @@ export function getLifecycleActiveIndex(phase: ElectionPhase): number {
               </div>
             );
           })}
+        </div>
+
+        {/* Mobile Stage Summary (< 640px) */}
+        <div className="timeline-mobile-summary" aria-hidden="true">
+          <div className="mobile-summary-row current-stage">
+            <span className="summary-badge">
+              {t("election.lifecycle.stageProgress", { current: activeIndex + 1, total: steps.length })}
+            </span>
+            <span className="summary-label">
+              <strong>{t("election.lifecycle.currentStage")}: {currentStep.label}</strong>
+            </span>
+          </div>
+          {nextStep ? (
+            <div className="mobile-summary-row next-stage">
+              <span className="summary-label">
+                {t("election.lifecycle.nextStage")}: {nextStep.label}
+              </span>
+            </div>
+          ) : null}
         </div>
       </div>
     );

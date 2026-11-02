@@ -375,23 +375,32 @@ class ElectionService:
         with self._factory() as session:
             return self._load_election_detail(session, election_id, now)
 
-    def list_admin_elections(self, page: int = 1, page_size: int = 20) -> Page[ElectionSummary]:
+    def list_admin_elections(
+        self, page: int = 1, page_size: int = 20, phase: str | None = None
+    ) -> Page[ElectionSummary]:
         """List all elections for administrators ordered by created_at desc."""
         now = self._clock.now()
         with self._factory() as session:
-            total = session.execute(
-                select(func.count(Poll.id)).where(Poll.activity_type == ActivityType.ELECTION.value)
-            ).scalar_one()
-
-            offset = (page - 1) * page_size
-            rows = session.execute(
+            base_query = (
                 select(Poll, ElectionConfig)
                 .join(ElectionConfig, ElectionConfig.poll_id == Poll.id)
                 .where(Poll.activity_type == ActivityType.ELECTION.value)
                 .order_by(Poll.created_at.desc(), Poll.id.desc())
-                .limit(page_size)
-                .offset(offset)
-            ).all()
+            )
+            all_rows = session.execute(base_query).all()
+            if phase is not None:
+                norm_phase = phase.upper().strip()
+                filtered_rows = [
+                    (p, c)
+                    for p, c in all_rows
+                    if compute_election_phase(p, c, now).value == norm_phase
+                ]
+            else:
+                filtered_rows = all_rows
+
+            total = len(filtered_rows)
+            offset = (page - 1) * page_size
+            rows = filtered_rows[offset : offset + page_size]
 
             results: list[ElectionSummary] = []
             for poll, config in rows:
@@ -442,20 +451,16 @@ class ElectionService:
             return detail
 
     def list_public_elections(
-        self, page: int = 1, page_size: int = 20, user_id: int | None = None
+        self,
+        page: int = 1,
+        page_size: int = 20,
+        user_id: int | None = None,
+        phase: str | None = None,
     ) -> Page[ElectionSummary]:
         """List published / closed elections for public."""
         now = self._clock.now()
         with self._factory() as session:
-            total = session.execute(
-                select(func.count(Poll.id)).where(
-                    Poll.activity_type == ActivityType.ELECTION.value,
-                    Poll.lifecycle.in_([PollLifecycle.PUBLISHED, PollLifecycle.CLOSED]),
-                )
-            ).scalar_one()
-
-            offset = (page - 1) * page_size
-            rows = session.execute(
+            base_query = (
                 select(Poll, ElectionConfig)
                 .join(ElectionConfig, ElectionConfig.poll_id == Poll.id)
                 .where(
@@ -463,9 +468,21 @@ class ElectionService:
                     Poll.lifecycle.in_([PollLifecycle.PUBLISHED, PollLifecycle.CLOSED]),
                 )
                 .order_by(Poll.starts_at.desc(), Poll.id.desc())
-                .limit(page_size)
-                .offset(offset)
-            ).all()
+            )
+            all_rows = session.execute(base_query).all()
+            if phase is not None:
+                norm_phase = phase.upper().strip()
+                filtered_rows = [
+                    (p, c)
+                    for p, c in all_rows
+                    if compute_election_phase(p, c, now).value == norm_phase
+                ]
+            else:
+                filtered_rows = all_rows
+
+            total = len(filtered_rows)
+            offset = (page - 1) * page_size
+            rows = filtered_rows[offset : offset + page_size]
 
             user_reg_map: dict[int, RegistrationStatus] = {}
             user_voted_map: dict[int, bool] = {}

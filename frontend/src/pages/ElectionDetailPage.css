@@ -306,19 +306,43 @@
 /* Mobile responsive */
 @media (max-width: 640px) {
   .detail-header-card {
-    padding: 20px 18px;
+    padding: 20px 16px;
     border-radius: 16px;
+    gap: 14px;
   }
 
-  .detail-timeline-grid {
-    grid-template-columns: 1fr;
-    padding: 14px;
+  /* Elevate Primary Voter Actions above long descriptions & timeline boxes */
+  .detail-badge-row {
+    order: 1;
   }
-
+  .detail-title {
+    order: 2;
+  }
+  .detail-timeline-wrapper-row {
+    order: 3;
+    margin: 4px 0 8px 0 !important;
+  }
   .detail-voter-panel {
+    order: 4;
     flex-direction: column;
     align-items: stretch;
-    gap: 14px;
+    gap: 12px;
+    margin: 4px 0 10px 0;
+  }
+  .election-detail-pending-banner {
+    order: 5;
+    margin-top: 4px !important;
+  }
+  .detail-description {
+    order: 6;
+    font-size: 0.92rem;
+    line-height: 1.6;
+  }
+  .detail-timeline-grid {
+    order: 7;
+    grid-template-columns: 1fr;
+    padding: 14px;
+    gap: 10px;
   }
 
   .voter-status-info {

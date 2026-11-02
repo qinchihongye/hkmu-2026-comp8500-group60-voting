@@ -4,7 +4,6 @@ import { useAuth } from "../features/auth/AuthProvider";
 import { getMyElectionRegistrations, getPublicElections } from "../features/elections/api";
 import { ElectionCard } from "../features/elections/ElectionCard";
 import type { CanonicalElectionPhase, ElectionSummary, VoterRegistrationSummary } from "../features/elections/types";
-import { normalizeElectionPhase } from "../features/elections/types";
 import { useI18n } from "../i18n/LocaleProvider";
 import "./ElectionsPage.css";
 
@@ -18,10 +17,25 @@ const PHASE_FILTERS: Array<{ key: string; phase?: CanonicalElectionPhase }> = [
 ];
 
 export function ElectionsPage() {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const { user, status } = useAuth();
   const authenticated = status === "authenticated" || Boolean(user);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  const dateLocale = locale === "en" ? "en-US" : locale === "zh-TW" ? "zh-TW" : "zh-CN";
+  const formatDate = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleString(dateLocale, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return iso;
+    }
+  };
 
   // Primary view mode: "explore" (All public elections) vs "my_registrations" (User's registrations)
   const currentView = searchParams.get("view") === "my_registrations" ? "my_registrations" : "explore";
@@ -40,6 +54,8 @@ export function ElectionsPage() {
   const [regCount, setRegCount] = useState<number | null>(null);
 
   const activeTab = searchParams.get("tab") || "all";
+  const activeFilter = PHASE_FILTERS.find((f) => f.key === activeTab);
+  const phaseParam = activeFilter?.phase;
   const page = parseInt(searchParams.get("page") || "1", 10);
 
   // Load public elections
@@ -48,7 +64,7 @@ export function ElectionsPage() {
     setLoading(true);
     setError(null);
 
-    getPublicElections({ page, page_size: 12 })
+    getPublicElections({ page, page_size: 12, phase: phaseParam })
       .then((data) => {
         if (cancelled) return;
         setElections(data.items);
@@ -66,7 +82,7 @@ export function ElectionsPage() {
     return () => {
       cancelled = true;
     };
-  }, [page, activeTab, t]);
+  }, [page, phaseParam, t]);
 
   // Load user registrations if authenticated
   useEffect(() => {
@@ -126,12 +142,7 @@ export function ElectionsPage() {
     setSearchParams(next);
   };
 
-  const filteredElections = elections.filter((item) => {
-    if (activeTab === "all") return true;
-    const filter = PHASE_FILTERS.find((f) => f.key === activeTab);
-    if (!filter?.phase) return true;
-    return normalizeElectionPhase(item.phase) === filter.phase;
-  });
+  const filteredElections = elections;
 
   return (
     <div className="view-root">
@@ -351,7 +362,7 @@ export function ElectionsPage() {
                   {t("election.registration.emptyRegistrations")}
                 </h3>
                 <p style={{ margin: "0 0 22px 0", maxWidth: 440, color: "#64748b", fontSize: "0.9rem", lineHeight: 1.5 }}>
-                  Register your identity before roster freeze to receive single-use credentials for upcoming elections.
+                  {t("election.registration.emptyDesc")}
                 </p>
                 <button
                   type="button"
@@ -378,46 +389,51 @@ export function ElectionsPage() {
               </div>
             ) : (
               <div className="registrations-list">
-                {registrations.map((reg) => (
-                  <div key={reg.id} className="registration-card">
-                    <div className="reg-card-header">
-                      <h3 className="reg-poll-title">
-                        <Link to={`/elections/${reg.poll_id}`}>{reg.poll_title}</Link>
-                      </h3>
-                      <span className={`status-pill status-${reg.status.toLowerCase()}`}>
-                        {t(`election.status.${reg.status}` as any)}
-                      </span>
-                    </div>
+                {registrations.map((reg) => {
+                  const regTitle = reg.election_title || reg.poll_title || t("election.title");
+                  return (
+                    <div key={reg.id} className="registration-card">
+                      <div className="reg-card-header">
+                        <h3 className="reg-poll-title">
+                          <Link to={`/elections/${reg.poll_id}`} aria-label={regTitle}>
+                            {regTitle}
+                          </Link>
+                        </h3>
+                        <span className={`status-pill status-${reg.status.toLowerCase()}`}>
+                          {t(`election.status.${reg.status}` as any)}
+                        </span>
+                      </div>
 
-                    <div className="reg-card-grid">
-                      <div className="reg-meta-item">
-                        <span className="label">{t("election.registration.legalName")}:</span>
-                        <span className="val">{reg.legal_name_snapshot}</span>
+                      <div className="reg-card-grid">
+                        <div className="reg-meta-item">
+                          <span className="label">{t("election.registration.legalName")}:</span>
+                          <span className="val">{reg.legal_name_snapshot}</span>
+                        </div>
+                        <div className="reg-meta-item">
+                          <span className="label">{t("election.registration.docType")}:</span>
+                          <span className="val">{t(`election.docType.${reg.document_type}` as any)}</span>
+                        </div>
+                        <div className="reg-meta-item">
+                          <span className="label">{t("election.registration.docNumber")}:</span>
+                          <span className="val">•••• •••• {reg.document_suffix}</span>
+                        </div>
+                        <div className="reg-meta-item">
+                          <span className="label">{t("election.registration.issuer")}:</span>
+                          <span className="val">{reg.issuer}</span>
+                        </div>
                       </div>
-                      <div className="reg-meta-item">
-                        <span className="label">{t("election.registration.docType")}:</span>
-                        <span className="val">{t(`election.docType.${reg.document_type}` as any)}</span>
-                      </div>
-                      <div className="reg-meta-item">
-                        <span className="label">{t("election.registration.docNumber")}:</span>
-                        <span className="val">•••• •••• {reg.document_suffix}</span>
-                      </div>
-                      <div className="reg-meta-item">
-                        <span className="label">{t("election.registration.issuer")}:</span>
-                        <span className="val">{reg.issuer}</span>
-                      </div>
-                    </div>
 
-                    <div className="reg-card-footer">
-                      <span className="reg-date">
-                        {new Date(reg.submitted_at).toLocaleString()}
-                      </span>
-                      <Link to={`/elections/${reg.poll_id}`} className="btn-outline">
-                        {t("polls.viewDetails")} &rarr;
-                      </Link>
+                      <div className="reg-card-footer">
+                        <span className="reg-date">
+                          {formatDate(reg.submitted_at)}
+                        </span>
+                        <Link to={`/elections/${reg.poll_id}`} className="btn-outline" aria-label={`${t("polls.viewDetails")} - ${regTitle}`}>
+                          {t("polls.viewDetails")} &rarr;
+                        </Link>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

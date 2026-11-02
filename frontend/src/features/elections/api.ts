@@ -18,7 +18,7 @@ import type {
 } from "./types";
 
 // Public & Voter API
-export function getPublicElections(query: PageQuery = {}): Promise<Page<ElectionSummary>> {
+export function getPublicElections(query: PageQuery & { phase?: string } = {}): Promise<Page<ElectionSummary>> {
   return apiClient({ path: "/api/v1/elections", query });
 }
 
@@ -64,7 +64,7 @@ export function getMyElectionRegistrations(
 }
 
 // Admin API
-export function getAdminElections(query: PageQuery = {}): Promise<Page<ElectionSummary>> {
+export function getAdminElections(query: PageQuery & { phase?: string } = {}): Promise<Page<ElectionSummary>> {
   return apiClient({ path: "/api/v1/admin/elections", query });
 }
 

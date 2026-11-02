@@ -25,8 +25,10 @@ const STATUS_FILTERS: Array<{ key: string; status?: RegistrationStatus }> = [
 
 export function AdminElectionRegistrationsPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const electionId = id ? parseInt(id, 10) : 0;
+
+  const dateLocale = locale === "en" ? "en-US" : locale === "zh-TW" ? "zh-TW" : "zh-CN";
 
   const [election, setElection] = useState<ElectionDetail | null>(null);
   const [registrations, setRegistrations] = useState<VoterRegistrationSummary[]>([]);
@@ -50,7 +52,7 @@ export function AdminElectionRegistrationsPage() {
   const formatFrozenTime = (iso?: string | null) => {
     if (!iso) return "";
     try {
-      return new Date(iso).toLocaleString([], {
+      return new Date(iso).toLocaleString(dateLocale, {
         year: "numeric",
         month: "short",
         day: "numeric",
