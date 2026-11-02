@@ -45,6 +45,23 @@ export function AdminElectionRegistrationsPage() {
     message: string;
   } | null>(null);
 
+  const isRosterFrozen = Boolean(election?.roster_frozen_at);
+
+  const formatFrozenTime = (iso?: string | null) => {
+    if (!iso) return "";
+    try {
+      return new Date(iso).toLocaleString([], {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return iso;
+    }
+  };
+
   const loadData = () => {
     if (!electionId) return;
     setLoading(true);
@@ -71,6 +88,7 @@ export function AdminElectionRegistrationsPage() {
   }, [electionId, activeFilter, t]);
 
   const handleOpenReview = (reg: VoterRegistrationSummary) => {
+    if (isRosterFrozen) return;
     setReviewingReg(reg);
     setDecision("APPROVED");
     setReviewNote("");
@@ -135,7 +153,49 @@ export function AdminElectionRegistrationsPage() {
           </Link>
         </div>
 
-        {normalizeElectionPhase(election?.phase) === "REVIEW" ? (
+        {isRosterFrozen ? (
+          <div
+            className="roster-frozen-banner"
+            style={{
+              background: "#f0fdf4",
+              border: "1px solid #bbf7d0",
+              borderRadius: "10px",
+              padding: "12px 18px",
+              marginBottom: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+            }}
+          >
+            <div style={{ fontSize: "0.88rem", color: "#166534", display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontSize: "1.15rem" }}>🔒</span>
+              <span style={{ fontWeight: 600 }}>
+                {t("election.admin.rosterFrozenBanner", {
+                  time: formatFrozenTime(election?.roster_frozen_at),
+                  count: election?.eligible_voter_count ?? registrations.filter((r) => r.status === "APPROVED").length,
+                })}
+              </span>
+            </div>
+            <span
+              style={{
+                fontSize: "0.78rem",
+                fontWeight: 700,
+                padding: "4px 10px",
+                borderRadius: "6px",
+                background: "#dcfce7",
+                color: "#15803d",
+                border: "1px solid #86efac",
+                whiteSpace: "nowrap",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              🔒 {t("election.admin.rosterLocked")}
+            </span>
+          </div>
+        ) : normalizeElectionPhase(election?.phase) === "REVIEW" ? (
           <div
             style={{
               background: "#eff6ff",
@@ -295,13 +355,24 @@ export function AdminElectionRegistrationsPage() {
                       )}
                     </td>
                     <td className="col-actions">
-                      <button
-                        type="button"
-                        className="table-btn btn-review"
-                        onClick={() => handleOpenReview(reg)}
-                      >
-                        {t("election.admin.decision")}
-                      </button>
+                      {isRosterFrozen ? (
+                        <button
+                          type="button"
+                          className="table-btn btn-review btn-locked"
+                          disabled
+                          title={t("election.admin.rosterLockedHint")}
+                        >
+                          🔒 {t("election.admin.rosterLocked")}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="table-btn btn-review"
+                          onClick={() => handleOpenReview(reg)}
+                        >
+                          {t("election.admin.decision")}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

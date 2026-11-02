@@ -66,7 +66,13 @@ export function ElectionRegisterPage() {
       setResult(res);
     } catch (err: any) {
       if (err.code === 40911 || (err.message && err.message.toLowerCase().includes("already registered"))) {
-        setAlreadyRegisteredStatus("APPROVED");
+        try {
+          const elec = await getPublicElection(electionId);
+          const status = elec.my_registration_status || elec.user_registration_status || "PENDING";
+          setAlreadyRegisteredStatus(status);
+        } catch {
+          setAlreadyRegisteredStatus(alreadyRegisteredStatus || "PENDING");
+        }
       } else {
         setError(err.message || t("error.validation"));
       }

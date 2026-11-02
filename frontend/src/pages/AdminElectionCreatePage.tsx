@@ -6,15 +6,25 @@ import type { ElectionCandidateItem } from "../features/elections/types";
 import { useI18n } from "../i18n/LocaleProvider";
 import "./AdminElectionCreatePage.css";
 
+function toLocalDatetimeString(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 export function AdminElectionCreatePage() {
   const { t } = useI18n();
   const navigate = useNavigate();
 
   const now = new Date();
-  const defaultRegStart = new Date(now.getTime() + 10 * 60 * 1000).toISOString().slice(0, 16);
-  const defaultRegEnd = new Date(now.getTime() + 2 * 24 * 3600 * 1000).toISOString().slice(0, 16);
-  const defaultVoteStart = new Date(now.getTime() + 3 * 24 * 3600 * 1000).toISOString().slice(0, 16);
-  const defaultVoteEnd = new Date(now.getTime() + 5 * 24 * 3600 * 1000).toISOString().slice(0, 16);
+  const defaultRegStart = toLocalDatetimeString(new Date(now.getTime() + 10 * 60 * 1000));
+  const defaultRegEnd = toLocalDatetimeString(new Date(now.getTime() + 2 * 24 * 3600 * 1000));
+  const defaultVoteStart = toLocalDatetimeString(new Date(now.getTime() + 3 * 24 * 3600 * 1000));
+  const defaultVoteEnd = toLocalDatetimeString(new Date(now.getTime() + 5 * 24 * 3600 * 1000));
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");

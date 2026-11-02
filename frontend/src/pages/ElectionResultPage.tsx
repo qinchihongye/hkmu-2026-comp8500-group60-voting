@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthProvider";
 import { getElectionResults } from "../features/elections/api";
 import { ElectionPhaseBadge } from "../features/elections/ElectionPhaseBadge";
-import type { ElectionResultResponse } from "../features/elections/types";
+import { normalizeElectionPhase, type ElectionResultResponse } from "../features/elections/types";
 import { useI18n } from "../i18n/LocaleProvider";
 import "./ElectionResultPage.css";
 
@@ -94,7 +94,7 @@ export function ElectionResultPage() {
   }
 
   const { scale, candidate_results, is_tie, winner_option_ids, phase } = results;
-  const isClosed = phase === "CLOSED";
+  const isClosed = normalizeElectionPhase(phase) === "RESULTS" || phase === "CLOSED";
 
   // Calculate winner candidate info
   const winners = candidate_results?.filter((c) => winner_option_ids?.includes(c.candidate_option_id)) || [];

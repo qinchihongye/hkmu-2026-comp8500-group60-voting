@@ -197,6 +197,19 @@
   min-height: 32px;
 }
 
+.table-btn.btn-locked {
+  background: #f1f5f9;
+  color: #94a3b8;
+  border-color: #e2e8f0;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.table-btn.btn-locked:hover {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
 .btn-review {
   background: #eff6ff;
   color: #1d4ed8;

@@ -85,6 +85,7 @@ export interface ElectionSummary {
   id: number;
   title: string;
   description: string;
+  lifecycle?: string;
   phase: ElectionPhase;
   registration_starts_at: string;
   registration_ends_at: string;
@@ -93,6 +94,8 @@ export interface ElectionSummary {
   allow_live_results: boolean;
   winning_threshold?: number | null;
   candidate_count: number;
+  roster_frozen_at?: string | null;
+  eligible_voter_count?: number | null;
   my_registration_status?: RegistrationStatus | null;
   user_registration_status?: RegistrationStatus | null;
   has_voted?: boolean;
@@ -111,6 +114,8 @@ export interface ElectionDetail {
   allow_live_results: boolean;
   winning_threshold?: number | null;
   candidates: CandidatePublic[];
+  roster_frozen_at?: string | null;
+  eligible_voter_count?: number | null;
   my_registration_status?: RegistrationStatus | null;
   user_registration_status?: RegistrationStatus | null;
   has_voted?: boolean;

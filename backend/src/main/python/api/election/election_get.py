@@ -106,11 +106,25 @@ def get_election_results(
     mark_no_referrer(response)
     user_id = principal.user_id if principal else None
     is_admin = (principal.role == UserRole.ADMIN.value) if principal else False
+
+    # Prevent draft election results from leaking to non-admin
+    if not is_admin:
+        election_service_for(request).get_public_election(election_id, user_id=user_id)
+
     results = election_result_service_for(request).get_results(
         poll_id=election_id,
         user_id=user_id,
         is_admin=is_admin,
     )
+
+    # Ensure winning_threshold is passed to client
+    if results.winning_threshold is None:
+        try:
+            detail = election_service_for(request).get_admin_election(election_id)
+            results.winning_threshold = detail.winning_threshold
+        except Exception:
+            pass
+
     return success_body(request, results)
 
 

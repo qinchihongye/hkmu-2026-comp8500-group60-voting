@@ -656,6 +656,9 @@ export const en = {
       viewPublicPage: "Public voter view",
       quickAdminTitle: "Election Governance",
       scrollHint: "Swipe/scroll left and right to view more columns",
+      rosterFrozenBanner: "Voter roster was frozen on {time} ({count} credentials issued). The roster is locked in read-only mode, awaiting voting to begin.",
+      rosterLocked: "Locked",
+      rosterLockedHint: "Roster is frozen; decisions can no longer be modified",
     },
   },
 } as const;
@@ -1318,6 +1321,9 @@ export const zh: StringTree<typeof en> = {
       viewPublicPage: "查看选民前台",
       quickAdminTitle: "选举治理",
       scrollHint: "左侧字段支持左右滑动浏览",
+      rosterFrozenBanner: "选民名册已于 {time} 正式冻结锁定（已签发 {count} 张投票资格凭证）。名册已归档只读，等待正式投票开启。",
+      rosterLocked: "已冻结",
+      rosterLockedHint: "名册已冻结锁定，不可修改审核结果",
     },
   },
 } as const;

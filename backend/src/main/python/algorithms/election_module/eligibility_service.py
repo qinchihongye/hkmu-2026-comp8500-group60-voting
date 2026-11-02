@@ -88,7 +88,9 @@ class EligibilityService:
                     )
 
                 config = session.execute(
-                    select(ElectionConfig).where(ElectionConfig.poll_id == poll_id)
+                    select(ElectionConfig)
+                    .where(ElectionConfig.poll_id == poll_id)
+                    .with_for_update()
                 ).scalar_one()
 
                 if not (config.registration_starts_at <= now < config.registration_ends_at):

@@ -69,9 +69,13 @@ def cast_election_ballot(
         user_id=principal.user_id,
         candidate_option_id=payload.data.candidate_option_id,
     )
-    election_service_for(request).check_and_trigger_threshold(
-        poll_id=election_id,
-        candidate_option_id=payload.data.candidate_option_id,
-    )
+    try:
+        election_service_for(request).check_and_trigger_threshold(
+            poll_id=election_id,
+            candidate_option_id=payload.data.candidate_option_id,
+        )
+    except Exception as ex:
+        import logging
+        logging.getLogger(__name__).warning("Failed to check winning threshold: %s", ex)
     return success_body(request, receipt)
 
