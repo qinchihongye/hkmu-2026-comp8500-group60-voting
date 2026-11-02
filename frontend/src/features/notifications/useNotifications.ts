@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { getMyElectionRegistrations, getPublicElections } from "../elections/api";
+import { normalizeElectionPhase } from "../elections/types";
 import type { NotificationItem } from "./notification-types";
 
 const STORAGE_PREFIX = "voting_notification_reads_";
@@ -131,9 +132,10 @@ export function useNotifications() {
 
         // 4. Election registration notifications (Approved / Rejected / Pending review)
         if (user?.id) {
+          let regs: Array<{ id: number; poll_id: number; status: string; election_title?: string; poll_title?: string; submitted_at: string; reviewed_at?: string | null }> = [];
           try {
-            const regRes = await getMyElectionRegistrations({ page: 1, page_size: 10 });
-            const regs = regRes?.items ?? [];
+            const regRes = await getMyElectionRegistrations({ page: 1, page_size: 50 });
+            regs = (regRes?.items ?? []) as any;
             for (const reg of regs) {
               if (reg.status === "APPROVED") {
                 generated.push({
@@ -188,11 +190,15 @@ export function useNotifications() {
 
           // 5. Approved elections where voting has opened
           try {
-            const elecRes = await getPublicElections({ page: 1, page_size: 10 });
+            const elecRes = await getPublicElections({ page: 1, page_size: 50 });
             const elections = elecRes?.items ?? [];
             for (const el of elections) {
               const regStatus = el.my_registration_status || (el as any).user_registration_status;
-              if (regStatus === "APPROVED" && el.phase === "VOTING_OPEN" && !el.has_voted) {
+              const matchedReg = regs.find((r) => r.poll_id === el.id);
+              const isApproved = regStatus === "APPROVED" || matchedReg?.status === "APPROVED";
+              const isVotingOpen = normalizeElectionPhase(el.phase) === "VOTING";
+
+              if (isApproved && isVotingOpen && !el.has_voted) {
                 generated.push({
                   id: `election-voting-open-${el.id}`,
                   type: "election_voting_open",
@@ -259,8 +265,23 @@ export function useNotifications() {
     }
 
     fetchPollNotifications();
+
+    const handleFocus = () => {
+      if (!cancelled) {
+        void fetchPollNotifications();
+      }
+    };
+    window.addEventListener("focus", handleFocus);
+    const timer = setInterval(() => {
+      if (!cancelled) {
+        void fetchPollNotifications();
+      }
+    }, 30000);
+
     return () => {
       cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      clearInterval(timer);
     };
   }, [user]);
 
