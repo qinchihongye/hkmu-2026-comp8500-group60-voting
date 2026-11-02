@@ -1,22 +1,30 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthProvider";
-import { getElectionResults } from "../features/elections/api";
+import { getElectionResults, getPublicElection } from "../features/elections/api";
 import { ElectionPhaseBadge } from "../features/elections/ElectionPhaseBadge";
-import { normalizeElectionPhase, type ElectionResultResponse } from "../features/elections/types";
+import { ElectionShareCardModal } from "../features/elections/ElectionShareCardModal";
+import { exportElectionResultsToExcel } from "../features/elections/export-election-excel";
+import {
+  normalizeElectionPhase,
+  type ElectionDetail,
+  type ElectionResultResponse,
+} from "../features/elections/types";
 import { useI18n } from "../i18n/LocaleProvider";
 import "./ElectionResultPage.css";
 
 export function ElectionResultPage() {
   const { id } = useParams<{ id: string }>();
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const { user } = useAuth();
   const electionId = id ? parseInt(id, 10) : 0;
 
   const [results, setResults] = useState<ElectionResultResponse | null>(null);
+  const [electionDetail, setElectionDetail] = useState<ElectionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [forbiddenError, setForbiddenError] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   useEffect(() => {
     if (!electionId) return;
@@ -24,8 +32,14 @@ export function ElectionResultPage() {
     setForbiddenError(false);
     setErrorMsg(null);
 
-    getElectionResults(electionId)
-      .then((data) => setResults(data))
+    Promise.all([
+      getElectionResults(electionId),
+      getPublicElection(electionId).catch(() => null),
+    ])
+      .then(([resData, detailData]) => {
+        setResults(resData);
+        setElectionDetail(detailData);
+      })
       .catch((err) => {
         if (err.status === 403 || err.code === 40306) {
           setForbiddenError(true);
@@ -103,7 +117,7 @@ export function ElectionResultPage() {
     <div className="view-root">
       <div className="view-scroll-frame">
         <div className="election-result-page">
-          <div className="result-breadcrumb" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <div className="result-breadcrumb" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <Link to="/elections" className="back-link">
                 &larr; {t("election.actions.backToList")}
@@ -113,26 +127,51 @@ export function ElectionResultPage() {
                 {t("election.actions.backToDetail")}
               </Link>
             </div>
-            {user?.role === "ADMIN" ? (
-              <Link
-                to={`/admin/elections/${electionId}`}
-                style={{
-                  fontSize: "0.78rem",
-                  fontWeight: 700,
-                  color: "#1d4ed8",
-                  background: "#eff6ff",
-                  border: "1px solid #bfdbfe",
-                  padding: "4px 10px",
-                  borderRadius: "6px",
-                  textDecoration: "none",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                }}
-              >
-                ⚙️ {t("election.actions.manageElection")}
-              </Link>
-            ) : null}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              {isClosed ? (
+                <>
+                  <button
+                    type="button"
+                    className="btn-export-report"
+                    onClick={() => setShareModalOpen(true)}
+                    data-testid="export-election-report-btn"
+                  >
+                    <span>🏛️</span>
+                    <span>{t("election.results.exportGazette")}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-export-excel"
+                    onClick={() => exportElectionResultsToExcel(results, locale)}
+                    data-testid="export-election-excel-btn"
+                  >
+                    <span>📊</span>
+                    <span>{t("resultPage.exportExcel")}</span>
+                  </button>
+                </>
+              ) : null}
+
+              {user?.role === "ADMIN" ? (
+                <Link
+                  to={`/admin/elections/${electionId}`}
+                  style={{
+                    fontSize: "0.78rem",
+                    fontWeight: 700,
+                    color: "#1d4ed8",
+                    background: "#eff6ff",
+                    border: "1px solid #bfdbfe",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                >
+                  ⚙️ {t("election.actions.manageElection")}
+                </Link>
+              ) : null}
+            </div>
           </div>
 
           <header className="result-header-card">
@@ -249,6 +288,14 @@ export function ElectionResultPage() {
             <div className="confidential-scale-notice">
               <p>{t("error.resultsHidden")}</p>
             </div>
+          )}
+
+          {shareModalOpen && results && (
+            <ElectionShareCardModal
+              results={results}
+              electionDetail={electionDetail}
+              onClose={() => setShareModalOpen(false)}
+            />
           )}
         </div>
       </div>

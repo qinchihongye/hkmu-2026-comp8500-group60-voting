@@ -48,6 +48,7 @@ export function AppRouter() {
         <Route path="/elections/:id/register" element={<RequireAuth><ElectionRegisterPage /></RequireAuth>} />
         <Route path="/elections/:id/vote" element={<RequireAuth><ElectionBallotPage /></RequireAuth>} />
         <Route path="/elections/:id/results" element={<ElectionResultPage />} />
+        <Route path="/elections/:id/result" element={<ElectionResultPage />} />
         <Route path="/my-election-registrations" element={<Navigate to="/elections?view=my_registrations" replace />} />
         <Route path="/my-activity" element={<RequireAuth><MyActivityPage /></RequireAuth>} />
         <Route path="/my-polls" element={<RequireAuth><MyPollsPage /></RequireAuth>} />

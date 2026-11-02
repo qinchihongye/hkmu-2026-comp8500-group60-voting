@@ -29,6 +29,61 @@
   transform: translateX(-2px);
 }
 
+.btn-export-report {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #2563eb;
+  color: #ffffff;
+  border: 1px solid #1d4ed8;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+}
+
+.btn-export-report:hover {
+  background: #1d4ed8;
+  border-color: #1e40af;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.25);
+}
+
+.btn-export-report:active {
+  transform: translateY(0);
+}
+
+.btn-export-excel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.btn-export-excel:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
+.btn-export-excel:active {
+  transform: translateY(0);
+}
+
 .result-header-card {
   background: #ffffff;
   border: 1px solid rgba(226, 232, 240, 0.85);

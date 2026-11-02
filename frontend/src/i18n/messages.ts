@@ -603,6 +603,8 @@ export const en = {
       tiedLeaders: "Current Tied Leaders ({count} candidates)",
       voteShare: "Vote share",
       votes: "{count} votes",
+      exportReport: "Export Report",
+      exportGazette: "Export Election Gazette",
     },
     registration: {
       title: "Voter Eligibility Registration",
@@ -1283,6 +1285,8 @@ export const zh: StringTree<typeof en> = {
       tiedLeaders: "当前并列领先（共 {count} 名）",
       voteShare: "得票率",
       votes: "{count} 票",
+      exportReport: "导出结果报告",
+      exportGazette: "导出选举公报",
     },
     registration: {
       title: "选民资格登记",

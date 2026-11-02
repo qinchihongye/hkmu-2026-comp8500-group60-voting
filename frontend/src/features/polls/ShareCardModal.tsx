@@ -10,9 +10,17 @@ interface ShareCardModalProps {
   results: PollResults;
   pollDetail?: PollDetail | null;
   onClose: () => void;
+  shareUrl?: string;
+  modalTitle?: string;
 }
 
-export function ShareCardModal({ results, pollDetail, onClose }: ShareCardModalProps) {
+export function ShareCardModal({
+  results,
+  pollDetail,
+  onClose,
+  shareUrl: customShareUrl,
+  modalTitle,
+}: ShareCardModalProps) {
   const { locale, t } = useI18n();
   const { user } = useAuth();
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -26,7 +34,8 @@ export function ShareCardModal({ results, pollDetail, onClose }: ShareCardModalP
   const exporterName =
     user?.display_name || user?.username || (isZh ? "系统管理员" : "System Admin");
 
-  const shareUrl = `${window.location.origin}/polls/${results.poll_id}/results`;
+  const shareUrl =
+    customShareUrl || `${window.location.origin}/polls/${results.poll_id}/results`;
 
   // Generate image once mounted and QR code rendered
   useEffect(() => {
@@ -202,7 +211,7 @@ export function ShareCardModal({ results, pollDetail, onClose }: ShareCardModalP
                   margin: 0,
                 }}
               >
-                {isZh ? "投票结果报告公示" : "Official Voting Results Report"}
+                {modalTitle || (isZh ? "投票结果报告公示" : "Official Voting Results Report")}
               </h2>
               <p style={{ fontSize: "0.8rem", color: "#64748b", margin: "2px 0 0 0" }}>
                 {isZh
