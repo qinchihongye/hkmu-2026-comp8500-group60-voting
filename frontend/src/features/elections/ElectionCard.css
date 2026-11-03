@@ -403,9 +403,9 @@
 /* Mobile responsive refinements */
 @media (max-width: 640px) {
   .election-card {
-    padding: 16px 18px;
+    padding: 16px 18px 12px;
     border-radius: 16px;
-    gap: 14px;
+    gap: 10px;
   }
 
   .election-card-title {
@@ -416,6 +416,14 @@
     grid-template-columns: 1fr;
     gap: 8px;
     padding: 10px 12px;
+  }
+
+  .election-card-desc {
+    -webkit-line-clamp: 1;
+  }
+
+  .election-card .election-data-grid > .data-grid-cell:nth-child(2) {
+    display: none;
   }
 
   .data-grid-cell.cell-full-width {

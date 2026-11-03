@@ -96,4 +96,20 @@ describe("ElectionLifecycleTimeline Component", () => {
         const progressbar = screen.getByRole("progressbar");
         expect(progressbar).toHaveAttribute("aria-valuenow", "5");
       });
+
+      it("keeps five short stage labels in the compact card timeline", () => {
+        render(
+          <LocaleProvider initialLocale="en">
+            <ElectionLifecycleTimeline phase="VOTING" compact />
+          </LocaleProvider>
+        );
+        const progressbar = screen.getByRole("progressbar");
+        expect(progressbar).toHaveClass("election-timeline-compact");
+        expect(progressbar).toHaveTextContent("Upcoming");
+        expect(progressbar).toHaveTextContent("Register");
+        expect(progressbar).toHaveTextContent("Review");
+        expect(progressbar).toHaveTextContent("Voting");
+        expect(progressbar).toHaveTextContent("Results");
+        expect(progressbar).not.toHaveTextContent("Current stage:");
+      });
     });

@@ -226,7 +226,7 @@ export function ElectionDetailPage() {
                   </span>
                 ) : (
                   <span className="status-pill status-unregistered">
-                    {t("election.status.PENDING") ? "未登记" : "Not Registered"}
+                    {t("election.status.unregistered")}
                   </span>
                 )}
                 {election.has_voted ? (
@@ -252,6 +252,22 @@ export function ElectionDetailPage() {
               </div>
 
               <div className="voter-actions">
+                  {canonicalPhase === "VOTING" && !election.has_voted &&
+                  election.my_registration_status !== "APPROVED" ? (
+                    <p className="detail-voter-guidance">
+                      {!user ? t("election.guidance.signInToCheck")
+                        : election.my_registration_status === "PENDING" || election.my_registration_status === "NEEDS_REVIEW"
+                          ? t("election.guidance.reviewPending")
+                          : election.my_registration_status === "REJECTED"
+                            ? t("election.guidance.rejected")
+                            : t("election.guidance.registrationClosed")}
+                    </p>
+                  ) : null}
+                  {canonicalPhase === "VOTING" && !user && !election.has_voted ? (
+                    <Link to={`/login?next=${encodeURIComponent(`/elections/${election.id}`)}`} className="action-btn btn-secondary">
+                      {t("nav.signIn")}
+                    </Link>
+                  ) : null}
                   { canonicalPhase === "REGISTRATION" && !election.my_registration_status ? (
                     <Link to={`/elections/${election.id}/register`} className="action-btn btn-primary">
                       {t("election.actions.registerNow")}

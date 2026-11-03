@@ -192,6 +192,14 @@
   flex-wrap: wrap;
 }
 
+.detail-voter-guidance {
+  width: 100%;
+  margin: 0;
+  color: #475569;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
 .action-btn {
   display: inline-flex;
   align-items: center;
@@ -319,22 +327,22 @@
     order: 2;
   }
   .detail-timeline-wrapper-row {
-    order: 3;
+    order: 5;
     margin: 4px 0 8px 0 !important;
   }
   .detail-voter-panel {
-    order: 4;
+    order: 3;
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
     margin: 4px 0 10px 0;
   }
   .election-detail-pending-banner {
-    order: 5;
+    order: 4;
     margin-top: 4px !important;
   }
   .detail-description {
-    order: 6;
+    order: 4;
     font-size: 0.92rem;
     line-height: 1.6;
   }

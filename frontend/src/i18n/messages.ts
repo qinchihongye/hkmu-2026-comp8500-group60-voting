@@ -551,6 +551,13 @@ export const en = {
       NEEDS_REVIEW: "Needs manual review",
       APPROVED: "Approved",
       REJECTED: "Rejected",
+      unregistered: "Not registered",
+    },
+    guidance: {
+      signInToCheck: "Sign in to check your voter eligibility.",
+      reviewPending: "Your voter registration is awaiting review. Voting is available after approval.",
+      rejected: "Your voter registration was not approved. You cannot vote in this election.",
+      registrationClosed: "Registration has closed. Only approved voters can vote in this election.",
     },
     actions: {
       registerNow: "Register to vote",
@@ -1233,6 +1240,13 @@ export const zh: StringTree<typeof en> = {
       NEEDS_REVIEW: "待人工审核",
       APPROVED: "已通过",
       REJECTED: "已拒绝",
+      unregistered: "未登记",
+    },
+    guidance: {
+      signInToCheck: "请登录以查看您的选民资格。",
+      reviewPending: "您的选民登记仍在审核中，通过后才能投票。",
+      rejected: "您的选民登记未通过，无法参与本场选举。",
+      registrationClosed: "登记已截止，只有审核通过的选民可以参与本场选举。",
     },
     actions: {
       registerNow: "登记选民资格",

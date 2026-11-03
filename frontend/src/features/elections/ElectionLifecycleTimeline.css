@@ -140,12 +140,57 @@
   text-align: center;
 }
 
+.step-pill-short {
+  display: none;
+}
+
 .timeline-mobile-summary {
   display: none;
 }
 
 /* Responsive Scaling (< 640px) */
 @media (max-width: 640px) {
+  .election-timeline-wrapper.election-timeline-compact {
+    padding: 9px 5px 6px;
+    margin: 0;
+    border: 0;
+    background: transparent;
+  }
+  .election-timeline-compact .step-circle,
+  .election-timeline-compact .step-active .step-circle {
+    width: 12px;
+    height: 12px;
+    margin: 0;
+    border-width: 2px;
+    box-shadow: none;
+  }
+  .election-timeline-compact .step-circle svg {
+    display: none;
+  }
+  .election-timeline-compact .timeline-connector {
+    top: 15px;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+  }
+  .election-timeline-compact .step-pill-short {
+    display: block;
+    margin-top: 7px;
+    color: #64748b;
+    font-size: 0.68rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .election-timeline-compact .step-active .step-pill-short {
+    color: #1363df;
+    font-weight: 800;
+  }
+  .election-timeline-compact .step-completed .step-pill-short {
+    color: #047857;
+  }
+  .election-timeline-compact .timeline-mobile-summary {
+    display: none;
+  }
   .election-timeline-wrapper {
     padding: 12px 10px;
     gap: 8px;
