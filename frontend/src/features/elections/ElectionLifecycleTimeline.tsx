@@ -5,6 +5,7 @@ import "./ElectionLifecycleTimeline.css";
 
 interface Props {
   phase: ElectionPhase;
+  compact?: boolean;
 }
 
 export function getLifecycleActiveIndex(phase: ElectionPhase): number {
@@ -25,7 +26,7 @@ export function getLifecycleActiveIndex(phase: ElectionPhase): number {
       }
   }
 
-  export function ElectionLifecycleTimeline({ phase }: Props) {
+  export function ElectionLifecycleTimeline({ phase, compact = false }: Props) {
     const { t } = useI18n();
     const activeIndex = getLifecycleActiveIndex(phase);
 
@@ -33,6 +34,7 @@ export function getLifecycleActiveIndex(phase: ElectionPhase): number {
       {
         key: "upcoming",
         label: t("election.lifecycle.upcoming"),
+        shortLabel: t("election.lifecycle.shortUpcoming"),
         icon: (
           // Calendar / Clock Icon
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -46,6 +48,7 @@ export function getLifecycleActiveIndex(phase: ElectionPhase): number {
       {
         key: "registration",
         label: t("election.lifecycle.registration"),
+        shortLabel: t("election.lifecycle.shortRegistration"),
         icon: (
           // User ID Badge Icon
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -58,6 +61,7 @@ export function getLifecycleActiveIndex(phase: ElectionPhase): number {
       {
         key: "review",
         label: t("election.lifecycle.review"),
+        shortLabel: t("election.lifecycle.shortReview"),
         icon: (
           // Shield Lock / Audit Check Icon
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -69,6 +73,7 @@ export function getLifecycleActiveIndex(phase: ElectionPhase): number {
       {
         key: "voting",
         label: t("election.lifecycle.voting"),
+        shortLabel: t("election.lifecycle.shortVoting"),
         icon: (
           // Ballot Box Icon (Exact Match to User Reference)
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -81,6 +86,7 @@ export function getLifecycleActiveIndex(phase: ElectionPhase): number {
       {
         key: "closed",
         label: t("election.lifecycle.closed"),
+        shortLabel: t("election.lifecycle.shortClosed"),
         icon: (
           // Trophy / Proclamation Icon
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -100,7 +106,7 @@ export function getLifecycleActiveIndex(phase: ElectionPhase): number {
 
     return (
       <div
-        className="election-timeline-wrapper"
+        className={`election-timeline-wrapper${compact ? " election-timeline-compact" : ""}`}
         role="progressbar"
         aria-label="Election lifecycle timeline"
         aria-valuenow={activeIndex + 1}
@@ -136,13 +142,14 @@ export function getLifecycleActiveIndex(phase: ElectionPhase): number {
                   {step.icon}
                 </div>
                 <span className="step-pill">{step.label}</span>
+                {compact ? <span className="step-pill-short" aria-hidden="true">{step.shortLabel}</span> : null}
               </div>
             );
           })}
         </div>
 
         {/* Mobile Stage Summary (< 640px) */}
-        <div className="timeline-mobile-summary" aria-hidden="true">
+        {!compact ? <div className="timeline-mobile-summary" aria-hidden="true">
           <div className="mobile-summary-row current-stage">
             <span className="summary-badge">
               {t("election.lifecycle.stageProgress", { current: activeIndex + 1, total: steps.length })}
@@ -158,7 +165,7 @@ export function getLifecycleActiveIndex(phase: ElectionPhase): number {
               </span>
             </div>
           ) : null}
-        </div>
+        </div> : null}
       </div>
     );
   }

@@ -86,4 +86,13 @@ describe("ElectionCard", () => {
     expect(screen.getByText(/Winning vote threshold/i)).toBeInTheDocument();
     expect(screen.getByText(/50/)).toBeInTheDocument();
   });
+
+  it("formats the schedule in the selected English locale and keeps action before the compact timeline", () => {
+    localStorage.setItem("voting_locale", "en");
+    const { container } = renderCard(baseElection);
+    expect(container.querySelector(".cell-schedule-range")).toHaveTextContent("Oct");
+    expect(container.querySelector(".cell-schedule-range")).not.toHaveTextContent("10月");
+    const card = container.querySelector(".election-card");
+    expect(card?.lastElementChild).toHaveClass("election-timeline-compact");
+  });
 });

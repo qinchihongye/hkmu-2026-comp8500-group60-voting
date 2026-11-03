@@ -584,6 +584,9 @@ def seed_realistic_elections(session_factory: sessionmaker[Session], hmac_key: b
                 include_extra=True,
                 roster_frozen=True,
             )
+            approved_count = _ensure_closed_demo_electorate(
+                session, e4_poll, admin, passwords, hmac_key
+            )
 
             session.add(
                 ElectionConfig(
@@ -630,10 +633,101 @@ def seed_realistic_elections(session_factory: sessionmaker[Session], hmac_key: b
             seeded_election_ids.append(e4_poll.id)
             logger.info("Seeded Election 4 (CLOSED): id=%d", e4_poll.id)
         else:
+            existing_ballot_count = session.scalar(
+                select(func.count())
+                .select_from(ElectionBallot)
+                .where(ElectionBallot.poll_id == e4_poll.id)
+            )
+            config = session.get(ElectionConfig, e4_poll.id)
+            if (
+                e4_poll.creator_id == admin.id
+                and e4_poll.lifecycle == PollLifecycle.CLOSED.value
+                and existing_ballot_count == 24
+                and config is not None
+                and config.roster_frozen_at is not None
+                and (config.eligible_voter_count or 0) < 24
+            ):
+                config.eligible_voter_count = _ensure_closed_demo_electorate(
+                    session, e4_poll, admin, passwords, hmac_key
+                )
+                credentials = _issue_credentials_for_approved_voters(
+                    session, e4_poll.id, config.roster_frozen_at
+                )
+                consumed_count = sum(
+                    credential.status == CredentialStatus.CONSUMED.value
+                    for credential in credentials
+                )
+                for credential in credentials:
+                    if consumed_count >= existing_ballot_count:
+                        break
+                    if credential.status == CredentialStatus.ISSUED.value:
+                        credential.status = CredentialStatus.CONSUMED.value
+                        credential.consumed_at = e4_poll.starts_at
+                        consumed_count += 1
             seeded_election_ids.append(e4_poll.id)
 
         session.commit()
     return seeded_election_ids
+
+
+def _ensure_closed_demo_electorate(
+    session: Session,
+    poll: Poll,
+    admin: User,
+    passwords: PasswordHash,
+    hmac_key: bytes,
+) -> int:
+    """Add inactive sample voters until the closed fixture has 24 approved voters.
+
+    Args:
+        session: Current database transaction.
+        poll: Closed sample election.
+        admin: Reviewer for the sample registrations.
+        passwords: Password hasher for sample accounts.
+        hmac_key: Key for sample identity fingerprints.
+
+    Returns:
+        Number of approved registrations in the sample election.
+    """
+    approved_count = int(session.scalar(
+        select(func.count()).select_from(ElectionRegistration).where(
+            ElectionRegistration.poll_id == poll.id,
+            ElectionRegistration.status == RegistrationStatus.APPROVED.value,
+        )
+    ) or 0)
+    password_hash: str | None = None
+    for index in range(1, 25):
+        if approved_count >= 24:
+            break
+        username = f"election_fixture_voter_{index:02d}"
+        user = session.scalar(select(User).where(User.username == username))
+        if user is not None and user.is_active:
+            continue
+        if user is None:
+            if password_hash is None:
+                password_hash = passwords.hash("Password123!")
+            user = User(
+                username=username,
+                display_name=f"Sample voter {index:02d}",
+                password_hash=password_hash,
+                role=UserRole.USER.value,
+                is_active=False,
+            )
+            session.add(user)
+            session.flush()
+        existing_registration = session.scalar(
+            select(ElectionRegistration).where(
+                ElectionRegistration.poll_id == poll.id,
+                ElectionRegistration.user_id == user.id,
+            )
+        )
+        if existing_registration is None:
+            approved_count += _register_voters_for_election(
+                session, poll, admin, {}, [user], hmac_key
+            )
+    if approved_count != 24:
+        raise RuntimeError("Unable to create 24 approved voters for the closed demo election.")
+    return approved_count
 
 
 def _register_voters_for_election(

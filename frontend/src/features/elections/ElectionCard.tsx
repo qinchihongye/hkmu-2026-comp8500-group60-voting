@@ -32,11 +32,12 @@ function formatCountdown(targetDate: string, isZh: boolean): string | null {
 export function ElectionCard({ election }: Props) {
   const { t, locale } = useI18n();
   const isZh = locale.startsWith("zh");
+  const dateLocale = locale === "en" ? "en-US" : locale === "zh-TW" ? "zh-TW" : "zh-CN";
 
   const formatDate = (iso: string) => {
     try {
       const d = new Date(iso);
-      return d.toLocaleDateString(undefined, {
+      return d.toLocaleDateString(dateLocale, {
         month: "short",
         day: "numeric",
         hour: "2-digit",
@@ -175,8 +176,6 @@ export function ElectionCard({ election }: Props) {
         ) : null}
       </div>
 
-      <ElectionLifecycleTimeline phase={election.phase} />
-
       {/* Structured Micro-Data Grid (Proposal A) */}
       <div className="election-data-grid">
         {/* Cell 1: Candidates count */}
@@ -298,6 +297,7 @@ export function ElectionCard({ election }: Props) {
         </div>
         <div className="election-card-action">{renderAction()}</div>
       </div>
+      <ElectionLifecycleTimeline phase={election.phase} compact />
     </article>
   );
 }
