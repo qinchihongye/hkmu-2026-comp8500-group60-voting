@@ -1,6 +1,6 @@
 # VoteNow 后端接口文档
 
-* **版本**：v1；核对日期 2026-10-31；覆盖当前注册的全部 **42 个应用操作**。依据路由生成的 OpenAPI、请求／响应模型、校验器及服务代码，按 `http-api-doc-writer` 模板整理。请求／响应字段集中定义，避免每个接口重复相同表格。
+* **版本**：v1；核对日期 2026-11-04；覆盖当前注册的全部 **42 个应用操作**。依据路由生成的 OpenAPI、请求／响应模型、校验器及服务代码，按 `http-api-doc-writer` 模板整理。请求／响应字段集中定义，避免每个接口重复相同表格。
 
   [后端设计](backend-design.md) · [数据库设计](database-design.md) · [详细使用](user-guide.md)
 
@@ -10,7 +10,7 @@
 
   | 项目 | 值 |
   | --- | --- |
-  | Docker 前端同源地址 | `http://localhost:8188/api/v1` |
+  | Docker 前端同源地址 | `http://localhost/api/v1`；当前 Compose 映射 80:80，需将模板中的 8188 来源配置同步调整 |
   | 本机后端地址 | `http://127.0.0.1:8000/api/v1` |
   | Vite 开发代理 | `http://localhost:5173/api/v1` → 后端 |
   | 请求／响应 | JSON；GET 无请求体；POST／PATCH 使用 Content-Type: application/json |
@@ -426,7 +426,7 @@
 
 ### GET /api/v1/me/votes
 
-* 仅可访问的记名记录；匿名票及未解锁的私有记录不返回。
+* 按当前账户 `voter_id` 查询可访问的普通投票记录；包括登录状态下关联账户的匿名票，纯访客匿名票不返回。普通私有记录仍按创建者／管理员或有效授权判断可见性。前端隐藏记录不调用删除接口，也不会改变本接口数据。
 
   | 项目 | 约定 |
   | --- | --- |
@@ -553,7 +553,7 @@
   | 项目 | 约定 |
   | --- | --- |
   | 权限 | 无；账户 Cookie 可选 |
-  | 参数 | `page` 默认 1；`page_size` 默认 20、范围 1–100 |
+  | 参数 | `page` 默认 1；`page_size` 默认 20、范围 1–100；`phase` 可选，支持标准五阶段及兼容旧阶段 |
   | 成功响应 | HTTP 200；Page_ElectionSummary_ |
   | 主要错误 | 42201 |
   | 实现 | `api/election/election_get.py` |
@@ -635,7 +635,7 @@
   | 项目 | 约定 |
   | --- | --- |
   | 权限 | 账户 Cookie + ADMIN |
-  | 参数 | `page` 默认 1；`page_size` 默认 20、范围 1–100 |
+  | 参数 | `page` 默认 1；`page_size` 默认 20、范围 1–100；`phase` 可选，按计算后的五阶段筛选 |
   | 成功响应 | HTTP 200；Page_ElectionSummary_ |
   | 主要错误 | 40101、40301、42201 |
   | 实现 | `api/admin/admin_election_get.py` |
@@ -728,7 +728,7 @@
 
 ### POST /api/v1/admin/elections/{election_id}/registrations/{registration_id}/review
 
-* 管理员人工批准或拒绝一条登记。
+* 管理员人工批准或拒绝一条 NEEDS_REVIEW 登记；名册冻结后拒绝修改。PENDING 虽阻止冻结，但当前人工复核服务不接受它。
 
   | 项目 | 约定 |
   | --- | --- |
@@ -736,7 +736,7 @@
   | 参数 | `election_id`、`registration_id`：path integer |
   | 请求 data | ReviewRegistrationRequest |
   | 成功响应 | HTTP 200；AdminRegistrationItem |
-  | 主要错误 | 40101、40301、40302、40400、40402、40915、42201 |
+  | 主要错误 | 40101、40301（也用于非 NEEDS_REVIEW 的 HTTP 409）、40302、40400、40402、40915、42201 |
   | 实现 | `api/admin/admin_election_post.py` |
 
   ```json
@@ -2223,7 +2223,7 @@
 
   ```json
   {
-    "share_url": "http://localhost:8188/s/<share-code>",
+    "share_url": "http://localhost/s/<share-code>",
     "requires_password": false,
     "requires_login": false,
     "access_password": null
@@ -2404,15 +2404,17 @@
   | --- | --- |
   | DocumentType | RESIDENT_ID、HK_MACAU_PERMIT、STUDENT_ID |
   | RegistrationStatus | PENDING、NEEDS_REVIEW、APPROVED、REJECTED |
-  | ElectionPhase | DRAFT、REGISTRATION_SCHEDULED、REGISTRATION_OPEN、REVIEWING、VOTING_SCHEDULED、VOTING_OPEN、CLOSED |
+  | ElectionPhase | UPCOMING、REGISTRATION、REVIEW、VOTING、RESULTS |
+
+  五阶段为响应中的标准值，与 `lifecycle` 的 DRAFT／PUBLISHED／CLOSED 分开。旧 DRAFT／REGISTRATION_SCHEDULED 映射 UPCOMING，REGISTRATION_OPEN 映射 REGISTRATION，REVIEWING／VOTING_SCHEDULED 映射 REVIEW，VOTING_OPEN 映射 VOTING，CLOSED 映射 RESULTS。登记结束后未冻结名册，或冻结后未到投票时间，均为 REVIEW。
 
 * 写请求模型；均放入 `{ "data": ... }`。
 
   | 模型 | 必填字段 | 可选字段／约束 |
   | --- | --- | --- |
   | CandidateInput | candidate_code: string；name: string | statement: string／null |
-  | CreateElectionRequest | title、registration_starts_at、registration_ends_at、starts_at、ends_at、allow_live_results、candidates | description 默认空字符串；candidates 至少 2 项 |
-  | UpdateElectionRequest | version: integer | title、description、四个时间、allow_live_results、candidates；仅提交需要修改的字段 |
+  | CreateElectionRequest | title、registration_starts_at、registration_ends_at、starts_at、ends_at、allow_live_results、candidates | description 默认空字符串；candidates 至少 2 项；winning_threshold 可空，创建时范围 1–1000000 |
+  | UpdateElectionRequest | version: integer | title、description、四个时间、allow_live_results、winning_threshold、candidates；仅提交需要修改的字段；门槛非空时受数据库正数约束 |
   | RegisterVoterRequest | legal_name、document_type、issuer、document_number | 无；document_number 不会进入响应 |
   | ReviewRegistrationRequest | decision | reason_codes 默认空数组；review_note 可空 |
   | SubmitElectionBallotRequest | candidate_option_id: integer | 无 |
@@ -2422,7 +2424,7 @@
   | 模型 | 字段 |
   | --- | --- |
   | CandidatePublic | option_id、candidate_code、name、statement、display_order |
-  | ElectionSummary | id、title、description、lifecycle、phase、registration_starts_at、registration_ends_at、starts_at、ends_at、allow_live_results、candidate_count、roster_frozen_at、eligible_voter_count、created_at、my_registration_status、user_registration_status、has_voted |
+  | ElectionSummary | id、title、description、lifecycle、phase、registration_starts_at、registration_ends_at、starts_at、ends_at、allow_live_results、winning_threshold、candidate_count、roster_frozen_at、eligible_voter_count、created_at、my_registration_status、user_registration_status、has_voted |
   | ElectionDetail | ElectionSummary 的核心时间与状态字段、candidates、version、updated_at、can_register、can_vote、can_view_results、next_action |
   | VoterRegistrationSummary | id、poll_id、election_title、legal_name_snapshot、document_type、document_suffix、issuer、status、model_score、model_reason_codes、submitted_at、reviewed_at |
   | BallotReceiptResponse | receipt_id: UUID、poll_id、submitted_at |
@@ -2437,9 +2439,13 @@
   | RosterFreezeResponse | poll_id、roster_frozen_at、eligible_voter_count、issued_credential_count |
   | TurnoutScaleStats | registration_count、approved_count、ballot_count、remaining_count、abstention_count、turnout_percentage |
   | CandidateResultItem | candidate_option_id、candidate_code、name、vote_count、percentage |
-  | ElectionResultResponse | poll_id、title、phase、allow_live_results、scale、candidate_results、winner_option_ids、is_tie |
+  | ElectionResultResponse | poll_id、title、phase、allow_live_results、winning_threshold、scale、candidate_results、winner_option_ids、is_tie |
 
   进行中返回 `remaining_count`，结束后返回 `abstention_count`。没有候选人票数权限时，管理员可取得规模数据但 `candidate_results` 和 `winner_option_ids` 为 null；非管理员会收到 40306。分页包装沿用 `Page<T>`，对应名称为 `Page_ElectionSummary_`、`Page_VoterRegistrationSummary_` 和 `Page_AdminRegistrationItem_`。
+
+  `winning_threshold` 默认为 null。提交选票成功后，路由另行尝试检查该候选人累计票数并在达到门槛时关闭选举；检查失败只写日志，选票回执仍成功，不应假定它与选票写入为同一原子事务。未达门槛不阻止自然结束后的最高票胜者计算。
+
+  投票率分母在名册冻结后使用 `eligible_voter_count`，结果字段名为 `scale.approved_count`；零分母时为 0.0。结束后弃权为 `max(0, approved_count - ballot_count)`。种子示例 24 人、24 票对应 100% 和 0 弃权，接口本身不固定这些数字。
 
   **选举详情 data 示例**
 
@@ -2449,13 +2455,14 @@
     "title": "Student Representative Election",
     "description": "Choose one candidate",
     "lifecycle": "PUBLISHED",
-    "phase": "VOTING_OPEN",
+    "phase": "VOTING",
     "registration_starts_at": "2030-10-01T01:00:00Z",
     "registration_ends_at": "2030-10-03T01:00:00Z",
     "starts_at": "2030-10-04T01:00:00Z",
     "ends_at": "2030-10-05T01:00:00Z",
     "allow_live_results": false,
-    "candidates": [{"option_id":101,"candidate_code":"A","name":"Candidate A","statement":"Statement A","display_order":0}],
+    "winning_threshold": null,
+    "candidates": [{"option_id":101,"candidate_code":"A","name":"Candidate A","statement":"Statement A","display_order":0},{"option_id":102,"candidate_code":"B","name":"Candidate B","statement":"Statement B","display_order":1}],
     "roster_frozen_at": "2030-10-03T02:00:00Z",
     "eligible_voter_count": 30,
     "version": 2,
@@ -2467,7 +2474,7 @@
     "can_register": false,
     "can_vote": true,
     "can_view_results": false,
-    "next_action": "VOTE_NOW"
+    "next_action": "VOTE"
   }
   ```
 
@@ -2477,8 +2484,9 @@
   {
     "poll_id": 41,
     "title": "Student Representative Election",
-    "phase": "CLOSED",
+    "phase": "RESULTS",
     "allow_live_results": false,
+    "winning_threshold": null,
     "scale":{"registration_count":32,"approved_count":30,"ballot_count":27,"remaining_count":null,"abstention_count":3,"turnout_percentage":90.0},
     "candidate_results":[{"candidate_option_id":101,"candidate_code":"A","name":"Candidate A","vote_count":15,"percentage":55.56},{"candidate_option_id":102,"candidate_code":"B","name":"Candidate B","vote_count":12,"percentage":44.44}],
     "winner_option_ids":[101],
@@ -2550,10 +2558,10 @@
 * 无写入自测（Docker 模式）
 
   ```bash
-  curl -i http://localhost:8188/api/v1/health/live
-  curl -i http://localhost:8188/api/v1/health/ready
-  curl -i 'http://localhost:8188/api/v1/polls?page=1&page_size=12'
-  curl -i 'http://localhost:8188/api/v1/elections?page=1&page_size=20'
+  curl -i http://localhost/api/v1/health/live
+  curl -i http://localhost/api/v1/health/ready
+  curl -i 'http://localhost/api/v1/polls?page=1&page_size=12'
+  curl -i 'http://localhost/api/v1/elections?page=1&page_size=20'
   ```
 
   | 操作 | 预期 |

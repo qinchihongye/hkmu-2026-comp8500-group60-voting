@@ -6,56 +6,51 @@
 
   Registered users can create polls. Guests can participate directly in public anonymous polls, while private polls require a share link and an access password. The project supports Docker Compose deployment and separate frontend and backend development.
 
+## Quick Start
+
+* Install and start Docker, then prepare the project `.env` file before running:
+
+  ```bash
+  git clone https://github.com/qinchihongye/hkmu-2026-comp8500-group60-voting.git
+  cd hkmu-2026-comp8500-group60-voting
+  docker compose up -d
+  ```
+
+  On first use, copy `.env.example` to `.env` and set the public address before the start command. See [start_guide](#start_guide) for setup steps and local or server settings.
+
 ## System Showcase & UI Previews
 
 * Full-stack modern online voting platform architecture & core views showcase:
 
   ![VoteNow Product Showcase](docs/images/product-showcase.png)
 
-* Core UI interactive switcher (click navigation buttons `| Previous | 1, 2, 3 | Next |` below, or try the [interactive web viewer](docs/images/interactive-viewer.html)):
+* Overview: search, filter and sort public polls, and check voting progress.
 
-<a id="preview-1"></a>
+  ![Poll overview](docs/images/overview.jpg)
 
-| [◀ Previous](#preview-3) | **[ 1 ] Overview** | [[ 2 ] Create Poll](#preview-2) | [[ 3 ] Results](#preview-3) | [Next ▶](#preview-2) |
-| :---: | :---: | :---: | :---: | :---: |
+* Create a poll: enter a title, options, times and voting rules. Smart fill is optional.
 
-> **Screen 1 / 3 · Overview Plaza**: Browse poll status, remaining time, responsive grid, and ballot progress.
+  ![Create poll](docs/images/create-poll.jpg)
 
-![Poll overview](docs/images/overview.jpg)
+* Poll results: view ballot counts, selections, charts and winners.
 
-<br/>
+  ![Poll results](docs/images/poll-results.jpg)
 
----
+* My Activity: manage created polls and view voting records.
 
-<a id="preview-2"></a>
+  ![My Activity](docs/images/guide-my-polls.png)
 
-| [◀ Previous](#preview-1) | [[ 1 ] Overview](#preview-1) | **[ 2 ] Create Poll** | [[ 3 ] Results](#preview-3) | [Next ▶](#preview-3) |
-| :---: | :---: | :---: | :---: | :---: |
+* Elections: view the five stages, voter status and available actions.
 
-> **Screen 2 / 3 · Create Poll & Smart Fill**: Configure topic, options, schedule, and rules with LLM text recognition and JSON preview.
+  ![Elections](docs/images/guide-elections.png)
 
-![Create poll](docs/images/create-poll.jpg)
+* Election results: view final votes, turnout, abstentions and export actions.
 
-<br/>
+  ![Election results](docs/images/guide-election-results.png)
 
----
+* Screenshots updated on November 4, 2026, using the current frontend and a separate local demo database. Smart fill screens use a fixed demo response to show the UI; they do not confirm a live model call.
 
-<a id="preview-3"></a>
-
-| [◀ Previous](#preview-2) | [[ 1 ] Overview](#preview-1) | [[ 2 ] Create Poll](#preview-2) | **[ 3 ] Results** | [Next ▶](#preview-1) |
-| :---: | :---: | :---: | :---: | :---: |
-
-> **Screen 3 / 3 · Results & Donut Chart**: View ballot and selection counts, Donut chart, micro-bars, and winner status.
-
-![Poll results](docs/images/poll-results.jpg)
-
-* Dynamic animated carousel preview:
-
-  ![Core UI Carousel Showcase](docs/images/preview-carousel.gif)
-
-  Screenshots captured on October 30, 2026, using local demo data.
-
-## Quick Start
+## start_guide
 
 * Docker Compose is recommended. Select the instructions for your operating system and complete each step in order. If the project or `.env` already exists, skip the corresponding clone or copy step instead of overwriting it.
 

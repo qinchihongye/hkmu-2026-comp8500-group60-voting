@@ -1,6 +1,6 @@
 # VoteNow 数据库设计
 
-* **范围**：PostgreSQL 17；18 张应用表 + 1 张 Alembic 版本表。依据当前 ORM 和迁移链，核对日期 2026-10-31。本文是结构设计文档，不包含运行库中的业务数据或凭据。
+* **范围**：PostgreSQL 17；18 张应用表 + 1 张 Alembic 版本表。依据当前 ORM 和迁移链，核对日期 2026-11-04。本文是结构设计文档，不包含运行库中的业务数据或凭据。
 
   [后端设计](backend-design.md) · [接口文档](backend-api.md) · [详细使用](user-guide.md)
 
@@ -53,7 +53,7 @@
   | poll_options | 投票选项及排序 | id |
   | votes | 一次提交的一份父选票、身份去重信息和回执 | id |
   | vote_selections | 选票选择明细，支持一票多选 | vote_id, option_id |
-  | election_configs | 选举配置：登记窗口、名册冻结与合资格人数 | poll_id |
+  | election_configs | 选举配置：登记窗口、名册冻结、合资格人数与胜出票数门槛 | poll_id |
   | election_candidates | 选举候选人拓展表：候选人代号与政纲 | poll_option_id |
   | voter_identities | 选民不可变证件版本（独立密钥 HMAC-SHA-256 指纹，不持久化明文号码） | id |
   | election_registrations | 选民登记快照、模型评分与审核结果 | id |
@@ -362,7 +362,7 @@
   | receipt_id | UUID | 否 | — | 对外回执。 |
   | poll_id | INTEGER | 否 | — | 所属投票。 |
   | identity_mode | VARCHAR(16) | 否 | — | 必须与所属投票的记名方式一致。 |
-  | voter_id | INTEGER | 是 | — | 记名投票的账户。匿名投票为空。 |
+  | voter_id | INTEGER | 是 | — | 记名票必须关联账户；登录提交的普通匿名票也可关联账户，纯访客匿名票为空。 |
   | anonymous_voter_hash | VARCHAR(64) | 是 | — | 本场浏览器凭据散列。记名投票为空。 |
   | submitted_at | TIMESTAMP WITH TIME ZONE | 否 | now() | 提交时间，UTC。 |
 
@@ -376,7 +376,7 @@
   	anonymous_voter_hash VARCHAR(64), 
   	submitted_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL, 
   	PRIMARY KEY (id), 
-  	CONSTRAINT ck_votes_identity CHECK ((identity_mode = 'NAMED' AND voter_id IS NOT NULL AND anonymous_voter_hash IS NULL) OR (identity_mode = 'ANONYMOUS' AND voter_id IS NULL AND anonymous_voter_hash IS NOT NULL)), 
+    CONSTRAINT ck_votes_identity CHECK ((identity_mode = 'NAMED' AND voter_id IS NOT NULL AND anonymous_voter_hash IS NULL) OR (identity_mode = 'ANONYMOUS' AND anonymous_voter_hash IS NOT NULL)),
   	CONSTRAINT uq_votes_poll_id_id UNIQUE (poll_id, id), 
   	CONSTRAINT fk_votes_poll_mode FOREIGN KEY(poll_id, identity_mode) REFERENCES polls (id, identity_mode) ON DELETE RESTRICT, 
   	UNIQUE (receipt_id), 
@@ -384,6 +384,7 @@
   );
   CREATE INDEX ix_votes_poll_id ON votes (poll_id);
   CREATE UNIQUE INDEX uq_votes_anon_poll_browser ON votes (poll_id, anonymous_voter_hash) WHERE identity_mode = 'ANONYMOUS';
+  CREATE UNIQUE INDEX uq_votes_anon_poll_voter ON votes (poll_id, voter_id) WHERE identity_mode = 'ANONYMOUS' AND voter_id IS NOT NULL;
   CREATE UNIQUE INDEX uq_votes_named_poll_voter ON votes (poll_id, voter_id) WHERE identity_mode = 'NAMED';
   ```
 
@@ -419,6 +420,7 @@
   | registration_starts_at / registration_ends_at | TIMESTAMPTZ | 否 | 登记窗口。 |
   | roster_frozen_at | TIMESTAMPTZ | 是 | 名册冻结时间。 |
   | eligible_voter_count | INTEGER | 是 | 冻结时的合资格人数。 |
+  | winning_threshold | INTEGER | 是 | 可选胜出票数门槛，非空时必须大于 0；创建请求另限制最大 1000000。 |
   | created_at / updated_at | TIMESTAMPTZ | 否 | 创建／更新时间。 |
 
   ```sql
@@ -428,11 +430,13 @@
     registration_ends_at TIMESTAMP WITH TIME ZONE NOT NULL,
     roster_frozen_at TIMESTAMP WITH TIME ZONE,
     eligible_voter_count INTEGER,
+    winning_threshold INTEGER,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
     CONSTRAINT pk_election_configs PRIMARY KEY (poll_id),
     CONSTRAINT fk_election_configs_poll_id_polls FOREIGN KEY (poll_id) REFERENCES polls (id) ON DELETE RESTRICT,
     CONSTRAINT ck_election_configs_reg_window CHECK (registration_starts_at < registration_ends_at),
+    CONSTRAINT ck_election_configs_winning_threshold CHECK (winning_threshold IS NULL OR winning_threshold > 0),
     CONSTRAINT ck_election_configs_freeze CHECK ((roster_frozen_at IS NULL AND eligible_voter_count IS NULL) OR (roster_frozen_at IS NOT NULL AND eligible_voter_count IS NOT NULL AND eligible_voter_count >= 0))
   );
   ```
@@ -658,6 +662,7 @@
   | --- | --- | --- |
   | 每账号每场一票 | 记名部分唯一索引 | 提交前检查并转换重复错误 |
   | 每浏览器凭据每场一票 | 匿名部分唯一索引 | 场次隔离的 HMAC-SHA256 |
+  | 登录账户每场普通匿名票唯一 | uq_votes_anon_poll_voter 部分唯一索引 | 登录提交匿名票时保存 voter_id；访客仍按浏览器散列去重 |
   | 身份模式一致 | `votes` 复合外键、身份 CHECK | 会话与投票身份检查 |
   | 明细不能跨场 | 两个复合外键 | 选项归属检查 |
   | 一票同项不可重复 | 明细复合主键 | 数组去重校验 |
@@ -679,7 +684,7 @@
   | 会话原令牌 | 浏览器 HttpOnly Cookie；数据库保存 SHA-256 散列 |
   | CSRF | 账户和访客各保存自己的校验值 |
   | 私有访问密码 | 新投票保存可取回明文 `private_password`；旧记录可保留 `private_password_hash`，二者不能与账户密码混为一谈 |
-  | 匿名选票 | 不保存 voter_id、访客编号、IP 或 User-Agent；保存场次专用浏览器散列 |
+  | 普通匿名选票 | 保存场次专用浏览器散列；登录提交时可保存 voter_id，纯访客为空；不保存访客编号、IP 或 User-Agent。与 election_ballots 的身份分离不同 |
   | 审计 | 不记录匿名逐票事件；记名事件不包含选项 |
   | 时间 | `TIMESTAMP WITH TIME ZONE`；服务按 UTC 处理，前端按香港时间显示／输入 |
   | updated_at | 默认 now() 仅用于插入；更新由业务代码赋值，没有自动更新时间触发器 |
@@ -699,8 +704,16 @@
   | d5a9c3e17b42 | allow_live_results，既有记录默认关闭 |
   | e7c4a91b2d58 | 两张初始化目录登记表 |
   | b2e1ec710001 | `activity_type`、FREEZE_ROSTER 审计动作与 7 张 B2 选举表 |
+  | e3f8a1c90002 | 放宽普通匿名票 CHECK，允许关联 voter_id；增加匿名票账户部分唯一索引 |
+  | f4a9b2c80003 | election_configs.winning_threshold 及正数 CHECK；当前迁移 head |
 
   多选迁移回退会检查是否仍能无损恢复单选结构，不满足条件时拒绝。固定投票初始化与数据库迁移分离，CLI 在迁移后补齐数据；不会靠重启覆盖已有选票。
+
+  普通匿名票迁移的回退会恢复“匿名票 voter_id 必须为空”的旧 CHECK；如果已有账户关联的匿名票，需先处理兼容性，不能视为可无损直接回退。前端“删除参与记录”仅写浏览器 localStorage，不删除上述任一表中的数据。
+
+  `phase` 不是新增存储列：根据 lifecycle、登记／投票时间和 roster_frozen_at 计算为 UPCOMING、REGISTRATION、REVIEW、VOTING、RESULTS。结果投票率为 ballot_count / approved_count × 100%；冻结后 approved_count 使用 eligible_voter_count 快照。结束后弃权为 max(0, approved_count - ballot_count)。
+
+  当前容器依次执行 seed-demo、seed-elections，再按开关执行 ensure-demo-polls。选举种子补齐四场示例，并修复特定旧已结束示例的名册人数：基线为 24 名合资格选民、24 张票、100% 投票率、0 弃权。关闭 DEMO_POLLS_ENABLED 不会禁用前两个初始化步骤。
 
   | 事实来源 | 位置 |
   | --- | --- |

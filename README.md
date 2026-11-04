@@ -10,62 +10,63 @@
 
   普通注册用户即可创建投票，访客可直接参与公开匿名投票；私有投票通过分享链接和访问密码进入。项目提供 Docker Compose 启动方式，也支持前后端独立开发。
 
+## Quick Start
+
+* 安装并启动 Docker，准备好项目 `.env` 配置后执行：
+
+  ```bash
+  git clone https://github.com/qinchihongye/hkmu-2026-comp8500-group60-voting.git
+  cd hkmu-2026-comp8500-group60-voting
+  docker compose up -d
+  ```
+
+  首次使用需要先将 `.env.example` 复制为 `.env` 并配置访问地址，再执行启动命令。各操作系统步骤、本地与服务器部署配置详见 [start_guide](#start_guide)。
+
 ## 页面效果与系统预览
 
-* 全栈现代化在线投票平台架构与核心视图效果总览：
+* 当前投票、我的活动、选举及管理员页面总览（由实际页面截图拼接）：
 
   ![VoteNow 效果总览](docs/images/product-showcase.png)
 
-* 核心页面切换浏览（点击下方按钮栏 `| Previous | 1, 2, 3 | Next |` 快速切换，或体验 [交互式切换页面](docs/images/interactive-viewer.html)）：
+* 投票概览：搜索、筛选和排序公开投票，查看状态、剩余时间和选票进度。
 
-<a id="preview-1"></a>
+  ![投票概览](docs/images/overview.jpg)
 
-| [◀ Previous](#preview-3) | **[ 1 ] 投票概览** | [[ 2 ] 创建投票](#preview-2) | [[ 3 ] 统计结果](#preview-3) | [Next ▶](#preview-2) |
-| :---: | :---: | :---: | :---: | :---: |
+* 创建投票：填写主题、选项、时间和参与规则，可选使用智能填写。
 
-> **第 1 / 3 屏 · 投票概览广场**：查看投票状态、剩余时间和选票进度。
+  ![创建投票](docs/images/create-poll.jpg)
 
-![投票概览](docs/images/overview.jpg)
+* 投票结果：查看选票数、选择次数、环形图和胜出结果。
 
-<br/>
+  ![投票结果](docs/images/poll-results.jpg)
 
----
+* 我的活动：管理已创建投票，切换查看本人参与记录。
 
-<a id="preview-2"></a>
+  ![我的活动](docs/images/guide-my-polls.png)
 
-| [◀ Previous](#preview-1) | [[ 1 ] 投票概览](#preview-1) | **[ 2 ] 创建投票** | [[ 3 ] 统计结果](#preview-3) | [Next ▶](#preview-3) |
-| :---: | :---: | :---: | :---: | :---: |
+* 选举列表：查看五阶段进度、个人资格和参与入口。
 
-> **第 2 / 3 屏 · 创建投票与智能填写**：填写主题、选项、时间及参与规则，支持大模型文字识别与 JSON 预览回填。
+  ![选举列表与五阶段进度](docs/images/guide-elections.png)
 
-![创建投票](docs/images/create-poll.jpg)
+* 选举结果：查看最终票数、投票率、弃权人数和导出入口。
 
-<br/>
+  ![选举结果：24 名合资格选民、24 票、100% 投票率](docs/images/guide-election-results.png)
 
----
+* 截图更新于 2026-11-04，来自当前前端代码和独立本地演示数据库。智能填写入口与 JSON 预览使用固定演示响应展示界面，不代表本次已验证外部模型服务；其他业务页面使用实际后端数据。
 
-<a id="preview-3"></a>
+  手机端卡片、选民登记、选票、资格复核和管理页面见 [详细使用文档](docs/technical/user-guide.md#选举)。
 
-| [◀ Previous](#preview-2) | [[ 1 ] 投票概览](#preview-1) | [[ 2 ] 创建投票](#preview-2) | **[ 3 ] 统计结果** | [Next ▶](#preview-1) |
-| :---: | :---: | :---: | :---: | :---: |
+## start_guide
 
-> **第 3 / 3 屏 · 统计结果与环形图**：分别统计选票数量与选择次数，展示 Donut 环形图和胜出徽标。
+* 推荐使用 Docker Compose。请根据部署方式选择一组步骤，并从上到下依次执行。已有项目代码或 `.env` 时，跳过对应的克隆或复制步骤，不要覆盖原配置。
 
-![投票结果](docs/images/poll-results.jpg)
+### 本地启动
 
-* 动态轮播动图效果：
+* 当前 `compose.yml` 将前端映射到宿主机 **80** 端口，而 `.env.example` 仍使用旧的 **8188** 地址。复制为 `.env` 后，先将 `PUBLIC_BASE_URL` 改为 `http://localhost`，将 `ALLOWED_ORIGINS` 改为 `["http://localhost"]`，再启动。其余默认值可用于本机课程演示；可选调整见“启动前配置 `.env`”。
 
-  ![核心页面左右轮播效果](docs/images/preview-carousel.gif)
+* **Windows**
 
-  截图采集于 2026-10-30，展示本地演示数据。
-
-## 快速启动
-
-* 推荐使用 Docker Compose。请根据操作系统选择一组步骤，并从上到下依次执行。已有项目代码或 `.env` 时，跳过对应的克隆或复制步骤，不要覆盖原配置。
-
-### Windows
-
-* 使用 PowerShell 执行以下步骤。
+  使用 PowerShell 执行以下步骤。
 
   1. 安装 Git 和 Docker Desktop，启用并使用 WSL 2 后端，然后启动 Docker Desktop。
 
@@ -84,42 +85,34 @@
      docker compose version
      ```
 
-  4. 首次配置时复制环境变量模板；已有 `.env` 时跳过本步骤。
+  4. 首次配置时复制环境变量模板；已有 `.env` 时跳过复制。用编辑器将访问地址调整为上述 80 端口配置。
 
      ```powershell
      Copy-Item .env.example .env
      ```
 
-  5. 打开 `.env`，设置数据库密码、演示账户密码、私有演示投票密码、`ANON_VOTER_HMAC_KEY` 和 `IDENTITY_FINGERPRINT_HMAC_KEY`。不要将 `.env` 提交到 Git。
-
-     ```powershell
-     notepad .env
-     ```
-
-     本机 Docker 模式应保留：`PUBLIC_BASE_URL=http://localhost:8188`、`ALLOWED_ORIGINS=["http://localhost:8188"]`、`COOKIE_SECURE=false`。数据库连接中的用户名、密码和数据库名必须与 PostgreSQL 配置一致。
-
-  6. 构建并在后台启动数据库、后端和前端。
+  5. 构建并在后台启动数据库、后端和前端。
 
      ```powershell
      docker compose up -d --build
      ```
 
-  7. 检查容器状态。`postgres`、`backend` 和 `web` 应处于运行状态，数据库应通过健康检查。
+  6. 检查容器状态。`postgres`、`backend` 和 `web` 应处于运行状态，数据库应通过健康检查。
 
      ```powershell
      docker compose ps
      ```
 
-  8. 打开系统；若页面暂时不可用，再查看后端启动日志。
+  7. 打开系统；若页面暂时不可用，再查看后端启动日志。
 
      ```powershell
-     Start-Process http://localhost:8188
+     Start-Process http://localhost
      docker compose logs --tail=100 backend
      ```
 
-### macOS
+* **macOS**
 
-* 使用 Terminal 执行以下步骤。Apple Silicon 与 Intel Mac 使用相同的 Compose 命令。
+  使用 Terminal 执行以下步骤。Apple Silicon 与 Intel Mac 使用相同的 Compose 命令。
 
   1. 安装 Git 和 Docker Desktop，然后启动 Docker Desktop。
 
@@ -138,42 +131,38 @@
      docker compose version
      ```
 
-  4. 首次配置时复制环境变量模板；已有 `.env` 时跳过本步骤。
+  4. 首次配置时复制环境变量模板；已有 `.env` 时跳过复制。用编辑器将访问地址调整为上述 80 端口配置。
 
      ```bash
      cp .env.example .env
      ```
 
-  5. 打开 `.env`，设置数据库密码、演示账户密码、私有演示投票密码、`ANON_VOTER_HMAC_KEY` 和 `IDENTITY_FINGERPRINT_HMAC_KEY`。不要将 `.env` 提交到 Git。
-
-     ```bash
-     open -e .env
-     ```
-
-     本机 Docker 模式应保留：`PUBLIC_BASE_URL=http://localhost:8188`、`ALLOWED_ORIGINS=["http://localhost:8188"]`、`COOKIE_SECURE=false`。数据库连接中的用户名、密码和数据库名必须与 PostgreSQL 配置一致。
-
-  6. 构建并在后台启动数据库、后端和前端。
+  5. 构建并在后台启动数据库、后端和前端。
 
      ```bash
      docker compose up -d --build
      ```
 
-  7. 检查容器状态。`postgres`、`backend` 和 `web` 应处于运行状态，数据库应通过健康检查。
+  6. 检查容器状态。`postgres`、`backend` 和 `web` 应处于运行状态，数据库应通过健康检查。
 
      ```bash
      docker compose ps
      ```
 
-  8. 打开系统；若页面暂时不可用，再查看后端启动日志。
+  7. 打开系统；若页面暂时不可用，再查看后端启动日志。
 
      ```bash
-     open http://localhost:8188
+     open http://localhost
      docker compose logs --tail=100 backend
      ```
 
-### Linux
+### 服务器启动
 
-* 使用终端执行以下步骤。
+* Linux 服务器不能直接使用 `.env.example` 中面向本机的默认地址和示例密钥。完成复制后，必须先按照本节后的“启动前配置 `.env`”修改服务器必填项，再执行启动命令。
+
+* **Linux**
+
+  使用终端执行以下步骤。
 
   1. 按当前发行版的官方安装说明安装 Git、Docker Engine 和 Docker Compose 插件，并启动 Docker 服务。
 
@@ -200,13 +189,11 @@
      cp .env.example .env
      ```
 
-  5. 打开 `.env`，设置数据库密码、演示账户密码、私有演示投票密码、`ANON_VOTER_HMAC_KEY` 和 `IDENTITY_FINGERPRINT_HMAC_KEY`。不要将 `.env` 提交到 Git。
+  5. 打开 `.env`，按照下面“启动前配置 `.env`”中的服务器清单完成全部必改项。不要将 `.env` 提交到 Git。
 
      ```bash
      ${EDITOR:-vi} .env
      ```
-
-     本机 Docker 模式应保留：`PUBLIC_BASE_URL=http://localhost:8188`、`ALLOWED_ORIGINS=["http://localhost:8188"]`、`COOKIE_SECURE=false`。数据库连接中的用户名、密码和数据库名必须与 PostgreSQL 配置一致。
 
   6. 构建并在后台启动数据库、后端和前端。
 
@@ -220,13 +207,89 @@
      docker compose ps
      ```
 
-  8. 在浏览器打开 [http://localhost:8188](http://localhost:8188)。若页面暂时不可用，再查看后端启动日志。
+  8. 在浏览器打开 `.env` 中配置的 `PUBLIC_BASE_URL`。若页面暂时不可用，再查看后端启动日志。
 
      ```bash
      docker compose logs --tail=100 backend
      ```
 
-* 三个平台首次启动都会执行数据库迁移、创建缺失的演示账户；启用初始化投票时，还会补齐固定投票数据。数据库健康检查通过不代表后端迁移已经完成，页面暂不可用时可查看后端日志。
+### 启动前配置 `.env`
+
+* 无论使用哪种方式，都需要将项目根目录的 `.env.example` 复制为 `.env`。不要直接修改 `.env.example`，也不要将 `.env` 提交到 Git。
+
+* **本地部署**
+
+  当前全栈 Compose 使用 `80:80`，必须将模板中的两项地址对齐为 `PUBLIC_BASE_URL=http://localhost`、`ALLOWED_ORIGINS=["http://localhost"]`；`COOKIE_SECURE=false` 保持不变。其余变量可选修改。若自行改用 `8188:80`，则两项地址都应包含 `:8188`。这里的默认值说明仅针对全栈 Docker；独立开发另见“本地开发”。
+
+  | 变量 | 何时需要修改 |
+  | --- | --- |
+  | `POSTGRES_PASSWORD`、`POSTGRES_USER`、`POSTGRES_DB` | 需要使用自己的本地数据库凭据或库名时修改。应在首次创建数据库卷前确定；已有数据卷时，只改 `.env` 不会自动修改 PostgreSQL 内已有账户或密码。 |
+  | `ANON_VOTER_HMAC_KEY`、`IDENTITY_FINGERPRINT_HMAC_KEY` | 需要使用自己的本地密钥时修改。两个值都应至少 32 字节且不能相同。 |
+  | `DEMO_ADMIN_PASSWORD`、`DEMO_USER_PASSWORD`、`DEMO_VOTER_PASSWORD`、`DEMO_POLL_PASSWORD` | 需要更换本地演示账户或私密演示投票密码时修改。 |
+  | `DEMO_POLLS_ENABLED` | 默认 `true`，控制固定普通投票补齐和目录接口；设为 `false` 不删除已有数据，也不停止当前启动脚本创建演示账户与示例选举。 |
+  | `DATABASE_URL`、`TEST_DATABASE_URL`、`TEST_POSTGRES_DB` | 只有前后端独立开发、连接外部数据库或运行数据库测试时才需要调整；测试库必须与开发库不同。 |
+  | `SESSION_TTL_HOURS`、`GUEST_TTL_DAYS`、`POLL_ACCESS_TTL_MINUTES` | 需要改变登录会话、访客身份或私密投票授权有效期时修改。 |
+  | `POLL_TEXT_PARSE_ENABLED`、`OPENAI_API_KEY`、`OPENAI_BASE_URL`、`POLL_TEXT_PARSE_MODEL` 及其他 `POLL_TEXT_PARSE_*` | 智能填写默认关闭；需要启用模型识别时才配置。不启用时保持默认空值或 `false`。 |
+  | `VITE_API_PROXY` | 只供 Vite 独立开发代理使用；全栈 Compose 不需要修改。 |
+
+* **服务器部署必须修改**
+
+  | 变量 | 必须执行的操作 |
+  | --- | --- |
+  | `POSTGRES_PASSWORD` | 替换默认值，使用强且唯一的密码。当前 Compose 会把它直接放入数据库连接 URL，建议只使用字母、数字、`_`、`-` 等 URL 安全字符。应在首次创建数据库卷前确定。 |
+  | `ANON_VOTER_HMAC_KEY` | 替换示例值，至少 32 字节，用于匿名投票防重复。 |
+  | `IDENTITY_FINGERPRINT_HMAC_KEY` | 替换示例值，至少 32 字节，并且必须与 `ANON_VOTER_HMAC_KEY` 不同。 |
+  | `PUBLIC_BASE_URL` | 改成浏览器实际访问地址，例如 `https://vote.example.com`；不能保留 `http://localhost:8188`，否则生成的分享链接会指向错误地址。 |
+  | `ALLOWED_ORIGINS` | 改成浏览器实际来源，不能保留本机地址。必须包含协议；使用非默认端口时还要包含端口。保持 JSON 数组格式，例如 `["https://vote.example.com"]`。 |
+  | `COOKIE_SECURE` | 按照实际协议设置：使用 HTTPS 时设为 `true`；直接使用 HTTP 时设为 `false`，否则浏览器不会发送登录 Cookie。 |
+  | `DEMO_ADMIN_PASSWORD`、`DEMO_USER_PASSWORD`、`DEMO_VOTER_PASSWORD` | 必须更换；当前启动脚本无条件执行 `seed-demo`，不受 `DEMO_POLLS_ENABLED` 控制。已有账户需单独更新数据库中的密码，环境变量不会重置旧密码。 |
+  | `DEMO_POLL_PASSWORD` | 服务器保留 `DEMO_POLLS_ENABLED=true` 时必须更换，用于新建固定私有投票。 |
+
+  服务器上的其他变量可根据需要修改：`DEMO_POLLS_ENABLED` 推荐设为 `false`；`POSTGRES_USER`、`POSTGRES_DB`、会话有效期和智能填写配置均可按实际需求调整。全栈 Compose 通常不需要修改 `DATABASE_URL`、`TEST_DATABASE_URL` 或 `VITE_API_PROXY`。
+
+* 服务器部署时，可用以下命令生成两个 HMAC 密钥；本地部署仅在希望替换模板密钥时使用。命令必须执行两次并填写两个不同结果。服务器部署后请安全备份并保持密钥稳定，更换密钥会影响已有匿名身份和选民身份指纹的匹配。
+
+  Windows PowerShell：
+
+  ```powershell
+  $bytes = New-Object byte[] 32
+  $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+  $rng.GetBytes($bytes)
+  [BitConverter]::ToString($bytes).Replace('-', '').ToLower()
+  $rng.Dispose()
+  ```
+
+  macOS 或 Linux：
+
+  ```bash
+  openssl rand -hex 32
+  ```
+
+* 服务器通过域名和 HTTPS 对外提供服务时，至少应改成类似以下配置。反向代理负责 HTTPS 时，`PUBLIC_BASE_URL` 和 `ALLOWED_ORIGINS` 仍填写浏览器看到的 `https://` 地址。
+
+  ```dotenv
+  POSTGRES_PASSWORD=<strong-url-safe-password>
+  ANON_VOTER_HMAC_KEY=<first-64-character-hex-key>
+  IDENTITY_FINGERPRINT_HMAC_KEY=<different-64-character-hex-key>
+  DEMO_POLLS_ENABLED=false
+  PUBLIC_BASE_URL=https://vote.example.com
+  ALLOWED_ORIGINS=["https://vote.example.com"]
+  COOKIE_SECURE=true
+  ```
+
+  如果按当前 Compose 通过 `http://服务器IP` 临时访问，则使用实际 IP，并保持 `COOKIE_SECURE=false`：
+
+  ```dotenv
+  PUBLIC_BASE_URL=http://203.0.113.10
+  ALLOWED_ORIGINS=["http://203.0.113.10"]
+  COOKIE_SECURE=false
+  ```
+
+  当前 Compose 占用宿主机 TCP `80`。若宿主机已有 Nginx、Caddy 等反向代理，应先调整 web 的宿主机端口映射，并将代理转发到该端口；浏览器访问地址仍以实际域名和协议为准。PostgreSQL 仅绑定 `127.0.0.1:5432`。
+
+* 使用根目录全栈 `compose.yml` 时，后端容器会根据 `POSTGRES_USER`、`POSTGRES_PASSWORD` 和 `POSTGRES_DB` 自动生成容器内 `DATABASE_URL`，不要把其中的主机名改成公网 IP。只有使用下文的前后端独立开发方式时，才需要让根目录中的 `DATABASE_URL`、`TEST_DATABASE_URL` 与实际数据库账户、密码、库名和端口保持一致；测试库不能与开发库相同。
+
+* 本地和服务器启动依次执行数据库迁移、`seed-demo`、`seed-elections`，最后在 `DEMO_POLLS_ENABLED=true` 时补齐固定普通投票。当前选举种子还会创建带源码内置演示密码的样本选民，关闭普通投票开关不能禁用它；对外部署前需调整初始化流程并处理已有样本账户。数据库健康检查通过不代表后端迁移已经完成，页面暂不可用时可查看后端日志。
 
 * 演示账户
 
@@ -268,7 +331,7 @@
   | 结果可见性 | 创建者可决定参与者能否在投票进行中查看汇总 |
   | 分享 | 支持分享链接、邀请文本与二维码 |
   | 创建者工作区 | 管理自己的草稿、发布投票、关闭投票和查看汇总 |
-  | 投票历史 | 登录用户可查看自己的记名投票记录 |
+  | 我的活动 | 在 My Activity 查看已创建投票及本人参与记录；“删除记录”仅在当前浏览器隐藏 |
   | 管理员 | 查看全部投票及结果，并查询审计事件 |
   | 智能填写（可选） | 从一段文字提取标题、选项及明确给出的部分设置，填入表单后可继续编辑 |
 
@@ -284,6 +347,10 @@
   | 实时结果矩阵 | 开启时管理员及已投选民可看候选人票数；关闭时管理员在投票期只看规模数据 |
   | 弃权计算 | 结束后计算系统弃权人数：冻结名册的合资格人数减已投选票数 |
   | 提交确认 | 选民二次确认后单选提交，返回随机 UUID 回执；回执不是密码学可验证证明 |
+  | 五阶段展示 | 即将开放、资格登记、名册审核、正式投票、结果公示；未冻结名册时不能进入投票阶段 |
+  | 胜出票数门槛 | 可选设置 `winning_threshold`；候选人达到门槛后，提交接口尝试提前关闭选举 |
+
+* 页面支持英文、简体中文和繁体中文，语言选择保存在当前浏览器。投票管理与参与记录入口合并为 My Activity；选举列表内提供“我的登记”视图。
 
 ## 使用流程与投票规则
 
@@ -323,7 +390,7 @@
   | 进行中查看结果 | 表示允许参与者打开汇总结果，不等于页面持续自动刷新 |
   | 创建者与管理员 | 按权限查看汇总；管理员监督页面不赋予修改他人投票的能力 |
   | 私有投票 | 不进入公共列表，分享链接不包含访问密码；解锁私有投票不能代替记名投票所需的登录 |
-  | 历史记录 | 展示记名投票记录，不展示匿名投票记录 |
+  | 历史记录 | 当前服务按本人 `voter_id` 查询，含登录状态下提交并关联账户的匿名票；纯访客匿名票没有账户历史。普通匿名票可关联账户，不具备选举 B2 的身份链分离保证 |
   | 时间 | 创建页面按香港时间填写，发布后按时间窗口和关闭状态决定是否可投票 |
 
 * 选举流程
@@ -354,6 +421,8 @@
   这些投票由普通账户创建，保存在数据库中，按普通投票规则使用。公共场次与其他公开投票一起展示，私有场次通过分享链接访问；Overview 不另设“示例投票”分区。
 
   初始化只补齐缺失的固定场次，不覆盖已有标题、密码、时间、选票、分享码或关闭状态。重建镜像不会重置已投满或已关闭的投票，自然到期的投票也不会自动重新开放。设置 `DEMO_POLLS_ENABLED=false` 可停止启动时补齐固定投票，但不会删除已有数据。
+
+* `seed-elections` 单独补齐四场不同阶段的示例选举与样本选民，不受 `DEMO_POLLS_ENABLED` 控制。已结束示例的基线为合资格选民 24 人、选票 24 份、投票率 100%、弃权 0 人；初始化包含对特定旧示例人数不一致的修复，不会普遍重置现有选举。
 
 * 数据生命周期
 
@@ -442,11 +511,12 @@
   uv sync --frozen
   uv run python -m alembic upgrade head
   uv run python -m src.main.python.cli seed-demo
+  uv run python -m src.main.python.cli seed-elections
   uv run python -m src.main.python.cli ensure-demo-polls
   uv run python -m uvicorn src.main.python.main:create_app --factory --host 127.0.0.1 --port 8000 --no-access-log
   ```
 
-  `ensure-demo-polls` 仅在初始化开关启用时补齐投票；不需要演示数据时可以跳过。后端从根目录 `.env` 读取应用配置。
+  `seed-demo`、`seed-elections` 和 `ensure-demo-polls` 是演示初始化步骤，独立开发不需要样本时可跳过；`seed-elections` 依赖先创建管理员。`ensure-demo-polls` 还要求初始化开关启用。后端从根目录 `.env` 读取应用配置。
 
 * 在另一个终端启动前端：
 
@@ -474,7 +544,7 @@
   | `POLL_TEXT_PARSE_RESPONSE_FORMAT` | 根据服务能力选择 `json_schema` 或 `json_object` |
   | `POLL_TEXT_PARSE_STREAM` | 当前识别链路保持 `false` |
 
-  其他模型参数见 [.env.example](.env.example)。修改后重新启动对应后端服务。文字识别只辅助填写，最终以用户检查并保存的表单为准；原文没有明确给出的可选信息由表单默认值处理，不自动发布投票。识别时输入文本会发送到所配置的模型服务。
+  其他模型参数见 [.env.example](.env.example)。模型选择由服务器配置，创建页面没有模型切换控件。修改后需重新创建后端容器以加载环境变量（`docker compose up -d --force-recreate backend`）；独立开发则重启后端进程。文字识别可回填明确的记名方式、公开性、选票上限和实时结果开关；未返回字段保留表单当前值，访问密码手填。识别不会自动发布投票，输入文本会发送到所配置的模型服务。
 
 * 其他常用配置
 

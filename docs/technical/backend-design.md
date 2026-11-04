@@ -1,6 +1,6 @@
 # VoteNow 后端设计
 
-* **范围**：Python 3.12 / FastAPI 后端；核对日期 2026-10-31。入口 `backend/src/main/python/main.py:create_app`。
+* **范围**：Python 3.12 / FastAPI 后端；核对日期 2026-11-04。入口 `backend/src/main/python/main.py:create_app`。
 
   [数据库设计](database-design.md) · [全部接口](backend-api.md) · [前端设计](frontend-design.md) · [详细使用](user-guide.md)
 
@@ -10,7 +10,7 @@
 
   ```mermaid
   flowchart LR
-    Browser[浏览器 React] --> Web[Nginx :8188]
+    Browser[浏览器 React] --> Web[Nginx 宿主机 :80]
     Web -->|静态页面| Static[frontend/dist]
     Web -->|/api/| API[FastAPI / Uvicorn :8000]
     API --> PG[(PostgreSQL 17)]
@@ -55,7 +55,7 @@
   | algorithms/guest_module | 浏览器凭据创建与恢复 | guest_sessions |
   | algorithms/poll_module | 创建、替换草稿、发布、关闭、列表 | polls、poll_options、审计 |
   | algorithms/poll_access_module | 分享码解析、密码解锁、可见详情 | poll_access_grants、访客凭据 |
-  | algorithms/vote_module | 一次提交、去重、限额、记名历史 | votes、vote_selections |
+  | algorithms/vote_module | 一次提交、去重、限额、账户关联参与历史 | votes、vote_selections |
   | algorithms/result_module | 授权后汇总与最终状态 | 投票共享锁、父票与明细统计 |
   | algorithms/audit_module | 审计写入与管理员读取 | audit_events |
   | algorithms/poll_import_module | 文字候选字段、时间解析、问题码 | 外部提取器，不直接创建投票 |
@@ -66,7 +66,7 @@
   | config/ | 环境、连接、日志配置 | 根目录 .env |
   | external_services/ | OpenAI SDK 调用与上游错误转换 | 可选模型服务 |
   | utils/ | 密码、Cookie、错误响应、限流、时钟 | 公共基础能力 |
-  | cli.py | seed-demo、ensure-demo-polls、new-demo-round | 初始化服务 |
+  | cli.py | seed-demo、seed-elections、ensure-demo-polls、new-demo-round | 初始化服务 |
 
 ## 身份与访问控制
 
@@ -161,15 +161,13 @@
 
   ```mermaid
   flowchart LR
-    Draft[DRAFT] --> Publish[发布]
-    Publish --> RegScheduled[REGISTRATION_SCHEDULED]
-    RegScheduled --> RegOpen[REGISTRATION_OPEN]
-    RegOpen --> Reviewing[REVIEWING]
-    Reviewing --> Freeze[管理员冻结名册]
-    Freeze --> VoteScheduled[VOTING_SCHEDULED]
-    VoteScheduled --> VoteOpen[VOTING_OPEN]
-    VoteOpen --> Closed[CLOSED]
+    Upcoming[UPCOMING 草稿或等待登记] --> Registration[REGISTRATION 登记窗口]
+    Registration --> Review[REVIEW 复核与冻结名册]
+    Review -->|名册冻结且到投票时间| Voting[VOTING 正式投票]
+    Voting --> Results[RESULTS 结束或关闭]
   ```
+
+  `phase` 为标准五阶段，`lifecycle` 仍保存 DRAFT／PUBLISHED／CLOSED。草稿的 phase 为 UPCOMING，但不进入公共列表。登记结束后未冻结名册，或冻结后尚未到投票时间，都为 REVIEW；超过结束时间即为 RESULTS。旧阶段字符串仅作为兼容别名解析。
 
   | 规则 | 实现 |
   | --- | --- |
@@ -179,9 +177,10 @@
   | 身份登记 | 登录用户在登记窗口提交姓名、证件类型、签发方与号码 |
   | 证件存储 | 号码经 NFKC、大小写和空白规范化后生成独立密钥 HMAC-SHA-256 指纹；数据库只保存指纹和尾号 |
   | 资格判断 | 本地规则引擎输出 APPROVED、NEEDS_REVIEW 或 REJECTED；不连接政府、院校或第三方身份库 |
-  | 人工复核 | ADMIN 可将登记设为 APPROVED 或 REJECTED；事件追加写入审核历史 |
+  | 人工复核 | 仅 NEEDS_REVIEW 可由 ADMIN 设为 APPROVED／REJECTED；冻结后禁止复核；PENDING 会阻止冻结但当前复核接口不接受该状态 |
   | 冻结名册 | 登记结束后显式执行；存在 PENDING／NEEDS_REVIEW 时拒绝；行锁、幂等，为每个 APPROVED 登记生成内部 UUID 凭证 |
-  | 投票 | 只允许 VOTING_OPEN；锁定并消费 ISSUED 凭证，同时插入一张单选选票 |
+  | 投票 | 只允许 VOTING；锁定并消费 ISSUED 凭证，同时插入一张单选选票 |
+  | 票数门槛 | 可选 winning_threshold；选票提交后另行检查该候选人累计票数，达到门槛时尝试关闭选举；该检查不在选票事务内，失败只记日志，不撤销回执 |
   | 未投票 | 结束后的 `abstention_count = eligible_voter_count - ballot_count` |
   | 回执 | 返回随机 UUID；用于提交确认，不是密码学可验证回执 |
 
@@ -229,8 +228,8 @@
   | --- | --- |
   | 输入 | trim后1–10000个Unicode码点 |
   | 必有输出键 | fields.title、fields.options；无法提取时可为null／空数组 |
-  | 可选候选键 | description、starts_at、ends_at、selection_mode；不可靠则省略 |
-  | 不推断字段 | 匿名／公开／密码／人数上限／结果开关等不由该输出模型提供 |
+  | 可选候选键 | description、starts_at、ends_at、selection_mode、identity_mode、visibility、vote_limit、allow_live_results；原文未明确或不可靠时省略 |
+  | 规则边界 | 不从“私有”推断“匿名”；上限须为 1–100000，否则返回 VOTE_LIMIT_INVALID；关闭实时结果可返回 false；访问密码始终手填 |
   | 时间参考 | Asia/Hong_Kong，服务提供 reference_time |
   | 数据库 | 等待模型时不持有业务数据库事务；识别不创建投票 |
   | 限额 | 每账户60秒5次、并发1次，全进程并发4次；不是跨实例分布式限流 |
@@ -240,7 +239,7 @@
 
   | 项目 | 当前行为 |
   | --- | --- |
-  | 启动 | Alembic迁移 → seed-demo → 按开关补固定投票 → Uvicorn |
+  | 启动 | Alembic 迁移 → seed-demo → seed-elections → 按 DEMO_POLLS_ENABLED 补固定普通投票 → Uvicorn |
   | 存活／就绪 | /health/live 不读库；/health/ready 执行 SELECT 1 |
   | 异常 | AppError 保留HTTP与业务码；框架校验转换为 data.errors；未知错误固定50000 |
   | 请求日志 | 请求标识、归类路由、耗时；匿名参与日志不写请求标识 |
@@ -249,5 +248,14 @@
   | 私有访问密码 | 当前可取回明文存储；不能声称全部秘密都只保存散列 |
   | 配置 | 根目录.env；模型密钥仅后端读取 |
   | 备份 | 数据卷持久化不等于备份；操作步骤见使用文档 |
+
+* 当前实现边界
+
+  | 项目 | 事实与影响 |
+  | --- | --- |
+  | 普通匿名票 | 登录提交时会写 voter_id；数据库允许并限制同账户同场匿名票唯一；账户历史查询包含这些关联票，不能与 B2 秘密选举的身份分离混为一谈 |
+  | 演示初始化 | seed-demo 和 seed-elections 无条件执行；普通投票开关不能禁用样本选民；选举种子含内置演示密码，对外部署需单独处理 |
+  | 已结束选举示例 | 基线 24 名合资格选民、24 张票、100% 投票率、0 弃权；种子包含特定旧示例人数修复，不是通用数据重置 |
+  | 部署端口 | 当前 web 为 80:80，模板仍指向 localhost:8188；实际部署必须对齐 PUBLIC_BASE_URL、ALLOWED_ORIGINS 和端口映射 |
 
   详细字段和全部错误码见 [后端接口文档](backend-api.md)，DDL与索引见 [数据库设计文档](database-design.md)。本次文档整理未修改服务实现或执行数据迁移。

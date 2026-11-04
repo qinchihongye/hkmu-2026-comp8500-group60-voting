@@ -83,7 +83,7 @@
     .slides-wrapper {
       position: relative;
       width: 100%;
-      aspect-ratio: 16 / 9;
+      aspect-ratio: 36 / 25;
       background: #020617;
       overflow: hidden;
     }
@@ -192,7 +192,7 @@
   <div class="header">
     <div class="badge">VOTENOW UI SHOWCASE</div>
     <h1 class="title">核心功能视图交互式切换</h1>
-    <p class="subtitle">点击 Previous / Next 或数字按钮 1、2、3 进行实时切换</p>
+    <p class="subtitle">2026-11-04 当前页面截图 · 点击 Previous / Next 或数字按钮切换六个视图；智能填写入口使用演示响应。</p>
   </div>
 
   <div class="carousel-container">
@@ -202,7 +202,7 @@
         <span class="dot yellow"></span>
         <span class="dot green"></span>
       </div>
-      <div class="window-title" id="window-url">http://localhost:8188/overview</div>
+      <div class="window-title" id="window-url">/overview</div>
     </div>
 
     <div class="slides-wrapper">
@@ -215,11 +215,20 @@
       <div class="slide" id="slide-2">
         <img src="poll-results.jpg" alt="统计结果与环形图">
       </div>
+      <div class="slide" id="slide-3">
+        <img src="guide-my-polls.png" alt="My Activity 我的活动">
+      </div>
+      <div class="slide" id="slide-4">
+        <img src="guide-elections.png" alt="选举列表与五阶段进度">
+      </div>
+      <div class="slide" id="slide-5">
+        <img src="guide-election-results.png" alt="选举最终结果与投票率">
+      </div>
     </div>
 
     <div class="controls-bar">
       <div class="info-text">
-        <span class="info-pill" id="slide-tag">1 / 3</span>
+        <span class="info-pill" id="slide-tag">1 / 6</span>
         <span id="slide-desc">📊 投票概览广场：查看投票状态、剩余时间和选票进度</span>
       </div>
 
@@ -228,6 +237,9 @@
         <button class="page-btn active" data-index="0">1</button>
         <button class="page-btn" data-index="1">2</button>
         <button class="page-btn" data-index="2">3</button>
+        <button class="page-btn" data-index="3">4</button>
+        <button class="page-btn" data-index="4">5</button>
+        <button class="page-btn" data-index="5">6</button>
         <button class="btn" id="next-btn">Next ▶</button>
       </div>
     </div>
@@ -236,19 +248,34 @@
   <script>
     const slides = [
       {
-        url: "http://localhost:8188/overview",
-        tag: "1 / 3",
+        url: "/overview",
+        tag: "1 / 6",
         desc: "📊 投票概览广场：查看投票状态、剩余时间和选票进度"
       },
       {
-        url: "http://localhost:8188/my-polls/new",
-        tag: "2 / 3",
+        url: "/my-polls/new",
+        tag: "2 / 6",
         desc: "✍️ 创建投票与智能填写：填写主题、选项、规则及大模型 JSON 识别"
       },
       {
-        url: "http://localhost:8188/polls/:id/results",
-        tag: "3 / 3",
+        url: "/polls/:id/results",
+        tag: "3 / 6",
         desc: "📈 统计结果与环形图：分别统计选票数量与选择次数，展示 Donut 环形图和胜出徽标"
+      },
+      {
+        url: "/my-activity",
+        tag: "4 / 6",
+        desc: "我的活动：统一查看已创建投票和参与记录"
+      },
+      {
+        url: "/elections",
+        tag: "5 / 6",
+        desc: "选举列表：五阶段进度、个人资格及参与入口"
+      },
+      {
+        url: "/elections/:id/results",
+        tag: "6 / 6",
+        desc: "选举结果：24 名合资格选民、24 票、100% 投票率、0 弃权"
       }
     ];
 
@@ -258,7 +285,10 @@
     const slideElements = [
       document.getElementById('slide-0'),
       document.getElementById('slide-1'),
-      document.getElementById('slide-2')
+      document.getElementById('slide-2'),
+      document.getElementById('slide-3'),
+      document.getElementById('slide-4'),
+      document.getElementById('slide-5')
     ];
     const pageButtons = document.querySelectorAll('.page-btn');
     const urlElement = document.getElementById('window-url');

@@ -1,8 +1,10 @@
 # VoteNow 详细使用文档
 
-* **适用范围**：本地课程演示、普通参与者、创建者与管理员；核对日期 2026-10-31。以下操作以当前实现为准，页面可切换中英文。
+* **适用范围**：本地课程演示、普通参与者、创建者与管理员；核对日期 2026-11-04。页面提供英文、简体中文和繁体中文，语言选择保存在当前浏览器；部分旧页面仍使用固定语言的日期格式。
 
   [数据库设计](database-design.md) · [前端设计](frontend-design.md) · [后端设计](backend-design.md) · [接口文档](backend-api.md)
+
+  本文页面截图于 2026-11-04 从当前代码重新采集，桌面视口为 1440 × 1000，手机视口为 390 × 1000；长表单分为上、下两幅。数据来自独立本地演示数据库。智能填写相关截图使用固定演示响应，仅展示当前组件及字段回填，不代表外部模型调用实测。
 
 ## 安装与首次启动
 
@@ -12,23 +14,23 @@
   | --- | --- | --- |
   | 1 | 安装并启动 Docker，确认 Compose 插件可用 | `docker compose version` |
   | 2 | 进入项目根目录；首次执行 `cp .env.example .env` | 已有.env不覆盖 |
-  | 3 | 设置数据库、演示账户、私有投票密码、匿名密钥与身份指纹密钥 | 不向仓库提交.env |
+  | 3 | 按当前 Compose 的 80 端口将 PUBLIC_BASE_URL 设为 http://localhost，ALLOWED_ORIGINS 设为 ["http://localhost"] | 模板仍为旧 8188 地址；其余本地配置可按需修改 |
   | 4 | `docker compose up -d --build` | postgres、backend、web启动 |
   | 5 | `docker compose ps` | 数据库健康，后端完成迁移 |
-  | 6 | 访问 `http://localhost:8188` | 打开登录页或进入公共概览 |
+  | 6 | 访问 `http://localhost` | 打开登录页或进入公共概览 |
 
   | 配置 | 本机 Docker 使用方式 |
   | --- | --- |
-  | PUBLIC_BASE_URL | `http://localhost:8188` |
-  | ALLOWED_ORIGINS | `["http://localhost:8188"]`，必须为JSON数组 |
+  | PUBLIC_BASE_URL | `http://localhost`；与当前 80 端口映射一致 |
+  | ALLOWED_ORIGINS | `["http://localhost"]`，必须为JSON数组 |
   | COOKIE_SECURE | 本机HTTP为false |
   | POSTGRES_USER / PASSWORD / DB | 数据库初始化凭据与名称 |
   | DATABASE_URL | Compose内覆盖为postgres服务名；本机直跑需自己保持凭据一致 |
-  | DEMO_POLLS_ENABLED | 开启时启动补齐固定场次；关闭不删除已有数据 |
+  | DEMO_POLLS_ENABLED | 仅控制固定普通投票补齐和目录接口；关闭不删除数据，也不禁用演示账户与示例选举初始化 |
   | POLL_TEXT_PARSE_ENABLED | 默认false，不影响普通创建／投票 |
   | IDENTITY_FINGERPRINT_HMAC_KEY | 选民证件指纹密钥；至少 32 字节，且不得与 ANON_VOTER_HMAC_KEY 相同 |
 
-  更详细的环境变量含义见 [README 配置说明](../../README.md#可选智能填写与配置) 和 [.env.example](../../.env.example)。
+  本地与服务器的完整清单见 [README start_guide](../../README.md#start_guide)。服务器必须配置实际访问地址、密钥与账户密码；当前启动脚本还会无条件执行 `seed-elections`，包含源码内置密码的样本选民。对外部署前须处理该初始化流程和已有样本账户。仅设置 `DEMO_POLLS_ENABLED=false` 无法关闭全部演示数据。
 
 * 演示账户
 
@@ -46,17 +48,18 @@
 
   | 目的 | 路径／操作 | 说明 |
   | --- | --- | --- |
-  | 查看公开投票 | Overview，`/overview` | 允许访客；可搜索、排序和筛选状态，桌面大屏采用三列响应式网格 |
+  | 查看公开投票 | Overview，`/overview` | 允许访客；可搜索、排序和筛选状态，当前桌面截图为两列响应式网格 |
   | 旧公共列表地址 | `/public-polls` | 自动转到Overview |
   | 注册 | `/register` | 用户名、显示名、密码；配备密码强度指示条与服务条款弹窗 |
   | 登录 | `/login` | 获得账户会话；Cookie需可用 |
-  | 消息通知 | 顶栏铃铛图标 | 查看页面加载时生成的系统、投票和选举提醒；已读状态保存在本浏览器 |
+  | 消息通知 | 顶栏铃铛图标 | 初次加载、窗口重新获得焦点及每 30 秒刷新提醒；已读状态按账户保存在本浏览器 |
   | 创建投票 | Create poll | 未登录先登录 |
-  | 管理自己的投票 | My polls | 包含全部、进行中、草稿、已结束分类计数徽标与快捷创建卡片 |
-  | 查看记名记录 | History / My votes | 不包含匿名记录 |
+  | 我的活动 | My Activity，`/my-activity` | Created 标签搜索、按状态筛选和分页查看自己的投票 |
+  | 查看参与记录 | `/my-activity?tab=voted` | Voted 标签显示本人账户关联的回执；可确认后在本浏览器隐藏记录 |
+  | 旧投票入口 | `/my-polls`、`/my-votes` | 独立列表路由仍保留；主要导航使用 My Activity |
   | 管理员入口 | Supervision、Audit | 仅管理员；手机从账户菜单进入，支持 300ms 搜索自动防抖 |
   | 选举列表 | Elections，`/elections` | 访客可浏览已发布选举；登录后显示个人登记／投票状态 |
-  | 我的选举登记 | `/my-election-registrations` | 登录用户查看各场登记及审核结果 |
+  | 我的选举登记 | Elections 内“我的登记”，`/elections?view=my_registrations` | 旧 `/my-election-registrations` 自动跳转；当前视图读取前 50 条登记 |
   | 选举管理 | `/admin/elections` | 仅管理员创建、发布、审核、冻结名册和关闭 |
 
   | 注册字段与要求 | 规则与辅助反馈 |
@@ -68,11 +71,17 @@
 
 * 页面展示
 
+  ![当前登录页面](../images/guide-login.png)
+
   ![公共投票概览广场](../images/guide-overview.png)
 
   ![账户注册：密码复杂度指示条与条款规范](../images/guide-register.png)
 
   ![顶栏消息通知下拉面板](../images/guide-notifications.png)
+
+  ![My Activity 已创建投票](../images/guide-my-polls.png)
+
+  ![My Activity 本人参与记录与本地隐藏入口](../images/guide-activity-voted.png)
 
 ## 创建、编辑与发布
 
@@ -109,8 +118,8 @@
 
   | 操作 | 可以何时做 | 注意 |
   | --- | --- | --- |
-  | 快捷创建 | 任何时候 | My Polls 列表首位提供带加号虚线快捷卡片，一键直达创建页 |
-  | 分类查看 | 任何时候 | My Polls 顶部状态标签（全部、进行中、草稿、已关闭）实时显示具体计数 |
+  | 快捷创建 | 任何时候 | My Activity 的 Created 标签和 My Polls 顶部提供创建按钮；旧 My Polls 在非空且不足一页时追加快捷卡片 |
+  | 分类查看 | 任何时候 | 可选择全部、草稿、进行中、排期、已关闭；搜索或切换状态后从第一页查询 |
   | 编辑草稿 | 自己的DRAFT | 保存是完整替换；若版本冲突，刷新后重新核对 |
   | 发布 | 自己的有效草稿 | 开始时间在未来则排期；发布后内容不能继续修改 |
   | 提前结束 | 自己已发布的投票 | 工作区点击触发红色警示弹窗，二次确认后立即关闭，不可逆且无法重开 |
@@ -121,7 +130,7 @@
 
   ![创建投票表单与规则配置](../images/guide-create-poll.png)
 
-  ![我的投票：状态分类计数与首位快速创建卡片](../images/guide-my-polls.png)
+  ![创建表单下半部：时间、选项与保存操作](../images/guide-create-poll-options.png)
 
   ![工作区提前结束投票确认弹窗](../images/guide-workspace-close.png)
 
@@ -132,12 +141,12 @@
   | 步骤 | 操作 |
   | --- | --- |
   | 1 | 展开 Smart fill / Smart-Fast Fill 折叠面板 |
-  | 2 | 粘贴包含主题、选项和可选截止时间的原文并点击识别 |
-  | 3 | 识别完成后可点击 **Preview JSON**，在弹窗中对比原始解析结构与提取字段 |
-  | 4 | 核对无误后点击应用（Apply to Form），将候选字段安全填入表单 |
-  | 5 | 手动检查并设置匿名／公开、密码、人数上限、结果开关后保存 |
+  | 2 | 粘贴包含主题、选项和可选规则的原文；点击 Preview JSON 可先识别并预览，点击 Parse & Auto-fill 则直接识别回填 |
+  | 3 | 在 Preview JSON 弹窗中核对结构化字段；直接回填后也可再次打开预览 |
+  | 4 | 在预览中点击 Apply to form 可将候选字段填入表单，再人工核对 |
+  | 5 | 核对识别出的记名方式、公开性、选票上限和实时结果设置；私有密码始终手动填写，再保存 |
 
-  ![智能填写 JSON 预览对比弹窗](../images/guide-json-preview.png)
+  ![智能填写 JSON 预览弹窗：固定演示响应](../images/guide-json-preview.png)
 
   ```text
   Friday sharing topic:
@@ -157,6 +166,8 @@
   | 频率限制 | 等待后再试，不连续点击 |
 
   原文会发送到已配置的模型服务；识别不会直接创建或发布投票。只有标题与选项是始终存在的候选键，其值仍可能表示未识别到内容。
+
+  原文明示时，可回填 `identity_mode`、`visibility`、`vote_limit` 和 `allow_live_results`。未识别到的可选值保留当前表单；明确关闭实时结果会回填 `false`。切换到公开会清空访问密码；切换到私有不会生成密码。无效上限会返回 `VOTE_LIMIT_INVALID`，需人工修正。模型由服务器 `.env` 配置，页面没有模型选择器。
 
 ## 分享与参与
 
@@ -216,7 +227,8 @@
   | 领先／胜出 | 进行中为当前领先；is_final=true时为最终结果并附带胜出徽标；并列可能有多个最高项 |
   | Excel | 从结果页导出概况和结果明细，浏览器生成.xlsx；进行中导出只是当时快照 |
   | PNG分享 | 独立结果页的最终结果提供分享图片入口；浏览器生成图片后保存／分享 |
-  | History | 只展示自己的可访问记名记录；私有记录授权失效后需通过原分享链接重新解锁 |
+  | My Activity / Voted | 展示本人账户关联的可访问回执，包含登录状态下关联账户的匿名票；纯访客匿名票不进入账户历史；私有记录授权失效后需重新解锁 |
+  | 删除记录 | 二次确认后仅在当前浏览器、当前账户下隐藏；不撤回选票、不改变统计、不删除服务器记录；清除本地存储后可能再次显示 |
 
   当前Excel明细中的最高项标签可能显示 Winner；对于进行中导出应理解为当前领先，不是已定案。导出的文件与图片不会继续受投票页面权限控制，分享前核对内容与接收对象。
 
@@ -241,12 +253,16 @@
   | 步骤 | 操作 | 结果／限制 |
   | --- | --- | --- |
   | 1 | 打开 Elections 并选择选举 | 访客可看已发布摘要和候选人 |
-  | 2 | 在 REGISTRATION_OPEN 期间登录并登记 | 填姓名、居民身份证／港澳通行证／学生证、签发方和号码 |
+  | 2 | 在 REGISTRATION 期间登录并登记 | 填姓名、居民身份证／港澳通行证／学生证、签发方和号码 |
   | 3 | 查看登记状态 | APPROVED 可进入后续名册；NEEDS_REVIEW 等待管理员；REJECTED 不能投票 |
   | 4 | 等待管理员冻结名册 | 冻结后每个 APPROVED 登记得到一个内部凭证；前端不会显示该凭证 |
-  | 5 | 在 VOTING_OPEN 期间选择一名候选人并确认 | 每个合资格登记最多提交一次 |
+  | 5 | 在 VOTING 期间选择一名候选人并确认 | 每个合资格登记最多提交一次 |
   | 6 | 复制回执 | 回执是随机 UUID，用于确认提交，不包含选择或身份信息 |
   | 7 | 打开结果页 | 可见内容由阶段、实时结果设置、管理员身份及是否已投决定 |
+
+  对外阶段统一为 `UPCOMING → REGISTRATION → REVIEW → VOTING → RESULTS`。登记结束后进入 REVIEW；名册未冻结或尚未到投票开始时间时仍留在 REVIEW。手机选举卡片保留 Upcoming、Register、Review、Voting、Results 五个短标题，操作按钮放在进度线之前。
+
+  投票阶段的详情页会说明不能投票的原因：访客先登录检查资格；PENDING／NEEDS_REVIEW 等待审核；REJECTED 表示登记未通过；未登记者提示登记已结束。访客可点 Sign in，登录后返回原选举。英文未登记状态显示 `Not registered`；选举页按当前语言显示日期，英文使用英文月份。
 
 * 身份登记说明
 
@@ -272,13 +288,44 @@
 
   | 阶段 | 操作 | 关键规则 |
   | --- | --- | --- |
-  | DRAFT | 创建选举 | 至少两名候选人；登记开始 < 登记结束 < 投票开始 < 投票结束；可选择是否显示实时票数 |
-  | DRAFT | 发布 | 发布后进入按时间计算的阶段；当前前端没有独立选举编辑页 |
-  | REGISTRATION_OPEN | 观察登记 | 规则引擎会自动判断可明确处理的证件 |
-  | REVIEWING | 筛选并复核 | 对 NEEDS_REVIEW／PENDING 登记选择 APPROVED 或 REJECTED，可写备注 |
-  | REVIEWING | 冻结名册 | 所有待处理登记必须先处理；重复点击安全返回既有冻结结果 |
-  | VOTING_OPEN | 查看进度或提前关闭 | 提前关闭不可逆；未投凭证计入结束后的弃权人数 |
-  | CLOSED | 查看最终结果 | 不支持重新开放 |
+  | UPCOMING（lifecycle=DRAFT） | 创建并发布 | 至少两名候选人；四个时间严格递增；可配置实时票数和胜出票数门槛；当前没有独立编辑页 |
+  | REGISTRATION | 观察登记 | 规则引擎会自动判断可明确处理的证件 |
+  | REVIEW | 筛选并复核 | 当前人工复核只接受 NEEDS_REVIEW，选择 APPROVED 或 REJECTED，可写备注；PENDING 同样会阻止冻结，但当前复核接口不接受它 |
+  | REVIEW | 冻结名册 | 所有待处理登记必须先处理；冻结后锁定审核；重复点击返回既有冻结结果；未到投票时间仍为 REVIEW |
+  | VOTING | 查看进度或提前关闭 | 未冻结名册不能进入本阶段；提前关闭不可逆 |
+  | RESULTS | 查看最终结果 | 不支持重新开放；按合资格人数计算投票率和弃权人数 |
+
+  `winning_threshold` 可留空；创建时范围为 1–1000000。候选人达到票数门槛后，提交接口在选票提交成功后尝试关闭选举。门槛关闭检查失败时不会撤销已提交选票，应刷新管理页确认状态。未达门槛不会取消正常结束后的最高票结果。零票无胜者，同票显示全部并列最高票候选人。
+
+  已结束示例的初始结果为合资格选民 24、选票 24、投票率 100%、弃权 0；候选人票数为 12、8、4。该数据用于核对展示，其他场次应按自身冻结名册和实际选票计算。
+
+* 当前选举页面
+
+  ![选举列表与五阶段进度](../images/guide-elections.png)
+
+  手机卡片保留五个短标题，主要操作在进度线之前。
+
+  <img src="../images/guide-elections-mobile.png" alt="390px 手机选举卡片：五阶段标题与参与按钮" width="390" />
+
+  ![已登记用户的选举详情与资格状态](../images/guide-election-detail.png)
+
+  ![访客详情：未登记状态、不能投票原因与登录入口](../images/guide-election-guest.png)
+
+  ![选民身份登记页面](../images/guide-election-register.png)
+
+  ![合资格选民的单选选票页面](../images/guide-election-ballot.png)
+
+  ![最终结果：24 名合资格选民、24 票、100% 投票率、0 弃权](../images/guide-election-results.png)
+
+* 当前选举管理页面
+
+  ![管理员选举列表与各阶段操作](../images/guide-admin-elections.png)
+
+  ![创建选举：时间窗口、候选人及胜出票数门槛](../images/guide-election-create.png)
+
+  ![选民登记筛选与人工复核入口](../images/guide-election-review.png)
+
+  ![选举管理详情与名册冻结状态](../images/guide-election-admin.png)
 
 ## 管理员使用
 
@@ -290,7 +337,7 @@
   | 投票详情 | 查看选项、规则与汇总 | 通用结果端点不返回草稿汇总 |
   | Audit | 300ms 自动防抖筛选事件、投票 ID、操作者用户名，支持一键清空筛选 | 包含创建、更新、发布、关闭、记名投票与冻结名册 |
   | Elections | 创建并查看所有阶段的选举 | 选举创建仅限管理员 |
-  | Election registrations | 按状态筛选并人工复核 | 名册冻结后禁止继续修改审核结果 |
+  | Election registrations | 按状态筛选；仅 NEEDS_REVIEW 可人工复核 | 名册冻结后禁止继续修改审核结果 |
   | 创建者工作区 | 管理管理员自己创建的投票 | 无权修改其他用户的投票 |
 
   审计不包含匿名逐票事件，也不提供个人选项明细。
@@ -310,7 +357,7 @@
   | 1 | 根目录 | 将PUBLIC_BASE_URL与ALLOWED_ORIGINS改为localhost:5173；配置本机数据库连接 |
   | 2 | 根目录 | `docker compose --env-file .env -f db/compose.yml up -d --wait postgres` |
   | 3 | backend | `uv sync --frozen`，再执行Alembic迁移 |
-  | 4 | backend | 按需seed-demo、ensure-demo-polls，然后启动Uvicorn 8000 |
+  | 4 | backend | 按需执行 seed-demo、seed-elections、ensure-demo-polls，然后启动 Uvicorn 8000 |
   | 5 | frontend | `npm ci`、`npm run dev -- --host localhost` |
   | 6 | 浏览器 | 访问localhost:5173 |
 
@@ -322,7 +369,7 @@
   | `docker compose restart` | 重启；已有投票不会重置 |
   | `docker compose down` | 停止并移除容器，保留命名数据卷 |
   | `docker compose down -v` | 删除该栈数据库卷，无法恢复未备份记录 |
-  | 修改演示开关为false | 不再补齐固定投票，不删除现有投票 |
+  | 修改演示开关为false | 不再补齐固定普通投票，不删除数据；启动仍执行演示账户与选举初始化 |
   | 新一轮演示 | 手动执行new-demo-round，每次增加四场，不是重置 |
 
 * 全栈 Compose 逻辑备份：在仓库根目录执行。输出含业务数据与私有访问密码，应作为本地备份保存，不提交Git。
@@ -338,7 +385,7 @@
 
   | 现象 | 检查／处理 |
   | --- | --- |
-  | 8188打不开 | Docker是否运行、端口是否被占用、docker compose ps |
+  | 本地页面打不开 | 当前 Compose 使用 80 端口，访问 http://localhost；检查 Docker、端口占用和 docker compose ps |
   | 前端可开但API报错 | `docker compose logs --tail=100 backend`；检查数据库与迁移 |
   | 本机后端无法连接库 | DATABASE_URL密码是否仍为change-me；与POSTGRES_PASSWORD保持一致 |
   | 403来源校验失败 | PUBLIC_BASE_URL、ALLOWED_ORIGINS与浏览器地址；Cookie及CSRF是否匹配 |
