@@ -72,7 +72,7 @@ describe("AdminAuditPage", () => {
 
     renderWithProviders(<AdminAuditPage />);
 
-    expect(screen.getByRole("heading", { name: "审计" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "审计日志" })).toBeInTheDocument();
     expect(screen.getByText("不可篡改记录")).toBeInTheDocument();
 
     // 点击发布筛选标签

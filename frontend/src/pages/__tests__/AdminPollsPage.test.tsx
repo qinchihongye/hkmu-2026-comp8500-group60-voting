@@ -79,7 +79,7 @@ describe("AdminPollsPage", () => {
 
     renderWithProviders(<AdminPollsPage />);
 
-    expect(screen.getByRole("heading", { name: "监督" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "投票监督" })).toBeInTheDocument();
     expect(screen.getByText("只读监督")).toBeInTheDocument();
 
     // 点击“进行中”状态标签
