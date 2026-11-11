@@ -1,18 +1,14 @@
+# VoteNow · Online Voting and Election System
 
+* **English** | [中文](README.zh-CN.md)
 
+* VoteNow is a course project by Group 60 for HKMU COMP8500SEF. It uses a React frontend and a separate Python backend. It supports everyday polls and course-demonstration elections with voter registration, eligibility review, roster freezing, and secret ballots.
 
-
-# VoteNow · 在线投票与选举系统
-
-* **中文** | [English](README.en.md)
-
-* VoteNow 是 HKMU COMP8500SEF 第 60 组课程项目，采用 React 前端与 Python 后端分离架构，支持日常投票及带选民登记、资格审核、名册冻结和秘密选票的课程演示选举。
-
-  普通注册用户即可创建投票，访客可直接参与公开匿名投票；私有投票通过分享链接和访问密码进入。项目提供 Docker Compose 启动方式，也支持前后端独立开发。
+  Registered users can create polls. Guests can participate directly in public anonymous polls, while private polls require a share link and an access password. The project supports Docker Compose deployment and separate frontend and backend development.
 
 ## Quick Start
 
-* 安装并启动 Docker，准备好项目 `.env` 配置后执行：
+* Install and start Docker, then prepare the project `.env` file before running:
 
   ```bash
   git clone https://github.com/qinchihongye/hkmu-2026-comp8500-group60-voting.git
@@ -20,50 +16,46 @@
   docker compose up -d
   ```
 
-  首次使用需要先将 `.env.example` 复制为 `.env` 并配置访问地址，再执行启动命令。各操作系统步骤、本地与服务器部署配置详见 [start_guide](#start_guide)。
+  On first use, copy `.env.example` to `.env` and set the public address before the start command. See [start_guide](#start_guide) for setup steps and local or server settings.
 
-## 页面效果与系统预览
+## System Showcase & UI Previews
 
-### 系统预览
+### System Preview
 
-* 投票、我的活动、选举及管理员页面总览。
+* An overview of polls, My Activity, elections and admin pages.
 
-  ![VoteNow 效果总览](docs/images/product-showcase.png)
+  ![VoteNow Product Showcase](docs/images/product-showcase.png)
 
-### 投票预览
+### Poll Preview
 
-* 从创建草稿、发布分享，到确认投票、查看结果和导出报告。
+* Create a draft, publish and share, confirm a vote, view results and export a report.
 
-  ![VoteNow 投票全过程](docs/template/images/poll-lifecycle-showcase.en.png)
+  ![VoteNow Poll Journey](docs/template/images/poll-lifecycle-showcase.en.png)
 
-### 选举预览
+### Election Preview
 
-* 展示预告、选民登记、资格审核、正式投票、结果公布五个阶段，以及选举结果导出。
+* Follow five stages—Upcoming, Registration, Review, Voting and Results—and export the election results.
 
-  ![VoteNow 选举全过程](docs/template/images/election-lifecycle-showcase.en.png)
+  ![VoteNow Election Journey](docs/template/images/election-lifecycle-showcase.en.png)
 
 ## start_guide
 
-* 推荐使用 Docker Compose。请根据部署方式选择一组步骤，并从上到下依次执行。已有项目代码或 `.env` 时，跳过对应的克隆或复制步骤，不要覆盖原配置。
+* Docker Compose is recommended. Select the instructions for your operating system and complete each step in order. If the project or `.env` already exists, skip the corresponding clone or copy step instead of overwriting it.
 
-### 本地启动
+### Windows
 
-* 当前 `compose.yml` 将前端映射到宿主机 **80** 端口，而 `.env.example` 仍使用旧的 **8188** 地址。复制为 `.env` 后，先将 `PUBLIC_BASE_URL` 改为 `http://localhost`，将 `ALLOWED_ORIGINS` 改为 `["http://localhost"]`，再启动。其余默认值可用于本机课程演示；可选调整见“启动前配置 `.env`”。
+* Complete these steps in PowerShell.
 
-* **Windows**
+  1. Install Git and Docker Desktop, enable the WSL 2 backend, and start Docker Desktop.
 
-  使用 PowerShell 执行以下步骤。
-
-  1. 安装 Git 和 Docker Desktop，启用并使用 WSL 2 后端，然后启动 Docker Desktop。
-
-  2. 首次使用时克隆仓库并进入项目根目录；已有代码时只需进入现有目录。
+  2. Clone the repository and enter its root directory. If the code already exists, enter the existing directory instead.
 
      ```powershell
      git clone https://github.com/qinchihongye/hkmu-2026-comp8500-group60-voting.git
      Set-Location hkmu-2026-comp8500-group60-voting
      ```
 
-  3. 检查 Git、Docker 和 Compose 是否可用。
+  3. Confirm that Git, Docker, and Compose are available.
 
      ```powershell
      git --version
@@ -71,45 +63,53 @@
      docker compose version
      ```
 
-  4. 首次配置时复制环境变量模板；已有 `.env` 时跳过复制。用编辑器将访问地址调整为上述 80 端口配置。
+  4. Copy the environment template on first setup. Skip this step when `.env` already exists.
 
      ```powershell
      Copy-Item .env.example .env
      ```
 
-  5. 构建并在后台启动数据库、后端和前端。
+  5. Open `.env` and set the database password, demo account passwords, private demo poll password, `ANON_VOTER_HMAC_KEY`, and `IDENTITY_FINGERPRINT_HMAC_KEY`. Do not commit `.env`.
+
+     ```powershell
+     notepad .env
+     ```
+
+     Keep `PUBLIC_BASE_URL=http://localhost:8188`, `ALLOWED_ORIGINS=["http://localhost:8188"]`, and `COOKIE_SECURE=false` for local Docker. Database usernames, passwords, and database names in connection URLs must match the PostgreSQL settings.
+
+  6. Build and start the database, backend, and frontend in the background.
 
      ```powershell
      docker compose up -d --build
      ```
 
-  6. 检查容器状态。`postgres`、`backend` 和 `web` 应处于运行状态，数据库应通过健康检查。
+  7. Check the containers. `postgres`, `backend`, and `web` should be running, and the database should pass its health check.
 
      ```powershell
      docker compose ps
      ```
 
-  7. 打开系统；若页面暂时不可用，再查看后端启动日志。
+  8. Open VoteNow. If the page is not ready, inspect the backend startup log.
 
      ```powershell
-     Start-Process http://localhost
+     Start-Process http://localhost:8188
      docker compose logs --tail=100 backend
      ```
 
-* **macOS**
+### macOS
 
-  使用 Terminal 执行以下步骤。Apple Silicon 与 Intel Mac 使用相同的 Compose 命令。
+* Complete these steps in Terminal. Apple Silicon and Intel Macs use the same Compose commands.
 
-  1. 安装 Git 和 Docker Desktop，然后启动 Docker Desktop。
+  1. Install Git and Docker Desktop, then start Docker Desktop.
 
-  2. 首次使用时克隆仓库并进入项目根目录；已有代码时只需进入现有目录。
+  2. Clone the repository and enter its root directory. If the code already exists, enter the existing directory instead.
 
      ```bash
      git clone https://github.com/qinchihongye/hkmu-2026-comp8500-group60-voting.git
      cd hkmu-2026-comp8500-group60-voting
      ```
 
-  3. 检查 Git、Docker 和 Compose 是否可用。
+  3. Confirm that Git, Docker, and Compose are available.
 
      ```bash
      git --version
@@ -117,49 +117,53 @@
      docker compose version
      ```
 
-  4. 首次配置时复制环境变量模板；已有 `.env` 时跳过复制。用编辑器将访问地址调整为上述 80 端口配置。
+  4. Copy the environment template on first setup. Skip this step when `.env` already exists.
 
      ```bash
      cp .env.example .env
      ```
 
-  5. 构建并在后台启动数据库、后端和前端。
+  5. Open `.env` and set the database password, demo account passwords, private demo poll password, `ANON_VOTER_HMAC_KEY`, and `IDENTITY_FINGERPRINT_HMAC_KEY`. Do not commit `.env`.
+
+     ```bash
+     open -e .env
+     ```
+
+     Keep `PUBLIC_BASE_URL=http://localhost:8188`, `ALLOWED_ORIGINS=["http://localhost:8188"]`, and `COOKIE_SECURE=false` for local Docker. Database usernames, passwords, and database names in connection URLs must match the PostgreSQL settings.
+
+  6. Build and start the database, backend, and frontend in the background.
 
      ```bash
      docker compose up -d --build
      ```
 
-  6. 检查容器状态。`postgres`、`backend` 和 `web` 应处于运行状态，数据库应通过健康检查。
+  7. Check the containers. `postgres`, `backend`, and `web` should be running, and the database should pass its health check.
 
      ```bash
      docker compose ps
      ```
 
-  7. 打开系统；若页面暂时不可用，再查看后端启动日志。
+  8. Open VoteNow. If the page is not ready, inspect the backend startup log.
 
      ```bash
-     open http://localhost
+     open http://localhost:8188
      docker compose logs --tail=100 backend
      ```
 
-### 服务器启动
+### Linux
 
-* Linux 服务器不能直接使用 `.env.example` 中面向本机的默认地址和示例密钥。完成复制后，必须先按照本节后的“启动前配置 `.env`”修改服务器必填项，再执行启动命令。
+* Complete these steps in a terminal.
 
-* **Linux**
+  1. Follow the official instructions for your distribution to install Git, Docker Engine, and the Docker Compose plugin, then start Docker.
 
-  使用终端执行以下步骤。
-
-  1. 按当前发行版的官方安装说明安装 Git、Docker Engine 和 Docker Compose 插件，并启动 Docker 服务。
-
-  2. 首次使用时克隆仓库并进入项目根目录；已有代码时只需进入现有目录。
+  2. Clone the repository and enter its root directory. If the code already exists, enter the existing directory instead.
 
      ```bash
      git clone https://github.com/qinchihongye/hkmu-2026-comp8500-group60-voting.git
      cd hkmu-2026-comp8500-group60-voting
      ```
 
-  3. 检查 Git、Docker 和 Compose 是否可用。
+  3. Confirm that Git, Docker, and Compose are available.
 
      ```bash
      git --version
@@ -167,314 +171,215 @@
      docker compose version
      ```
 
-     如果 Docker 返回权限错误，请按 Docker 官方说明配置当前用户的 Docker 用户组；只有在系统策略允许时才使用 `sudo docker compose`。
+     If Docker reports a permission error, configure the current user's Docker group according to the official Docker guide. Use `sudo docker compose` only when permitted by system policy.
 
-  4. 首次配置时复制环境变量模板；已有 `.env` 时跳过本步骤。
+  4. Copy the environment template on first setup. Skip this step when `.env` already exists.
 
      ```bash
      cp .env.example .env
      ```
 
-  5. 打开 `.env`，按照下面“启动前配置 `.env`”中的服务器清单完成全部必改项。不要将 `.env` 提交到 Git。
+  5. Open `.env` and set the database password, demo account passwords, private demo poll password, `ANON_VOTER_HMAC_KEY`, and `IDENTITY_FINGERPRINT_HMAC_KEY`. Do not commit `.env`.
 
      ```bash
      ${EDITOR:-vi} .env
      ```
 
-  6. 构建并在后台启动数据库、后端和前端。
+     Keep `PUBLIC_BASE_URL=http://localhost:8188`, `ALLOWED_ORIGINS=["http://localhost:8188"]`, and `COOKIE_SECURE=false` for local Docker. Database usernames, passwords, and database names in connection URLs must match the PostgreSQL settings.
+
+  6. Build and start the database, backend, and frontend in the background.
 
      ```bash
      docker compose up -d --build
      ```
 
-  7. 检查容器状态。`postgres`、`backend` 和 `web` 应处于运行状态，数据库应通过健康检查。
+  7. Check the containers. `postgres`, `backend`, and `web` should be running, and the database should pass its health check.
 
      ```bash
      docker compose ps
      ```
 
-  8. 在浏览器打开 `.env` 中配置的 `PUBLIC_BASE_URL`。若页面暂时不可用，再查看后端启动日志。
+  8. Open [http://localhost:8188](http://localhost:8188) in a browser. If the page is not ready, inspect the backend startup log.
 
      ```bash
      docker compose logs --tail=100 backend
      ```
 
-### 启动前配置 `.env`
+* On all three platforms, first startup applies database migrations and creates missing demo accounts. When poll initialization is enabled, it also creates missing predefined polls. A healthy database does not mean backend migrations have finished; check the backend logs if the application is not yet available.
 
-* 无论使用哪种方式，都需要将项目根目录的 `.env.example` 复制为 `.env`。不要直接修改 `.env.example`，也不要将 `.env` 提交到 Git。
+* Demo accounts
 
-* **本地部署**
-
-  当前全栈 Compose 使用 `80:80`，必须将模板中的两项地址对齐为 `PUBLIC_BASE_URL=http://localhost`、`ALLOWED_ORIGINS=["http://localhost"]`；`COOKIE_SECURE=false` 保持不变。其余变量可选修改。若自行改用 `8188:80`，则两项地址都应包含 `:8188`。这里的默认值说明仅针对全栈 Docker；独立开发另见“本地开发”。
-
-  | 变量 | 何时需要修改 |
-  | --- | --- |
-  | `POSTGRES_PASSWORD`、`POSTGRES_USER`、`POSTGRES_DB` | 需要使用自己的本地数据库凭据或库名时修改。应在首次创建数据库卷前确定；已有数据卷时，只改 `.env` 不会自动修改 PostgreSQL 内已有账户或密码。 |
-  | `ANON_VOTER_HMAC_KEY`、`IDENTITY_FINGERPRINT_HMAC_KEY` | 需要使用自己的本地密钥时修改。两个值都应至少 32 字节且不能相同。 |
-  | `DEMO_ADMIN_PASSWORD`、`DEMO_USER_PASSWORD`、`DEMO_VOTER_PASSWORD`、`DEMO_POLL_PASSWORD` | 需要更换本地演示账户或私密演示投票密码时修改。 |
-  | `DEMO_POLLS_ENABLED` | 默认 `true`，控制固定普通投票补齐和目录接口；设为 `false` 不删除已有数据，也不停止当前启动脚本创建演示账户与示例选举。 |
-  | `DATABASE_URL`、`TEST_DATABASE_URL`、`TEST_POSTGRES_DB` | 只有前后端独立开发、连接外部数据库或运行数据库测试时才需要调整；测试库必须与开发库不同。 |
-  | `SESSION_TTL_HOURS`、`GUEST_TTL_DAYS`、`POLL_ACCESS_TTL_MINUTES` | 需要改变登录会话、访客身份或私密投票授权有效期时修改。 |
-  | `POLL_TEXT_PARSE_ENABLED`、`OPENAI_API_KEY`、`OPENAI_BASE_URL`、`POLL_TEXT_PARSE_MODEL` 及其他 `POLL_TEXT_PARSE_*` | 智能填写默认关闭；需要启用模型识别时才配置。不启用时保持默认空值或 `false`。 |
-  | `VITE_API_PROXY` | 只供 Vite 独立开发代理使用；全栈 Compose 不需要修改。 |
-
-* **服务器部署必须修改**
-
-  | 变量 | 必须执行的操作 |
-  | --- | --- |
-  | `POSTGRES_PASSWORD` | 替换默认值，使用强且唯一的密码。当前 Compose 会把它直接放入数据库连接 URL，建议只使用字母、数字、`_`、`-` 等 URL 安全字符。应在首次创建数据库卷前确定。 |
-  | `ANON_VOTER_HMAC_KEY` | 替换示例值，至少 32 字节，用于匿名投票防重复。 |
-  | `IDENTITY_FINGERPRINT_HMAC_KEY` | 替换示例值，至少 32 字节，并且必须与 `ANON_VOTER_HMAC_KEY` 不同。 |
-  | `PUBLIC_BASE_URL` | 改成浏览器实际访问地址，例如 `https://vote.example.com`；不能保留 `http://localhost:8188`，否则生成的分享链接会指向错误地址。 |
-  | `ALLOWED_ORIGINS` | 改成浏览器实际来源，不能保留本机地址。必须包含协议；使用非默认端口时还要包含端口。保持 JSON 数组格式，例如 `["https://vote.example.com"]`。 |
-  | `COOKIE_SECURE` | 按照实际协议设置：使用 HTTPS 时设为 `true`；直接使用 HTTP 时设为 `false`，否则浏览器不会发送登录 Cookie。 |
-  | `DEMO_ADMIN_PASSWORD`、`DEMO_USER_PASSWORD`、`DEMO_VOTER_PASSWORD` | 必须更换；当前启动脚本无条件执行 `seed-demo`，不受 `DEMO_POLLS_ENABLED` 控制。已有账户需单独更新数据库中的密码，环境变量不会重置旧密码。 |
-  | `DEMO_POLL_PASSWORD` | 服务器保留 `DEMO_POLLS_ENABLED=true` 时必须更换，用于新建固定私有投票。 |
-
-  服务器上的其他变量可根据需要修改：`DEMO_POLLS_ENABLED` 推荐设为 `false`；`POSTGRES_USER`、`POSTGRES_DB`、会话有效期和智能填写配置均可按实际需求调整。全栈 Compose 通常不需要修改 `DATABASE_URL`、`TEST_DATABASE_URL` 或 `VITE_API_PROXY`。
-
-* 服务器部署时，可用以下命令生成两个 HMAC 密钥；本地部署仅在希望替换模板密钥时使用。命令必须执行两次并填写两个不同结果。服务器部署后请安全备份并保持密钥稳定，更换密钥会影响已有匿名身份和选民身份指纹的匹配。
-
-  Windows PowerShell：
-
-  ```powershell
-  $bytes = New-Object byte[] 32
-  $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
-  $rng.GetBytes($bytes)
-  [BitConverter]::ToString($bytes).Replace('-', '').ToLower()
-  $rng.Dispose()
-  ```
-
-  macOS 或 Linux：
-
-  ```bash
-  openssl rand -hex 32
-  ```
-
-* 服务器通过域名和 HTTPS 对外提供服务时，至少应改成类似以下配置。反向代理负责 HTTPS 时，`PUBLIC_BASE_URL` 和 `ALLOWED_ORIGINS` 仍填写浏览器看到的 `https://` 地址。
-
-  ```dotenv
-  POSTGRES_PASSWORD=<strong-url-safe-password>
-  ANON_VOTER_HMAC_KEY=<first-64-character-hex-key>
-  IDENTITY_FINGERPRINT_HMAC_KEY=<different-64-character-hex-key>
-  DEMO_POLLS_ENABLED=false
-  PUBLIC_BASE_URL=https://vote.example.com
-  ALLOWED_ORIGINS=["https://vote.example.com"]
-  COOKIE_SECURE=true
-  ```
-
-  如果按当前 Compose 通过 `http://服务器IP` 临时访问，则使用实际 IP，并保持 `COOKIE_SECURE=false`：
-
-  ```dotenv
-  PUBLIC_BASE_URL=http://203.0.113.10
-  ALLOWED_ORIGINS=["http://203.0.113.10"]
-  COOKIE_SECURE=false
-  ```
-
-  当前 Compose 占用宿主机 TCP `80`。若宿主机已有 Nginx、Caddy 等反向代理，应先调整 web 的宿主机端口映射，并将代理转发到该端口；浏览器访问地址仍以实际域名和协议为准。PostgreSQL 仅绑定 `127.0.0.1:5432`。
-
-* 使用根目录全栈 `compose.yml` 时，后端容器会根据 `POSTGRES_USER`、`POSTGRES_PASSWORD` 和 `POSTGRES_DB` 自动生成容器内 `DATABASE_URL`，不要把其中的主机名改成公网 IP。只有使用下文的前后端独立开发方式时，才需要让根目录中的 `DATABASE_URL`、`TEST_DATABASE_URL` 与实际数据库账户、密码、库名和端口保持一致；测试库不能与开发库相同。
-
-* 本地和服务器启动依次执行数据库迁移、`seed-demo`、`seed-elections`，最后在 `DEMO_POLLS_ENABLED=true` 时补齐固定普通投票。当前选举种子还会创建带源码内置演示密码的样本选民，关闭普通投票开关不能禁用它；对外部署前需调整初始化流程并处理已有样本账户。数据库健康检查通过不代表后端迁移已经完成，页面暂不可用时可查看后端日志。
-
-* 演示账户
-
-  | 用户名 | 用途 | 密码来源 |
+  | Username | Purpose | Password setting |
   | --- | --- | --- |
-  | `admin` | 管理员，查看全部投票与审计记录 | `DEMO_ADMIN_PASSWORD` |
-  | `demo_user` | 普通创建者，拥有初始化投票 | `DEMO_USER_PASSWORD` |
-  | `demo_voter` | 普通参与者，用于体验记名投票 | `DEMO_VOTER_PASSWORD` |
+  | `admin` | Administrator; view all polls and audit records | `DEMO_ADMIN_PASSWORD` |
+  | `demo_user` | Regular creator who owns the initialized polls | `DEMO_USER_PASSWORD` |
+  | `demo_voter` | Regular participant for trying named voting | `DEMO_VOTER_PASSWORD` |
 
-  密码以自己 `.env` 中的设置为准。初始化不会重置已有账户密码；修改环境变量后重启，也不会自动修改数据库中的旧密码。初始化私有投票的密码来自 `DEMO_POLL_PASSWORD`。
+  Use the passwords configured in your own `.env`. Initialization does not reset existing account passwords; changing environment variables and restarting will not update passwords already stored in the database. Private demo polls use `DEMO_POLL_PASSWORD` during initialization.
 
-* 常用维护命令
+* Common maintenance commands
 
   ```bash
-  # 停止服务，保留数据库卷
+  # Stop services while retaining the database volume
   docker compose down
   
-  # 修改代码或依赖后重新构建
+  # Rebuild after changing code or dependencies
   docker compose up -d --build
   
-  # 查看后端运行日志
+  # Follow backend logs
   docker compose logs -f backend
   ```
 
-  全栈 Compose 与下文的独立数据库模式均使用宿主机 5432 端口，不应同时启动两套数据库服务。
+  Both the full-stack Compose setup and the standalone database setup below use host port 5432. Do not run both database services at the same time.
 
-## 主要功能
+## Features
 
-* 投票创建与参与
+* Poll creation and participation
 
-  | 功能 | 说明 |
+  | Feature | Description |
   | --- | --- |
-  | 账户与访客 | 支持注册、登录和访客浏览，创建投票需要登录 |
-  | 记名／匿名 | 记名投票要求登录；匿名投票使用浏览器凭据防重复 |
-  | 公开／私有 | 公开投票进入公共列表；私有投票通过链接与密码访问 |
-  | 单选／多选 | 至少三个有效选项时可启用多选 |
-  | 选票上限 | 可设置整场选票提交次数上限，达到上限后关闭 |
-  | 时间安排 | 支持开始、结束时间及发布后的排期状态 |
-  | 结果可见性 | 创建者可决定参与者能否在投票进行中查看汇总 |
-  | 分享 | 支持分享链接、邀请文本与二维码 |
-  | 创建者工作区 | 管理自己的草稿、发布投票、关闭投票和查看汇总 |
-  | 我的活动 | 在 My Activity 查看已创建投票及本人参与记录；“删除记录”仅在当前浏览器隐藏 |
-  | 管理员 | 查看全部投票及结果，并查询审计事件 |
-  | 智能填写（可选） | 从一段文字提取标题、选项及明确给出的部分设置，填入表单后可继续编辑 |
+  | Accounts and guests | Registration, login, and guest browsing; creating polls requires login |
+  | Named / anonymous | Named polls require login; anonymous polls use browser credentials to prevent duplicate submissions |
+  | Public / private | Public polls appear in the public list; private polls require a link and password |
+  | Single / multiple choice | Multiple choice can be enabled with at least three valid options |
+  | Ballot limit | Optional cap on total ballot submissions; reaching the cap closes the poll |
+  | Scheduling | Start and end times, including a scheduled state after publication |
+  | Result visibility | Creators decide whether participants can view aggregate results while voting is open |
+  | Sharing | Share links, invitation text, and QR codes |
+  | Creator workspace | Manage drafts, publish and close polls, and view aggregate results |
+  | Voting history | Logged-in users can view their named voting records |
+  | Administration | View all polls and results, and inspect audit events |
+  | Smart fill (optional) | Extract a title, options, and explicitly stated settings from text; review and edit the populated form |
 
-* 选举系统（B2：身份链与选票表分离）
+* Election system (B2: identity chain separated from ballot records)
 
-  | 功能 | 说明 |
+  | Feature | Description |
   | --- | --- |
-  | B2 数据边界 | 选票表不保存 user_id、登记 ID、凭证 ID、IP 或 User-Agent；身份链与选票表无外键互联 |
-  | 单事务原子核销 | 资格凭据消费（ISSUED → CONSUMED）与选票写入在同一数据库事务中完成 |
-  | 选民名册冻结 | 管理员在登记截止后显式冻结名册，冻结后不可变更，批量生成一次性投票凭证 |
-  | 身份资格登记 | 支持居民身份证、港澳通行证和学生证；完整号码不持久化，仅保存独立密钥 HMAC-SHA-256 指纹与尾号 |
-  | 课程演示审核 | 本地格式／校验规则引擎自动判断或转人工复核；不连接政府、院校或第三方身份库 |
-  | 实时结果矩阵 | 开启时管理员及已投选民可看候选人票数；关闭时管理员在投票期只看规模数据 |
-  | 弃权计算 | 结束后计算系统弃权人数：冻结名册的合资格人数减已投选票数 |
-  | 提交确认 | 选民二次确认后单选提交，返回随机 UUID 回执；回执不是密码学可验证证明 |
-  | 五阶段展示 | 即将开放、资格登记、名册审核、正式投票、结果公示；未冻结名册时不能进入投票阶段 |
-  | 胜出票数门槛 | 可选设置 `winning_threshold`；候选人达到门槛后，提交接口尝试提前关闭选举 |
+  | B2 data boundary | Ballot records contain no user ID, registration ID, credential ID, IP address, or User-Agent, and have no foreign-key link to the identity chain |
+  | Atomic credential consumption | The ISSUED → CONSUMED transition and ballot insertion occur in one database transaction |
+  | Roster freezing | Administrators explicitly freeze the roster after registration closes and issue one internal credential for every approved registration |
+  | Voter registration | Supports resident identity cards, Hong Kong/Macau permits, and student IDs; full numbers are not persisted, only a keyed HMAC-SHA-256 fingerprint and suffix |
+  | Course-demo review | A local format and checksum rules engine approves, rejects, or sends registrations for manual review; it does not connect to government, university, or third-party identity databases |
+  | Live-result matrix | When enabled, administrators and voters who have submitted a ballot can see candidate totals; when disabled, administrators see scale statistics only while voting is open |
+  | Abstention calculation | After closing, system abstentions equal the frozen eligible-voter count minus submitted ballots |
+  | Submission receipt | Voters confirm one candidate and receive a random UUID receipt; it is not a cryptographically verifiable proof |
 
-* 页面支持英文、简体中文和繁体中文，语言选择保存在当前浏览器。投票管理与参与记录入口合并为 My Activity；选举列表内提供“我的登记”视图。
+## Workflow and Voting Rules
 
-## 使用流程与投票规则
+* For detailed steps, role permissions, result exports, and troubleshooting, see the [User Guide (Chinese)](docs/technical/user-guide.md).
 
-* 详细的操作步骤、角色权限、结果导出和常见问题请看 [详细使用文档](docs/technical/user-guide.md)。
+* End-to-End System Workflow Diagram
 
-* 全流程业务链路与系统架构图
+  ![VoteNow System Workflow](docs/images/system-workflow.png)
 
-  ![VoteNow 端到端使用流程图](docs/images/system-workflow.png)
-
-* 基本流程
+* Basic workflow
 
   ```mermaid
   flowchart LR
-    A[01. 身份接入<br/>访客/用户/管理员] --> B[02. 投票发起<br/>表单配置 / ✨智能解析]
-    B --> C[03. 策略排期<br/>记名/匿名 · 公开/私有 · 选票上限]
-    C --> D[04. 全渠道分发<br/>专属短链 / 邀请文本 / 二维码]
-    D --> E[05. 选票提交<br/>左对齐指示器 · 事务排他锁防刷]
-    E --> F[06. 结果与治理<br/>Donut环形图 · Excel导出 · 审计日志]
+    A[01. Identity Access<br/>Guest/User/Admin] --> B[02. Poll Creation<br/>Manual Form / ✨Smart Fill]
+    B --> C[03. Policy & Schedule<br/>Named/Anon · Public/Private · Cap]
+    C --> D[04. Multi-Channel Share<br/>Link / Text / QR Code]
+    D --> E[05. Ballot Submission<br/>Left-aligned UI · Atomic Lock]
+    E --> F[06. Analytics & Audit<br/>Donut Chart · Excel · Audit Trail]
   ```
 
-  1. **注册或登录**：在 Create poll 中填写标题、选项和时间，或使用 Smart-Fast Fill 粘贴文本并通过 JSON 预览对比一键回填。
-  2. **规则策略配置**：选择记名／匿名、公开／私有、选票上限及结果可见性；私有投票设置访问密码。
-  3. **保存与发布**：保存草稿，在创建者工作区核对后一键发布（开始时间在未来则自动排期）。
-  4. **全渠道分享**：复制短链、标准邀请文本或下载动态二维码；私有投票向参与者提供密码。
-  5. **安全参与投票**：参与者在时间窗口内单选或多选提交，系统进行并发事务控制与上限自动结票。
-  6. **数据分析与治理**：通过 Donut 环形图与微进度条实时分析，支持导出 Excel 或 PNG 分享海报；创建者可提前关闭，管理员可全场监督与审计。
+  1. **Register or log in**: Enter title, options, and schedule in Create poll, or use Smart-Fast Fill to parse raw text and preview JSON before applying.
+  2. **Configure policies**: Choose named or anonymous voting, public or private visibility, ballot limit, and result visibility. Set an access password for private polls.
+  3. **Save and publish**: Save a draft, review it, and publish it from the creator workspace (polls starting in the future are scheduled automatically).
+  4. **Share across channels**: Share the dedicated link, invitation text, or QR code. For private polls, provide the access password.
+  5. **Participate safely**: Participants vote with single/multiple selection during the window; transactions enforce concurrency and auto-closure on ballot cap.
+  6. **Analyze and govern**: Review results via Donut chart and micro-bars, export Excel or PNG share cards, close early with confirmation, or audit as admin.
 
-* 关键规则
+* Key rules
 
-  | 规则 | 当前行为 |
+  | Rule | Current behavior |
   | --- | --- |
-  | 记名投票 | 同一账号在同一场投票中只能提交一次；当前不支持每天重新投一次 |
-  | 匿名投票 | 同一浏览器凭据在同一场投票中只能提交一次；清除凭据或更换浏览器可能再次参与，不能保证严格的一人一票 |
-  | 多选 | 一次可选多个选项，但仍只算一份选票，不代表可重复提交 |
-  | 选票上限 | 限制整场接收的选票数量，而不是所有选项的得票总和；达到上限的提交与关闭在同一事务中处理 |
-  | 结果百分比 | 按各选项获得的选择次数占总选择次数计算；多选场景的总选择次数可大于选票数 |
-  | 进行中查看结果 | 表示允许参与者打开汇总结果，不等于页面持续自动刷新 |
-  | 创建者与管理员 | 按权限查看汇总；管理员监督页面不赋予修改他人投票的能力 |
-  | 私有投票 | 不进入公共列表，分享链接不包含访问密码；解锁私有投票不能代替记名投票所需的登录 |
-  | 历史记录 | 当前服务按本人 `voter_id` 查询，含登录状态下提交并关联账户的匿名票；纯访客匿名票没有账户历史。普通匿名票可关联账户，不具备选举 B2 的身份链分离保证 |
-  | 时间 | 创建页面按香港时间填写，发布后按时间窗口和关闭状态决定是否可投票 |
+  | Named voting | Each account can submit once per poll; daily repeat voting is not currently supported |
+  | Anonymous voting | Each browser credential can submit once per poll; clearing credentials or switching browsers may allow another submission, so strict one-person-one-vote is not guaranteed |
+  | Multiple choice | Selecting multiple options still counts as one ballot and does not permit repeated submissions |
+  | Ballot limit | Caps the number of ballots received, not the sum of option votes; the submission reaching the cap and poll closure occur in the same transaction |
+  | Result percentages | Each option's selections are divided by the total number of selections; multiple-choice polls may have more selections than ballots |
+  | Results while open | Participants may open aggregate results; this does not imply continuous automatic refresh |
+  | Creators and administrators | View aggregate results according to their permissions; administrator oversight does not grant permission to edit other users' polls |
+  | Private polls | Excluded from the public list; share links do not contain passwords. Unlocking a private poll does not replace the login required for named voting |
+  | History | Shows named voting records, excluding anonymous votes |
+  | Time | The creation form uses Hong Kong time; after publication, the voting window and closure state determine whether ballots are accepted |
 
-* 选举流程
+## Initialized Polls and Data Persistence
 
-  ```mermaid
-  flowchart LR
-    Create[管理员创建并发布] --> Register[选民登记]
-    Register --> Review[规则检查／人工复核]
-    Review --> Freeze[冻结名册并签发内部凭证]
-    Freeze --> Vote[合资格选民单选投票]
-    Vote --> Result[按实时规则或结束后查看结果]
-  ```
+* For table purposes, fields, complete DDL, and an ER diagram, see the [Database Design (Chinese)](docs/technical/database-design.md).
 
-  | 角色 | 当前能力 |
+* The default Compose configuration initializes 38 predefined polls covering voter identity, visibility, ballot limits, single and multiple choice, result visibility, and lifecycle states.
+
+  These polls belong to regular accounts, are stored in the database, and follow normal voting rules. Public polls appear alongside other public polls; private polls are accessed through share links. Overview has no separate demo-poll category.
+
+  Initialization only creates missing predefined polls. It does not overwrite existing titles, passwords, schedules, ballots, share codes, or closure states. Rebuilding images does not reset full or closed polls, and expired polls do not automatically reopen. Set `DEMO_POLLS_ENABLED=false` to stop filling in missing predefined polls at startup; this does not delete existing data.
+
+* Data lifecycle
+
+  | Operation | Data retention |
   | --- | --- |
-  | 访客 | 浏览已发布选举、候选人和结束后的最终结果 |
-  | 登录用户 | 在登记窗口提交身份信息；获批且名册冻结后投一票；查看自己的登记历史 |
-  | 管理员 | 创建／发布选举、复核登记、冻结名册、查看规模数据与提前关闭 |
+  | `docker compose up -d --build` | Retains the existing database volume |
+  | `docker compose restart` | Retains data |
+  | `docker compose down`, then start again | Retains data |
+  | `docker compose down -v` | Deletes this Compose project's database volume and its data |
 
-  选举时间必须满足“登记开始 < 登记结束 < 投票开始 < 投票结束”。名册冻结前必须处理全部待审核登记；投票结束前未消费的合资格凭证计入系统计算的弃权人数。完整操作与结果权限矩阵见 [详细使用文档](docs/technical/user-guide.md#选举)。
+  Starting again after deleting the volume recreates only the initialization baseline, not previous voting records. Back up any data you need to keep. This behavior applies to the root full-stack Compose setup. The standalone database configuration uses the `db/data/` bind mount; the two setups do not automatically share data.
 
-## 初始化投票与数据保存
-
-* 详细的数据表用途、字段、完整建表语句和 ER 图请看 [数据库设计文档](docs/technical/database-design.md)。
-
-* 默认 Compose 配置启用固定投票初始化，共 38 场，覆盖身份方式、可见性、选票限额、单／多选、结果可见性和不同生命周期状态。
-
-  这些投票由普通账户创建，保存在数据库中，按普通投票规则使用。公共场次与其他公开投票一起展示，私有场次通过分享链接访问；Overview 不另设“示例投票”分区。
-
-  初始化只补齐缺失的固定场次，不覆盖已有标题、密码、时间、选票、分享码或关闭状态。重建镜像不会重置已投满或已关闭的投票，自然到期的投票也不会自动重新开放。设置 `DEMO_POLLS_ENABLED=false` 可停止启动时补齐固定投票，但不会删除已有数据。
-
-* `seed-elections` 单独补齐四场不同阶段的示例选举与样本选民，不受 `DEMO_POLLS_ENABLED` 控制。已结束示例的基线为合资格选民 24 人、选票 24 份、投票率 100%、弃权 0 人；初始化包含对特定旧示例人数不一致的修复，不会普遍重置现有选举。
-
-* 数据生命周期
-
-  | 操作 | 数据是否保留 |
-  | --- | --- |
-  | `docker compose up -d --build` | 保留现有数据库卷 |
-  | `docker compose restart` | 保留 |
-  | `docker compose down` 后再次启动 | 保留 |
-  | `docker compose down -v` | 删除该 Compose 项目的数据库卷及其数据 |
-
-  删除卷后再次启动只能重建初始化基线，不能恢复之前的投票记录。需要保留的数据应单独备份。以上说明针对根目录全栈 Compose；独立数据库配置使用 `db/data/` 绑定目录，两种模式不自动共享数据。
-
-* 可选：手动新增一轮四场投票，不修改已有场次。该命令每次都会新增数据，不属于普通启动必需步骤。
+* Optional: manually add a new round of four polls without changing existing polls. Each invocation adds new data; this is not required for normal startup.
 
   ```bash
   docker compose exec backend /app/backend/.venv/bin/python -m src.main.python.cli new-demo-round
   ```
 
-## 技术栈与目录
+## Technology and Structure
 
-* 技术组成
+* Technology stack
 
-  | 层级 | 技术 |
+  | Layer | Technologies |
   | --- | --- |
-  | 前端 | React 19、TypeScript、Vite 8、React Router |
-  | 后端 | Python 3.12、FastAPI、Pydantic |
-  | 数据访问 | SQLAlchemy 2、Psycopg、Alembic |
-  | 数据库 | PostgreSQL 17 |
-  | 部署 | Docker Compose、Nginx |
-  | 可选文字识别 | OpenAI Python SDK，支持配置兼容服务地址 |
-  | 测试与检查 | Pytest、Ruff、Vitest、Testing Library、ESLint、TypeScript |
+  | Frontend | React 19, TypeScript, Vite 8, React Router |
+  | Backend | Python 3.12, FastAPI, Pydantic |
+  | Data access | SQLAlchemy 2, Psycopg, Alembic |
+  | Database | PostgreSQL 17 |
+  | Deployment | Docker Compose, Nginx |
+  | Optional text parsing | OpenAI Python SDK with a configurable compatible service URL |
+  | Testing and checks | Pytest, Ruff, Vitest, Testing Library, ESLint, TypeScript |
 
-  前端的路由、组件和状态设计请看 [前端设计文档](docs/technical/frontend-design.md)；后端的模块、鉴权和事务设计请看 [后端设计文档](docs/technical/backend-design.md)。
+  See the [Frontend Design (Chinese)](docs/technical/frontend-design.md) for routing, components, and state management, and the [Backend Design (Chinese)](docs/technical/backend-design.md) for modules, authentication, and transactions.
 
-* 主要目录
+* Main directories
 
   ```text
   .
-  ├── frontend/                 # React 前端
+  ├── frontend/                 # React frontend
   │   └── src/
-  │       ├── pages/            # 页面
-  │       ├── features/         # 投票、账户、创建者等功能
-  │       ├── layouts/          # 导航与公共布局
-  │       ├── i18n/             # 界面语言
-  │       └── lib/              # API 类型与公共工具
-  ├── backend/                  # Python 后端
+  │       ├── pages/            # Pages
+  │       ├── features/         # Poll, account, and creator features
+  │       ├── layouts/          # Navigation and shared layouts
+  │       ├── i18n/             # Interface languages
+  │       └── lib/              # API types and shared utilities
+  ├── backend/                  # Python backend
   │   ├── src/main/python/
-  │   │   ├── api/              # 路由与依赖
-  │   │   ├── algorithms/       # 业务逻辑
-  │   │   ├── fileds/           # 请求、响应和上下文模型
-  │   │   ├── database/         # 数据模型与数据库访问
-  │   │   ├── config/           # 配置
-  │   │   └── external_services/ # 外部服务调用
-  │   └── tests/                # 后端测试
-  ├── db/                       # 独立开发与测试数据库配置
-  ├── deploy/                   # Nginx 部署配置
-  ├── docs/                     # 项目文档与页面截图
-  ├── compose.yml               # 全栈启动配置
-  └── .env.example              # 环境变量模板
+  │   │   ├── api/              # Routes and dependencies
+  │   │   ├── algorithms/       # Business logic
+  │   │   ├── fileds/           # Request, response, and context models
+  │   │   ├── database/         # Data models and database access
+  │   │   ├── config/           # Configuration
+  │   │   └── external_services/ # External service calls
+  │   └── tests/                # Backend tests
+  ├── db/                       # Standalone development and test databases
+  ├── deploy/                   # Nginx deployment configuration
+  ├── docs/                     # Documentation and screenshots
+  ├── compose.yml               # Full-stack startup configuration
+  └── .env.example              # Environment variable template
   ```
 
-  `fileds` 沿用当前代码中的目录名称。`references/` 是本地参考资料目录，不参与应用运行或正常启动。
+  `fileds` retains the directory name used in the current codebase. `references/` contains local reference material and is not required to run or start the application.
 
-## 本地开发
+## Local Development
 
-* 环境准备：Python 3.12、uv，以及与 Vite 8 兼容的 Node.js 22.12+ 和 npm。Docker 构建使用 Node.js 22。先准备根目录 `.env`，再切换以下配置：
+* Prerequisites: Python 3.12, uv, and Node.js 22.12+ with npm compatible with Vite 8. Docker builds use Node.js 22. Prepare the root `.env`, then use these settings:
 
   ```dotenv
   PUBLIC_BASE_URL=http://localhost:5173
@@ -482,29 +387,28 @@
   VITE_API_PROXY=http://127.0.0.1:8000
   ```
 
-  将 `DATABASE_URL` 设置为宿主机的 PostgreSQL 连接地址，主机 `127.0.0.1`、端口 `5432`；用户名、密码、库名与 `POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_DB` 一致。模板中的 `change-me` 不会自动替换为数据库密码，需自行更新。密码包含 URL 特殊字符时需要编码。
+  Set `DATABASE_URL` to the PostgreSQL connection on the host at `127.0.0.1:5432`. The username, password, and database name must match `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB`. Replace the template's `change-me` manually; it is not automatically substituted with the database password. URL-encode any special characters in the password.
 
-* 在仓库根目录启动开发数据库：
+* Start the development database from the repository root:
 
   ```bash
   docker compose --env-file .env -f db/compose.yml up -d --wait postgres
   ```
 
-* 在一个终端启动后端：
+* Start the backend in one terminal:
 
   ```bash
   cd backend
   uv sync --frozen
   uv run python -m alembic upgrade head
   uv run python -m src.main.python.cli seed-demo
-  uv run python -m src.main.python.cli seed-elections
   uv run python -m src.main.python.cli ensure-demo-polls
   uv run python -m uvicorn src.main.python.main:create_app --factory --host 127.0.0.1 --port 8000 --no-access-log
   ```
 
-  `seed-demo`、`seed-elections` 和 `ensure-demo-polls` 是演示初始化步骤，独立开发不需要样本时可跳过；`seed-elections` 依赖先创建管理员。`ensure-demo-polls` 还要求初始化开关启用。后端从根目录 `.env` 读取应用配置。
+  `ensure-demo-polls` creates missing polls only when initialization is enabled. Skip it if you do not need demo polls. The backend reads application settings from the root `.env`.
 
-* 在另一个终端启动前端：
+* Start the frontend in another terminal:
 
   ```bash
   cd frontend
@@ -512,42 +416,42 @@
   npm run dev -- --host localhost
   ```
 
-  访问 [http://localhost:5173](http://localhost:5173)。前端通过 Vite 将 `/api` 请求代理到后端。接口交互文档可在本机后端运行时访问 [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)；全栈 Compose 默认未向宿主机开放后端 8000 端口。
+  Open [http://localhost:5173](http://localhost:5173). Vite proxies `/api` requests to the backend. Interactive API documentation is available at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) when the local backend is running. The full-stack Compose setup does not expose backend port 8000 to the host by default.
 
-  全部后端接口、请求响应字段、鉴权方式和错误码请看 [后端接口文档](docs/technical/backend-api.md)。
+  For all backend endpoints, request and response fields, authentication, and error codes, see the [Backend API Reference (Chinese)](docs/technical/backend-api.md).
 
-## 可选配置项
+## Optional Smart Fill and Configuration
 
-* 智能填写默认关闭，不配置模型服务也可以使用普通创建和投票功能。启用时，在根目录 `.env` 中设置：
+* Smart fill is disabled by default. Normal poll creation and voting work without a model service. To enable it, configure the following in the root `.env`:
 
-  | 配置 | 用途 |
+  | Setting | Purpose |
   | --- | --- |
-  | `POLL_TEXT_PARSE_ENABLED` | 设置为 `true` 启用 |
-  | `OPENAI_API_KEY` | 模型服务凭据，仅供后端使用 |
-  | `POLL_TEXT_PARSE_MODEL` | 所使用的模型名称 |
-  | `OPENAI_BASE_URL` | 可选的兼容服务地址，留空使用 SDK 默认地址 |
-  | `POLL_TEXT_PARSE_TIMEOUT_SECONDS` | 请求超时，允许 1–60 秒 |
-  | `POLL_TEXT_PARSE_RESPONSE_FORMAT` | 根据服务能力选择 `json_schema` 或 `json_object` |
-  | `POLL_TEXT_PARSE_STREAM` | 当前识别链路保持 `false` |
+  | `POLL_TEXT_PARSE_ENABLED` | Set to `true` to enable |
+  | `OPENAI_API_KEY` | Model service credential, used only by the backend |
+  | `POLL_TEXT_PARSE_MODEL` | Model name |
+  | `OPENAI_BASE_URL` | Optional compatible service URL; leave empty for the SDK default |
+  | `POLL_TEXT_PARSE_TIMEOUT_SECONDS` | Request timeout, from 1 to 60 seconds |
+  | `POLL_TEXT_PARSE_RESPONSE_FORMAT` | Choose `json_schema` or `json_object` according to service support |
+  | `POLL_TEXT_PARSE_STREAM` | Keep `false` for the current parsing workflow |
 
-  其他模型参数见 [.env.example](.env.example)。模型选择由服务器配置，创建页面没有模型切换控件。修改后需重新创建后端容器以加载环境变量（`docker compose up -d --force-recreate backend`）；独立开发则重启后端进程。文字识别可回填明确的记名方式、公开性、选票上限和实时结果开关；未返回字段保留表单当前值，访问密码手填。识别不会自动发布投票，输入文本会发送到所配置的模型服务。
+  See [.env.example](.env.example) for other model parameters. Restart the relevant backend service after making changes. Text parsing only helps populate the form; the reviewed and saved form determines the final settings. Optional information not explicitly provided in the source text uses form defaults. Parsing does not publish a poll automatically. Submitted text is sent to the configured model service for parsing.
 
-* 其他常用配置
+* Other common settings
 
-  | 配置 | 说明 |
+  | Setting | Description |
   | --- | --- |
-  | `SESSION_TTL_HOURS` | 账户会话有效期 |
-  | `GUEST_TTL_DAYS` | 访客会话有效期 |
-  | `POLL_ACCESS_TTL_MINUTES` | 私有投票访问授权有效期 |
-  | `ANON_VOTER_HMAC_KEY` | 匿名防重复标识使用的服务端密钥，已有数据运行期间应保持稳定 |
-  | `IDENTITY_FINGERPRINT_HMAC_KEY` | 选民证件指纹密钥，至少 32 字节，且必须与 ANON_VOTER_HMAC_KEY 不同 |
-  | `COOKIE_SECURE` | 本机 HTTP 使用 `false`，HTTPS 部署应配置为 `true` |
-  | `PUBLIC_BASE_URL` | 分享链接使用的前端访问地址 |
-  | `ALLOWED_ORIGINS` | 浏览器来源白名单，使用 JSON 数组 |
+  | `SESSION_TTL_HOURS` | Account session lifetime |
+  | `GUEST_TTL_DAYS` | Guest session lifetime |
+  | `POLL_ACCESS_TTL_MINUTES` | Private poll access authorization lifetime |
+  | `ANON_VOTER_HMAC_KEY` | Server secret for anonymous duplicate-prevention identifiers; keep stable while existing data is in use |
+  | `IDENTITY_FINGERPRINT_HMAC_KEY` | Voter identity fingerprint secret; at least 32 bytes and different from `ANON_VOTER_HMAC_KEY` |
+  | `COOKIE_SECURE` | Use `false` for local HTTP and `true` for HTTPS deployment |
+  | `PUBLIC_BASE_URL` | Frontend URL used in share links |
+  | `ALLOWED_ORIGINS` | Allowed browser origins as a JSON array |
 
-## 测试与检查
+## Tests and Checks
 
-* 前端：在 `frontend/` 目录执行。
+* Frontend: run from `frontend/`.
 
   ```bash
   npm run typecheck
@@ -556,15 +460,15 @@
   npm run build
   ```
 
-* 后端：数据库测试会重建或清空专用测试库。先将根目录 `.env` 中的 `TEST_DATABASE_URL` 配置为本机 `127.0.0.1:5433/voting_test`，凭据与数据库配置一致，`TEST_POSTGRES_DB` 保持 `voting_test`。不要指向开发或需保留数据的数据库。
+* Backend: database tests rebuild or clear the dedicated test database. Set `TEST_DATABASE_URL` in the root `.env` to the local database at `127.0.0.1:5433/voting_test`, with matching credentials, and keep `TEST_POSTGRES_DB=voting_test`. Do not point it at a development database or any database whose data you need to retain.
 
-  在仓库根目录启动测试数据库：
+  Start the test database from the repository root:
 
   ```bash
   docker compose --env-file .env -f db/compose.yml --profile test up -d --wait postgres-test
   ```
 
-  然后在 `backend/` 目录执行：
+  Then run from `backend/`:
 
   ```bash
   uv sync --frozen
@@ -572,22 +476,22 @@
   uv run --env-file ../.env pytest
   ```
 
-  测试数据库辅助代码读取进程环境变量，因此测试命令显式加载 `.env`。这里提供检查方法，不代表每次代码修改后这些检查都已经通过。
+  Test database helpers read process environment variables, so the test command explicitly loads `.env`. These commands describe how to run checks; they do not imply that every check has passed after every code change.
 
-## 项目文档
+## Documentation
 
-* 详细技术文档统一存放在 `docs/technical/`，以表格、架构图和代码示例说明当前实现。
+* Detailed technical documents are stored in `docs/technical/` and describe the current implementation using tables, architecture diagrams, and code examples. These documents are currently in Chinese.
 
-  | 文档 | 内容 |
+  | Document | Contents |
   | --- | --- |
-  | [数据库设计](docs/technical/database-design.md) | 全部表用途、字段、DDL、索引、ER 图与迁移 |
-  | [前端设计](docs/technical/frontend-design.md) | 投票与选举页面路由、组件、状态及请求流程 |
-  | [后端设计](docs/technical/backend-design.md) | 架构、业务模块、身份权限、投票／选举生命周期与事务 |
-  | [后端接口](docs/technical/backend-api.md) | 全部应用接口合并于一份文件，含字段、示例与错误码 |
-  | [详细使用](docs/technical/user-guide.md) | 安装、投票、选民登记、选举管理、结果与维护 |
+  | [Database Design](docs/technical/database-design.md) | All table purposes, fields, DDL, indexes, ER diagram, and migrations |
+  | [Frontend Design](docs/technical/frontend-design.md) | Routes, components, state, requests, and export flows |
+  | [Backend Design](docs/technical/backend-design.md) | Architecture, business modules, permissions, lifecycle, and transactions |
+  | [Backend API Reference](docs/technical/backend-api.md) | All application endpoints in one file, including fields, examples, and error codes |
+  | [User Guide](docs/technical/user-guide.md) | Installation, creation, sharing, voting, result exports, administration, and maintenance |
 
-  旧协作快照保留在 `docs/coordination/`。开发计划与审查记录分别保存在 `docs/superpowers/plans/` 和 `docs/reviews/`，不作为已完成功能清单；代码修改后也应同步维护上述技术文档。
+  Earlier collaboration snapshots are retained in `docs/coordination/`. Development plans and review records are stored in `docs/superpowers/plans/` and `docs/reviews/`; they are not lists of completed features. Keep the technical documents above updated when changing the code.
 
-## 团队与使用范围
+## Team and Usage
 
-* 本项目由 HKMU COMP8500SEF 第 60 组完成，用于课程学习与演示。当前仓库未附独立开源许可证；如需作为开源项目发布，应先由团队确认授权方式并补充许可证文件。团队成员及具体贡献可在确认后补充。
+* This project was developed by HKMU COMP8500SEF Group 60 for coursework and demonstrations. The repository currently has no separate open-source license. Before publishing it as an open-source project, the team should agree on licensing and add a license file. Team members and individual contributions can be added once confirmed.

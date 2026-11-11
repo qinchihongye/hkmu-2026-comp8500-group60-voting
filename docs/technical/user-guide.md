@@ -30,7 +30,7 @@
   | POLL_TEXT_PARSE_ENABLED | 默认false，不影响普通创建／投票 |
   | IDENTITY_FINGERPRINT_HMAC_KEY | 选民证件指纹密钥；至少 32 字节，且不得与 ANON_VOTER_HMAC_KEY 相同 |
 
-  本地与服务器的完整清单见 [README start_guide](../../README.md#start_guide)。服务器必须配置实际访问地址、密钥与账户密码；当前启动脚本还会无条件执行 `seed-elections`，包含源码内置密码的样本选民。对外部署前须处理该初始化流程和已有样本账户。仅设置 `DEMO_POLLS_ENABLED=false` 无法关闭全部演示数据。
+  本地与服务器的完整清单见 [README start_guide](../../README.zh-CN.md#start_guide)。服务器必须配置实际访问地址、密钥与账户密码；当前启动脚本还会无条件执行 `seed-elections`，包含源码内置密码的样本选民。对外部署前须处理该初始化流程和已有样本账户。仅设置 `DEMO_POLLS_ENABLED=false` 无法关闭全部演示数据。
 
 * 演示账户
 
@@ -350,7 +350,7 @@
 
 ## 本地开发、维护与排错
 
-* 前后端独立运行：完整命令见 [README 本地开发](../../README.md#本地开发)。简要顺序如下。
+* 前后端独立运行：完整命令见 [README 本地开发](../../README.zh-CN.md#本地开发)。简要顺序如下。
 
   | 顺序 | 工作目录 | 操作 |
   | --- | --- | --- |
