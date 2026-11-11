@@ -8,6 +8,13 @@ prompt.txt
 /docs/superpowers/
 /docs/votenow_ppt/
 
+# README 使用的流程总览图；其余 template 素材仅保留在本地
+/docs/template/*
+!/docs/template/images/
+/docs/template/images/*
+!/docs/template/images/election-lifecycle-showcase.en.png
+!/docs/template/images/poll-lifecycle-showcase.en.png
+
 # 本地环境与密钥
 .env
 

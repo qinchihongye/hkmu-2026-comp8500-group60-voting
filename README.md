@@ -24,37 +24,23 @@
 
 ## 页面效果与系统预览
 
-* 当前投票、我的活动、选举及管理员页面总览（由实际页面截图拼接）：
+### 系统预览
+
+* 投票、我的活动、选举及管理员页面总览。
 
   ![VoteNow 效果总览](docs/images/product-showcase.png)
 
-* 投票概览：搜索、筛选和排序公开投票，查看状态、剩余时间和选票进度。
+### 投票预览
 
-  ![投票概览](docs/images/overview.jpg)
+* 从创建草稿、发布分享，到确认投票、查看结果和导出报告。
 
-* 创建投票：填写主题、选项、时间和参与规则，可选使用智能填写。
+  ![VoteNow 投票全过程](docs/template/images/poll-lifecycle-showcase.en.png)
 
-  ![创建投票](docs/images/create-poll.jpg)
+### 选举预览
 
-* 投票结果：查看选票数、选择次数、环形图和胜出结果。
+* 展示预告、选民登记、资格审核、正式投票、结果公布五个阶段，以及选举结果导出。
 
-  ![投票结果](docs/images/poll-results.jpg)
-
-* 我的活动：管理已创建投票，切换查看本人参与记录。
-
-  ![我的活动](docs/images/guide-my-polls.png)
-
-* 选举列表：查看五阶段进度、个人资格和参与入口。
-
-  ![选举列表与五阶段进度](docs/images/guide-elections.png)
-
-* 选举结果：查看最终票数、投票率、弃权人数和导出入口。
-
-  ![选举结果：24 名合资格选民、24 票、100% 投票率](docs/images/guide-election-results.png)
-
-* 截图更新于 2026-11-04，来自当前前端代码和独立本地演示数据库。智能填写入口与 JSON 预览使用固定演示响应展示界面，不代表本次已验证外部模型服务；其他业务页面使用实际后端数据。
-
-  手机端卡片、选民登记、选票、资格复核和管理页面见 [详细使用文档](docs/technical/user-guide.md#选举)。
+  ![VoteNow 选举全过程](docs/template/images/election-lifecycle-showcase.en.png)
 
 ## start_guide
 
@@ -530,7 +516,7 @@
 
   全部后端接口、请求响应字段、鉴权方式和错误码请看 [后端接口文档](docs/technical/backend-api.md)。
 
-## 可选智能填写与配置
+## 可选配置项
 
 * 智能填写默认关闭，不配置模型服务也可以使用普通创建和投票功能。启用时，在根目录 `.env` 中设置：
 

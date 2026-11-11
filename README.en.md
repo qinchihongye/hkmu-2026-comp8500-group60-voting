@@ -20,35 +20,23 @@
 
 ## System Showcase & UI Previews
 
-* Full-stack modern online voting platform architecture & core views showcase:
+### System Preview
+
+* An overview of polls, My Activity, elections and admin pages.
 
   ![VoteNow Product Showcase](docs/images/product-showcase.png)
 
-* Overview: search, filter and sort public polls, and check voting progress.
+### Poll Preview
 
-  ![Poll overview](docs/images/overview.jpg)
+* Create a draft, publish and share, confirm a vote, view results and export a report.
 
-* Create a poll: enter a title, options, times and voting rules. Smart fill is optional.
+  ![VoteNow Poll Journey](docs/template/images/poll-lifecycle-showcase.en.png)
 
-  ![Create poll](docs/images/create-poll.jpg)
+### Election Preview
 
-* Poll results: view ballot counts, selections, charts and winners.
+* Follow five stages—Upcoming, Registration, Review, Voting and Results—and export the election results.
 
-  ![Poll results](docs/images/poll-results.jpg)
-
-* My Activity: manage created polls and view voting records.
-
-  ![My Activity](docs/images/guide-my-polls.png)
-
-* Elections: view the five stages, voter status and available actions.
-
-  ![Elections](docs/images/guide-elections.png)
-
-* Election results: view final votes, turnout, abstentions and export actions.
-
-  ![Election results](docs/images/guide-election-results.png)
-
-* Screenshots updated on November 4, 2026, using the current frontend and a separate local demo database. Smart fill screens use a fixed demo response to show the UI; they do not confirm a live model call.
+  ![VoteNow Election Journey](docs/template/images/election-lifecycle-showcase.en.png)
 
 ## start_guide
 
